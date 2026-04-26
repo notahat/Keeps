@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import os
 
 /// Full-window view of a single photo. Esc returns to the grid. Left/right arrow
 /// keys and h/l navigate between photos; j/k also navigate linearly.
@@ -7,6 +8,8 @@ struct SingleImageView: View {
     var library: FolderLibrary
 
     @State private var image: NSImage?
+
+    private let signposter = OSSignposter(subsystem: "com.notahat.Keeps", category: "Navigation")
 
     var body: some View {
         Group {
@@ -24,6 +27,8 @@ struct SingleImageView: View {
         }
         .task(id: library.selectedIndex) {
             guard let index = library.selectedIndex else { image = nil; return }
+            let isCacheHit = ImageLoader.shared.isFullImageCached(for: library.items[index])
+            let intervalState = signposter.beginInterval("imageLoad", "\(isCacheHit ? "hit" : "miss")")
             await withTaskGroup(of: (Int, NSImage?).self) { group in
                 for loadIndex in loadIndices(around: index) {
                     group.addTask {
@@ -31,7 +36,10 @@ struct SingleImageView: View {
                     }
                 }
                 for await (loadIndex, loadedImage) in group {
-                    if loadIndex == index { image = loadedImage }
+                    if loadIndex == index {
+                        image = loadedImage
+                        signposter.endInterval("imageLoad", intervalState)
+                    }
                 }
             }
         }

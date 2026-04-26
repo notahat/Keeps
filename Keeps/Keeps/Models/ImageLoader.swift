@@ -13,6 +13,10 @@ final class ImageLoader {
 
     private let cache = NSCache<NSString, NSImage>()
 
+    func isFullImageCached(for item: PhotoItem) -> Bool {
+        cache.object(forKey: "\(item.sourceURL.path)@full" as NSString) != nil
+    }
+
     func fullImage(for item: PhotoItem) async -> NSImage? {
         let key = "\(item.sourceURL.path)@full" as NSString
         if let cached = cache.object(forKey: key) { return cached }
