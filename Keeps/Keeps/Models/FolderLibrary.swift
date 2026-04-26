@@ -6,11 +6,17 @@ import Observation
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
+    enum Mark { case pick, reject }
 
     private(set) var items: [PhotoItem] = []
     private(set) var folderURL: URL?
     var selectedIndex: Int?
     var viewMode: ViewMode = .grid
+    private(set) var marks: [UUID: Mark] = [:]
+
+    func setMark(_ mark: Mark?, for item: PhotoItem) {
+        marks[item.id] = mark
+    }
 
     func openFolder(url: URL) {
         folderURL = url

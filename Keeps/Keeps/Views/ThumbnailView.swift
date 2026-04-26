@@ -7,6 +7,7 @@ import AppKit
 struct ThumbnailView: View {
     let item: PhotoItem
     var isSelected: Bool = false
+    var mark: FolderLibrary.Mark? = nil
 
     @Environment(\.controlActiveState) private var controlActiveState
 
@@ -28,6 +29,11 @@ struct ThumbnailView: View {
                             Rectangle().stroke(Color.accentColor, lineWidth: 3)
                         }
                     }
+                    .overlay(alignment: .bottomLeading) {
+                        if let mark {
+                            MarkBadge(mark: mark).padding(6)
+                        }
+                    }
             } else {
                 Color(nsColor: .quaternaryLabelColor)
             }
@@ -36,5 +42,18 @@ struct ThumbnailView: View {
         .task(id: item.id) {
             image = await ImageLoader.shared.thumbnail(for: item, maxPixelSize: Self.pixelSize)
         }
+    }
+}
+
+/// A small badge showing whether a photo has been picked or rejected.
+private struct MarkBadge: View {
+    let mark: FolderLibrary.Mark
+
+    var body: some View {
+        Image(systemName: mark == .pick ? "checkmark.circle.fill" : "x.circle.fill")
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(.white, mark == .pick ? Color.green : Color.red)
+            .font(.system(size: 22))
+            .shadow(radius: 2)
     }
 }

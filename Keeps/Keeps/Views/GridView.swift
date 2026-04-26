@@ -19,7 +19,7 @@ struct GridView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: spacing) {
                     ForEach(Array(library.items.enumerated()), id: \.element.id) { index, item in
-                        ThumbnailView(item: item, isSelected: library.selectedIndex == index)
+                        ThumbnailView(item: item, isSelected: library.selectedIndex == index, mark: library.marks[item.id])
                             .onTapGesture(count: 2) {
                                 library.selectedIndex = index
                                 library.viewMode = .single
@@ -51,9 +51,23 @@ struct GridView: View {
 
     private enum Direction { case left, right, up, down }
 
+    private func markAction(for event: NSEvent) -> FolderLibrary.Mark?? {
+        switch event.charactersIgnoringModifiers {
+        case "p": return .some(.pick)
+        case "x": return .some(.reject)
+        case "u": return .some(nil)
+        default:  return nil
+        }
+    }
+
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         if event.keyCode == 36, library.selectedIndex != nil {
             library.viewMode = .single
+            return true
+        }
+        if let mark = markAction(for: event), let index = library.selectedIndex {
+            library.setMark(mark, for: library.items[index])
+            library.selectedIndex = min(library.items.count - 1, index + 1)
             return true
         }
         guard let direction = direction(for: event) else { return false }
