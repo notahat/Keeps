@@ -1,0 +1,56 @@
+import SwiftUI
+import AppKit
+
+/// Full-window view of a single photo. Esc returns to the grid. Left/right arrow
+/// keys and h/l navigate between photos; j/k also navigate linearly.
+struct SingleImageView: View {
+    var library: FolderLibrary
+
+    @State private var image: NSImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Color(nsColor: .quaternaryLabelColor)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            KeyAwareView { event in handleKeyEvent(event) }
+        }
+        .task(id: library.selectedIndex) {
+            image = nil
+            guard let index = library.selectedIndex else { return }
+            image = await ImageLoader.shared.fullImage(for: library.items[index])
+        }
+    }
+
+    private func handleKeyEvent(_ event: NSEvent) -> Bool {
+        if event.keyCode == 53 {
+            library.viewMode = .grid
+            return true
+        }
+        guard let step = navigationStep(for: event) else { return false }
+        let count = library.items.count
+        guard count > 0, let current = library.selectedIndex else { return false }
+        library.selectedIndex = max(0, min(count - 1, current + step))
+        return true
+    }
+
+    private func navigationStep(for event: NSEvent) -> Int? {
+        switch event.keyCode {
+        case 123, 126: return -1
+        case 124, 125: return 1
+        default: break
+        }
+        switch event.charactersIgnoringModifiers {
+        case "h", "k": return -1
+        case "l", "j": return 1
+        default: return nil
+        }
+    }
+}

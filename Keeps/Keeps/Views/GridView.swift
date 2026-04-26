@@ -20,6 +20,10 @@ struct GridView: View {
                 LazyVGrid(columns: columns, spacing: spacing) {
                     ForEach(Array(library.items.enumerated()), id: \.element.id) { index, item in
                         ThumbnailView(item: item, isSelected: library.selectedIndex == index)
+                            .onTapGesture(count: 2) {
+                                library.selectedIndex = index
+                                library.viewMode = .single
+                            }
                             .onTapGesture { library.selectedIndex = index }
                             .id(item.id)
                     }
@@ -32,6 +36,11 @@ struct GridView: View {
             .background {
                 KeyAwareView { event in handleKeyEvent(event) }
             }
+            .onAppear {
+                if let index = library.selectedIndex {
+                    scrollProxy.scrollTo(library.items[index].id, anchor: .center)
+                }
+            }
             .onChange(of: library.selectedIndex) { _, index in
                 if let index {
                     withAnimation { scrollProxy.scrollTo(library.items[index].id, anchor: .center) }
@@ -43,6 +52,10 @@ struct GridView: View {
     private enum Direction { case left, right, up, down }
 
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
+        if event.keyCode == 36, library.selectedIndex != nil {
+            library.viewMode = .single
+            return true
+        }
         guard let direction = direction(for: event) else { return false }
         let count = library.items.count
         guard count > 0, let current = library.selectedIndex else { return false }

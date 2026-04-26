@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 
+enum ViewMode { case grid, single }
+
 /// Owns the photo items for a single open folder. Handles directory scanning and
 /// file pairing. Does not load image data — that's ImageLoader's job.
 @Observable
@@ -8,6 +10,7 @@ class FolderLibrary {
     private(set) var items: [PhotoItem] = []
     private(set) var folderURL: URL?
     var selectedIndex: Int?
+    var viewMode: ViewMode = .grid
 
     func openFolder(url: URL) {
         folderURL = url

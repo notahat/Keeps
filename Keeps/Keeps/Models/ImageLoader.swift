@@ -13,6 +13,10 @@ final class ImageLoader {
 
     private var cache: [String: NSImage] = [:]
 
+    func fullImage(for item: PhotoItem) async -> NSImage? {
+        await thumbnail(for: item, maxPixelSize: 4096)
+    }
+
     func thumbnail(for item: PhotoItem, maxPixelSize: Int) async -> NSImage? {
         let key = cacheKey(url: item.sourceURL, size: maxPixelSize)
         if let cached = cache[key] { return cached }

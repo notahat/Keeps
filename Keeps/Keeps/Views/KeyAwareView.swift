@@ -11,23 +11,24 @@ struct KeyAwareView: NSViewRepresentable {
     func makeNSView(context: Context) -> ResponderView {
         let view = ResponderView()
         view.onKeyDown = onKeyDown
-        DispatchQueue.main.async {
-            view.window?.makeFirstResponder(view)
-        }
         return view
     }
 
     func updateNSView(_ view: ResponderView, context: Context) {
         view.onKeyDown = onKeyDown
-        DispatchQueue.main.async {
-            guard view.window?.isKeyWindow == true, view.window?.firstResponder !== view else { return }
-            view.window?.makeFirstResponder(view)
-        }
     }
 
     final class ResponderView: NSView {
         var onKeyDown: ((NSEvent) -> Bool)?
         override var acceptsFirstResponder: Bool { true }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let window, window.isKeyWindow {
+                window.makeFirstResponder(self)
+            }
+        }
+
         override func keyDown(with event: NSEvent) {
             if onKeyDown?(event) != true { super.keyDown(with: event) }
         }

@@ -14,6 +14,8 @@ struct ContentView: View {
         Group {
             if library.items.isEmpty {
                 emptyState
+            } else if library.viewMode == .single {
+                SingleImageView(library: library)
             } else {
                 GridView(library: library)
             }
