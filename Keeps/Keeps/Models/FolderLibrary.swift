@@ -12,39 +12,45 @@ class FolderLibrary {
 
     private(set) var items: [PhotoItem] = []
     private(set) var folderURL: URL?
-    var selectedIndex: Int?
+    private(set) var selectedItemID: UUID?
     var viewMode: ViewMode = .grid
     private(set) var marks: [UUID: Mark] = [:]
     private(set) var filterMode: FilterMode = .all
 
+    /// The index of the selected item within the current filtered list, or nil if the
+    /// selected item isn't present in the current filter. Setting this updates the
+    /// selected item identity, so the selection follows the item across filter switches.
+    var selectedIndex: Int? {
+        get {
+            guard let id = selectedItemID else { return nil }
+            return filteredItems.firstIndex { $0.id == id }
+        }
+        set {
+            selectedItemID = newValue.map { filteredItems[$0].id }
+        }
+    }
+
     var filteredItems: [PhotoItem] {
         switch filterMode {
-        case .all: return items
-        case .picked: return items.filter { marks[$0.id] == .pick }
-        case .rejected: return items.filter { marks[$0.id] == .reject }
-        case .unmarked: return items.filter { marks[$0.id] == nil }
+        case .all: items
+        case .picked: items.filter { marks[$0.id] == .pick }
+        case .rejected: items.filter { marks[$0.id] == .reject }
+        case .unmarked: items.filter { marks[$0.id] == nil }
         }
     }
 
     func setMark(_ mark: Mark?, for item: PhotoItem) {
         marks[item.id] = mark
-        clampSelectedIndex()
     }
 
     func applyFilter(_ mode: FilterMode) {
         filterMode = mode
-        selectedIndex = filteredItems.isEmpty ? nil : 0
     }
 
     func openFolder(url: URL) {
         folderURL = url
         items = scanFolder(url: url)
-        selectedIndex = items.isEmpty ? nil : 0
-    }
-
-    private func clampSelectedIndex() {
-        guard let index = selectedIndex else { return }
-        selectedIndex = filteredItems.isEmpty ? nil : min(index, filteredItems.count - 1)
+        selectedItemID = items.first?.id
     }
 
     private func scanFolder(url: URL) -> [PhotoItem] {
