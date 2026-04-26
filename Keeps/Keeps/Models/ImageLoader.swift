@@ -14,11 +14,22 @@ final class ImageLoader {
     private var cache: [String: NSImage] = [:]
 
     func fullImage(for item: PhotoItem) async -> NSImage? {
-        await thumbnail(for: item, maxPixelSize: 4096)
+        let key = "\(item.sourceURL.path)@full"
+        if let cached = cache[key] { return cached }
+
+        let url = item.sourceURL
+        let decoded = await Task.detached(priority: .userInitiated) {
+            Self.decodeFullImage(from: url)
+        }.value
+        guard let cgImage = decoded else { return nil }
+
+        let image = NSImage(cgImage: cgImage, size: .zero)
+        cache[key] = image
+        return image
     }
 
     func thumbnail(for item: PhotoItem, maxPixelSize: Int) async -> NSImage? {
-        let key = cacheKey(url: item.sourceURL, size: maxPixelSize)
+        let key = "\(item.sourceURL.path)@\(maxPixelSize)"
         if let cached = cache[key] { return cached }
 
         let url = item.sourceURL
@@ -32,8 +43,18 @@ final class ImageLoader {
         return image
     }
 
-    private func cacheKey(url: URL, size: Int) -> String {
-        "\(url.path)@\(size)"
+    /// Extracts the embedded JPEG preview from a RAW file at full size. Using
+    /// kCGImageSourceCreateThumbnailFromImageIfAbsent: false ensures CGImageSource
+    /// returns the pre-existing embedded preview rather than decoding the RAW data.
+    /// kCGImageSourceCreateThumbnailWithTransform applies the EXIF orientation tag
+    /// so portrait shots display upright without any additional rotation.
+    nonisolated static func decodeFullImage(from url: URL) -> CGImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageIfAbsent: false,
+            kCGImageSourceCreateThumbnailWithTransform: true
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
     /// Decodes a thumbnail using CGImageSource. Marked nonisolated so it can run

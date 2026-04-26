@@ -23,9 +23,17 @@ struct SingleImageView: View {
             KeyAwareView { event in handleKeyEvent(event) }
         }
         .task(id: library.selectedIndex) {
-            image = nil
-            guard let index = library.selectedIndex else { return }
-            image = await ImageLoader.shared.fullImage(for: library.items[index])
+            guard let index = library.selectedIndex else { image = nil; return }
+            await withTaskGroup(of: (Int, NSImage?).self) { group in
+                for loadIndex in loadIndices(around: index) {
+                    group.addTask {
+                        (loadIndex, await ImageLoader.shared.fullImage(for: library.items[loadIndex]))
+                    }
+                }
+                for await (loadIndex, loadedImage) in group {
+                    if loadIndex == index { image = loadedImage }
+                }
+            }
         }
     }
 
@@ -39,6 +47,12 @@ struct SingleImageView: View {
         guard count > 0, let current = library.selectedIndex else { return false }
         library.selectedIndex = max(0, min(count - 1, current + step))
         return true
+    }
+
+    // Loads current index plus 4 ahead and 2 behind to warm the cache.
+    private func loadIndices(around index: Int) -> [Int] {
+        let count = library.items.count
+        return (max(0, index - 2)...min(count - 1, index + 4)).map { $0 }
     }
 
     private func navigationStep(for event: NSEvent) -> Int? {
