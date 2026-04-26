@@ -33,11 +33,6 @@
 			path = KeepsTests;
 			sourceTree = "<group>";
 		};
-		34AA6A462F9DE8AE007BA223 /* KeepsUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = KeepsUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,7 +59,6 @@
 				349CDCA42F9DED6D00EAED54 /* PLAN.md */,
 				34AA6A2E2F9DE8AD007BA223 /* Keeps */,
 				34AA6A3C2F9DE8AE007BA223 /* KeepsTests */,
-				34AA6A462F9DE8AE007BA223 /* KeepsUITests */,
 				34AA6A2D2F9DE8AD007BA223 /* Products */,
 			);
 			sourceTree = "<group>";

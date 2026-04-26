@@ -30,9 +30,7 @@ struct ContentView: View {
     }
 
     private var itemList: some View {
-        List(library.items) { item in
-            Text(item.stem)
-        }
+        GridView(items: library.items)
     }
 
     private func openFolder() {
