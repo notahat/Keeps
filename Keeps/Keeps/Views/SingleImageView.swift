@@ -32,7 +32,7 @@ struct SingleImageView: View {
             await withTaskGroup(of: (Int, NSImage?).self) { group in
                 for loadIndex in loadIndices(around: index) {
                     group.addTask {
-                        (loadIndex, await ImageLoader.shared.fullImage(for: library.filteredItems[loadIndex]))
+                        await (loadIndex, ImageLoader.shared.fullImage(for: library.filteredItems[loadIndex]))
                     }
                 }
                 for await (loadIndex, loadedImage) in group {
@@ -60,7 +60,7 @@ struct SingleImageView: View {
     /// Loads current index plus 4 ahead and 2 behind to warm the cache.
     private func loadIndices(around index: Int) -> [Int] {
         let count = library.filteredItems.count
-        return (max(0, index - 2) ... min(count - 1, index + 4)).map { $0 }
+        return (max(0, index - 2) ... min(count - 1, index + 4)).map(\.self)
     }
 
     private func navigationStep(for event: NSEvent) -> Int? {

@@ -24,20 +24,38 @@ struct ContentView: View {
         .navigationSubtitle(library.folderURL?.path ?? "")
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Picker("Filter", selection: Binding(
-                    get: { library.filterMode },
-                    set: { library.applyFilter($0) }
-                )) {
-                    Text("All").tag(FolderLibrary.FilterMode.all)
-                    Text("Picked").tag(FolderLibrary.FilterMode.picked)
-                    Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
-                    Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+                HStack(spacing: 16) {
+                    HStack(spacing: 2) {
+                        MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
+                            applyMark(.reject)
+                        }
+                        MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
+                            applyMark(nil)
+                        }
+                        MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
+                            applyMark(.pick)
+                        }
+                    }
+                    .imageScale(.medium)
+                    .font(.body)
+                    Picker("Filter", selection: Binding(
+                        get: { library.filterMode },
+                        set: { library.applyFilter($0) }
+                    )) {
+                        Text("All").tag(FolderLibrary.FilterMode.all)
+                        Text("Picked").tag(FolderLibrary.FilterMode.picked)
+                        Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
+                        Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
                 }
-                .pickerStyle(.segmented)
-                .fixedSize()
             }
             ToolbarItem(placement: .primaryAction) {
-                Button("Open Folder") { openFolder() }
+                Button(action: openFolder) {
+                    Image(systemName: "folder")
+                }
+                .help("Open Folder")
             }
         }
         .frame(minWidth: 400, minHeight: 300)
@@ -93,6 +111,13 @@ struct ContentView: View {
             relativeTo: nil
         )
         UserDefaults.standard.set(data, forKey: Self.bookmarkKey)
+    }
+
+    private func applyMark(_ mark: FolderLibrary.Mark?) {
+        guard let index = library.selectedIndex else { return }
+        library.setMark(mark, for: library.filteredItems[index])
+        let items = library.filteredItems
+        library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
     }
 
     private static let bookmarkKey = "lastFolderBookmark"

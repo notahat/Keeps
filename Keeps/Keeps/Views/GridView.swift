@@ -71,7 +71,8 @@ struct GridView: View {
         }
         if let mark = markAction(for: event), let index = library.selectedIndex {
             library.setMark(mark, for: library.filteredItems[index])
-            library.selectedIndex = min(library.filteredItems.count - 1, index + 1)
+            let items = library.filteredItems
+            library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
             return true
         }
         guard let direction = direction(for: event) else { return false }

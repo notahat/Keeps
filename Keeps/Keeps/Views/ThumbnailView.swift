@@ -7,7 +7,7 @@ import SwiftUI
 struct ThumbnailView: View {
     let item: PhotoItem
     var isSelected: Bool = false
-    var mark: FolderLibrary.Mark? = nil
+    var mark: FolderLibrary.Mark?
 
     @Environment(\.controlActiveState) private var controlActiveState
 
@@ -25,7 +25,7 @@ struct ThumbnailView: View {
                     .scaledToFit()
                     .padding(3)
                     .overlay {
-                        if isSelected && controlActiveState == .key {
+                        if isSelected, controlActiveState == .key {
                             Rectangle().stroke(Color.accentColor, lineWidth: 3)
                         }
                     }
