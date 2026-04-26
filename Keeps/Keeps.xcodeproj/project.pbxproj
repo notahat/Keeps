@@ -17,9 +17,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		349CDCA42F9DED6D00EAED54 /* PLAN.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PLAN.md; sourceTree = "<group>"; };
-		349CDCB72F9E480A00EAED54 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
-		349CDCBA2F9E54CE00EAED54 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		34AA6A2C2F9DE8AD007BA223 /* Keeps.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Keeps.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34AA6A392F9DE8AE007BA223 /* KeepsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KeepsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -58,9 +55,6 @@
 		34AA6A232F9DE8AD007BA223 = {
 			isa = PBXGroup;
 			children = (
-				349CDCBA2F9E54CE00EAED54 /* README.md */,
-				349CDCB72F9E480A00EAED54 /* CLAUDE.md */,
-				349CDCA42F9DED6D00EAED54 /* PLAN.md */,
 				34AA6A2E2F9DE8AD007BA223 /* Keeps */,
 				34AA6A3C2F9DE8AE007BA223 /* KeepsTests */,
 				34AA6A2D2F9DE8AD007BA223 /* Products */,
