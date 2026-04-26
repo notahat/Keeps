@@ -57,9 +57,9 @@ struct GridView: View {
 
     private func markAction(for event: NSEvent) -> FolderLibrary.Mark?? {
         switch event.charactersIgnoringModifiers {
-        case "p": .some(.pick)
-        case "x": .some(.reject)
-        case "u": .some(nil)
+        case "f": .some(.pick)
+        case "s": .some(.reject)
+        case "d": .some(nil)
         default: nil
         }
     }
