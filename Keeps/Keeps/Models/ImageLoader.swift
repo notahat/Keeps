@@ -65,8 +65,14 @@ final class ImageLoader {
     /// freely on background threads via Task.detached.
     nonisolated static func decodeThumbnail(from url: URL, maxPixelSize: Int) -> CGImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let jpegExtensions: Set = ["jpg", "jpeg"]
+        let isJPEG = jpegExtensions.contains(url.pathExtension.lowercased())
         let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
+            // For JPEGs, always decode from the full image — the embedded EXIF
+            // thumbnail is typically tiny and would be blurry when scaled up.
+            // For RAWs, use the embedded full-res JPEG preview for speed.
+            kCGImageSourceCreateThumbnailFromImageAlways: isJPEG,
+            kCGImageSourceCreateThumbnailFromImageIfAbsent: !isJPEG,
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
         ]
