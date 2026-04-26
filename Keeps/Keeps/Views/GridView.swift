@@ -61,7 +61,7 @@ struct GridView: View {
     }
 
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        if event.keyCode == 36, library.selectedIndex != nil {
+        if event.keyCode == .returnKey, library.selectedIndex != nil {
             library.viewMode = .single
             return true
         }
@@ -84,10 +84,10 @@ struct GridView: View {
 
     private func direction(for event: NSEvent) -> Direction? {
         switch event.keyCode {
-        case 123: return .left
-        case 124: return .right
-        case 125: return .down
-        case 126: return .up
+        case .leftArrow:  return .left
+        case .rightArrow: return .right
+        case .downArrow:  return .down
+        case .upArrow:    return .up
         default: break
         }
         switch event.charactersIgnoringModifiers {

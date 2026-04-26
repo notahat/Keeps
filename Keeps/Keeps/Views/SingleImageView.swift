@@ -46,7 +46,7 @@ struct SingleImageView: View {
     }
 
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        if event.keyCode == 53 {
+        if event.keyCode == .escape {
             library.viewMode = .grid
             return true
         }
@@ -65,8 +65,8 @@ struct SingleImageView: View {
 
     private func navigationStep(for event: NSEvent) -> Int? {
         switch event.keyCode {
-        case 123, 126: return -1
-        case 124, 125: return 1
+        case .leftArrow, .upArrow:    return -1
+        case .rightArrow, .downArrow: return 1
         default: break
         }
         switch event.charactersIgnoringModifiers {
