@@ -27,12 +27,12 @@ struct SingleImageView: View {
         }
         .task(id: library.selectedIndex) {
             guard let index = library.selectedIndex else { image = nil; return }
-            let isCacheHit = ImageLoader.shared.isFullImageCached(for: library.items[index])
+            let isCacheHit = ImageLoader.shared.isFullImageCached(for: library.filteredItems[index])
             let intervalState = signposter.beginInterval("imageLoad", "\(isCacheHit ? "hit" : "miss")")
             await withTaskGroup(of: (Int, NSImage?).self) { group in
                 for loadIndex in loadIndices(around: index) {
                     group.addTask {
-                        (loadIndex, await ImageLoader.shared.fullImage(for: library.items[loadIndex]))
+                        (loadIndex, await ImageLoader.shared.fullImage(for: library.filteredItems[loadIndex]))
                     }
                 }
                 for await (loadIndex, loadedImage) in group {
@@ -51,7 +51,7 @@ struct SingleImageView: View {
             return true
         }
         guard let step = navigationStep(for: event) else { return false }
-        let count = library.items.count
+        let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }
         library.selectedIndex = max(0, min(count - 1, current + step))
         return true
@@ -59,7 +59,7 @@ struct SingleImageView: View {
 
     // Loads current index plus 4 ahead and 2 behind to warm the cache.
     private func loadIndices(around index: Int) -> [Int] {
-        let count = library.items.count
+        let count = library.filteredItems.count
         return (max(0, index - 2)...min(count - 1, index + 4)).map { $0 }
     }
 

@@ -18,7 +18,7 @@ struct GridView: View {
         ScrollViewReader { scrollProxy in
             ScrollView {
                 LazyVGrid(columns: columns, spacing: spacing) {
-                    ForEach(Array(library.items.enumerated()), id: \.element.id) { index, item in
+                    ForEach(Array(library.filteredItems.enumerated()), id: \.element.id) { index, item in
                         ThumbnailView(item: item, isSelected: library.selectedIndex == index, mark: library.marks[item.id])
                             .onTapGesture(count: 2) {
                                 library.selectedIndex = index
@@ -38,12 +38,12 @@ struct GridView: View {
             }
             .onAppear {
                 if let index = library.selectedIndex {
-                    scrollProxy.scrollTo(library.items[index].id, anchor: .center)
+                    scrollProxy.scrollTo(library.filteredItems[index].id, anchor: .center)
                 }
             }
             .onChange(of: library.selectedIndex) { _, index in
                 if let index {
-                    withAnimation { scrollProxy.scrollTo(library.items[index].id, anchor: .center) }
+                    withAnimation { scrollProxy.scrollTo(library.filteredItems[index].id, anchor: .center) }
                 }
             }
         }
@@ -66,12 +66,12 @@ struct GridView: View {
             return true
         }
         if let mark = markAction(for: event), let index = library.selectedIndex {
-            library.setMark(mark, for: library.items[index])
-            library.selectedIndex = min(library.items.count - 1, index + 1)
+            library.setMark(mark, for: library.filteredItems[index])
+            library.selectedIndex = min(library.filteredItems.count - 1, index + 1)
             return true
         }
         guard let direction = direction(for: event) else { return false }
-        let count = library.items.count
+        let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }
         library.selectedIndex = switch direction {
             case .left:  max(0, current - 1)

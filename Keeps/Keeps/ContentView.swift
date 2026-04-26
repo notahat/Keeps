@@ -23,10 +23,21 @@ struct ContentView: View {
         .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
         .navigationSubtitle(library.folderURL?.path ?? "")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Open Folder") {
-                    openFolder()
+            ToolbarItem(placement: .principal) {
+                Picker("Filter", selection: Binding(
+                    get: { library.filterMode },
+                    set: { library.applyFilter($0) }
+                )) {
+                    Text("All").tag(FolderLibrary.FilterMode.all)
+                    Text("Picked").tag(FolderLibrary.FilterMode.picked)
+                    Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
+                    Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
                 }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Open Folder") { openFolder() }
             }
         }
         .frame(minWidth: 400, minHeight: 300)
