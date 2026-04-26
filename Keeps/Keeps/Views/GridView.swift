@@ -24,7 +24,11 @@ struct GridView: View {
                                 library.selectedIndex = index
                                 library.viewMode = .single
                             }
-                            .onTapGesture { library.selectedIndex = index }
+                            // simultaneousGesture fires immediately without waiting for the
+                            // double-tap timeout that onTapGesture(count: 1) would incur.
+                            .simultaneousGesture(TapGesture().onEnded {
+                                library.selectedIndex = index
+                            })
                             .id(item.id)
                     }
                 }
@@ -53,10 +57,10 @@ struct GridView: View {
 
     private func markAction(for event: NSEvent) -> FolderLibrary.Mark?? {
         switch event.charactersIgnoringModifiers {
-        case "p": return .some(.pick)
-        case "x": return .some(.reject)
-        case "u": return .some(nil)
-        default: return nil
+        case "p": .some(.pick)
+        case "x": .some(.reject)
+        case "u": .some(nil)
+        default: nil
         }
     }
 
