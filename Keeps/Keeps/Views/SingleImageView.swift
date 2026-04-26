@@ -2,8 +2,8 @@ import AppKit
 import os
 import SwiftUI
 
-/// Full-window view of a single photo. Esc returns to the grid. Left/right arrow
-/// keys and h/l navigate between photos; j/k also navigate linearly.
+/// Full-window view of a single photo. Esc or G returns to the grid. Left/right
+/// arrow keys and h/l navigate between photos; j/k also navigate linearly.
 struct SingleImageView: View {
     var library: FolderLibrary
 
@@ -46,7 +46,7 @@ struct SingleImageView: View {
     }
 
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        if event.keyCode == .escape {
+        if event.keyCode == .escape || event.charactersIgnoringModifiers == "g" {
             library.viewMode = .grid
             return true
         }
