@@ -6,8 +6,10 @@ import Observation
 @Observable
 class FolderLibrary {
     private(set) var items: [PhotoItem] = []
+    private(set) var folderURL: URL?
 
     func openFolder(url: URL) {
+        folderURL = url
         items = scanFolder(url: url)
     }
 

@@ -18,6 +18,8 @@ struct ContentView: View {
                 GridView(items: library.items)
             }
         }
+        .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
+        .navigationSubtitle(library.folderURL.map { abbreviatedPath($0) } ?? "")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Open Folder") {
@@ -78,6 +80,15 @@ struct ContentView: View {
             relativeTo: nil
         )
         UserDefaults.standard.set(data, forKey: Self.bookmarkKey)
+    }
+
+    private func abbreviatedPath(_ url: URL) -> String {
+        let path = url.path
+        guard let pw = getpwuid(getuid()), let home = String(validatingCString: pw.pointee.pw_dir) else {
+            return path
+        }
+        guard path.hasPrefix(home) else { return path }
+        return "~" + String(path.dropFirst(home.count))
     }
 
     private static let bookmarkKey = "lastFolderBookmark"
