@@ -18,7 +18,7 @@ struct ThumbnailView: View {
             if let image {
                 Image(nsImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
             } else {
                 Color(nsColor: .quaternaryLabelColor)
             }
