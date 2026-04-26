@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// An invisible NSViewRepresentable that holds first-responder focus and forwards
 /// key-down events to a callback. Embed as a .background on a view that needs
@@ -8,19 +8,21 @@ import AppKit
 struct KeyAwareView: NSViewRepresentable {
     var onKeyDown: (NSEvent) -> Bool
 
-    func makeNSView(context: Context) -> ResponderView {
+    func makeNSView(context _: Context) -> ResponderView {
         let view = ResponderView()
         view.onKeyDown = onKeyDown
         return view
     }
 
-    func updateNSView(_ view: ResponderView, context: Context) {
+    func updateNSView(_ view: ResponderView, context _: Context) {
         view.onKeyDown = onKeyDown
     }
 
     final class ResponderView: NSView {
         var onKeyDown: ((NSEvent) -> Bool)?
-        override var acceptsFirstResponder: Bool { true }
+        override var acceptsFirstResponder: Bool {
+            true
+        }
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()

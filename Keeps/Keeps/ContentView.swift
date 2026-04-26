@@ -1,13 +1,13 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// Top-level view. Routes between the grid and single-image views as the library
 /// state changes.
 struct ContentView: View {
     @State private var library = FolderLibrary()
 
-    // Tracks the security-scoped URL currently being accessed, so we can stop
-    // access when the user switches to a different folder.
+    /// Tracks the security-scoped URL currently being accessed, so we can stop
+    /// access when the user switches to a different folder.
     @State private var securityScopedURL: URL?
 
     var body: some View {

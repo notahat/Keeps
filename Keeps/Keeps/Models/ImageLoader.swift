@@ -56,7 +56,7 @@ final class ImageLoader {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageIfAbsent: false,
-            kCGImageSourceCreateThumbnailWithTransform: true
+            kCGImageSourceCreateThumbnailWithTransform: true,
         ]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
@@ -68,7 +68,7 @@ final class ImageLoader {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
         ]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }

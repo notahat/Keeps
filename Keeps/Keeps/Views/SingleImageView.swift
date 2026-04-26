@@ -1,6 +1,6 @@
-import SwiftUI
 import AppKit
 import os
+import SwiftUI
 
 /// Full-window view of a single photo. Esc returns to the grid. Left/right arrow
 /// keys and h/l navigate between photos; j/k also navigate linearly.
@@ -57,15 +57,15 @@ struct SingleImageView: View {
         return true
     }
 
-    // Loads current index plus 4 ahead and 2 behind to warm the cache.
+    /// Loads current index plus 4 ahead and 2 behind to warm the cache.
     private func loadIndices(around index: Int) -> [Int] {
         let count = library.filteredItems.count
-        return (max(0, index - 2)...min(count - 1, index + 4)).map { $0 }
+        return (max(0, index - 2) ... min(count - 1, index + 4)).map { $0 }
     }
 
     private func navigationStep(for event: NSEvent) -> Int? {
         switch event.keyCode {
-        case .leftArrow, .upArrow:    return -1
+        case .leftArrow, .upArrow: return -1
         case .rightArrow, .downArrow: return 1
         default: break
         }

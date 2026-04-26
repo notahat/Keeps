@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// A fixed-size square cell that loads and displays a photo thumbnail.
 /// Shows a neutral placeholder while loading. Uses .task(id:) so the load

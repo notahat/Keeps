@@ -56,7 +56,7 @@ struct GridView: View {
         case "p": return .some(.pick)
         case "x": return .some(.reject)
         case "u": return .some(nil)
-        default:  return nil
+        default: return nil
         }
     }
 
@@ -74,20 +74,20 @@ struct GridView: View {
         let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }
         library.selectedIndex = switch direction {
-            case .left:  max(0, current - 1)
-            case .right: min(count - 1, current + 1)
-            case .up:    current - columnCount >= 0 ? current - columnCount : current
-            case .down:  current + columnCount < count ? current + columnCount : current
+        case .left: max(0, current - 1)
+        case .right: min(count - 1, current + 1)
+        case .up: current - columnCount >= 0 ? current - columnCount : current
+        case .down: current + columnCount < count ? current + columnCount : current
         }
         return true
     }
 
     private func direction(for event: NSEvent) -> Direction? {
         switch event.keyCode {
-        case .leftArrow:  return .left
+        case .leftArrow: return .left
         case .rightArrow: return .right
-        case .downArrow:  return .down
-        case .upArrow:    return .up
+        case .downArrow: return .down
+        case .upArrow: return .up
         default: break
         }
         switch event.charactersIgnoringModifiers {
@@ -95,7 +95,7 @@ struct GridView: View {
         case "l": return .right
         case "j": return .down
         case "k": return .up
-        default:  return nil
+        default: return nil
         }
     }
 }

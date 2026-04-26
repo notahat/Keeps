@@ -177,3 +177,63 @@ Files: Update `SingleImageView.swift`
 6. Rapid navigation shows cached images with minimal lag.
 7. `Esc` returns to grid with same item selected.
 8. Activity Monitor: main thread stays idle during thumbnail loading.
+
+---
+
+# Next: Pass-based review
+
+## Context
+
+Currently, marking a photo causes it to immediately disappear from the filtered view
+(e.g. marking as picked while in "Unmarked" filter removes it instantly). The desired
+workflow is to review photos in passes: mark freely, see badges accumulate, then
+explicitly commit the pass — at which point the pass advances to only the
+still-unmarked items.
+
+No explicit "start pass" action is needed — you're always implicitly mid-pass.
+
+## Model
+
+A fifth filter tab — **"Pass"** — is added alongside the existing four. The existing
+tabs (All / Picked / Rejected / Unmarked) remain purely global and computed live as
+today, with no behavioral change. Only the "Pass" tab uses a snapshot.
+
+The Pass tab shows a fixed snapshot of items (initially all items in the folder).
+Marks accumulate visually with badges but don't remove items from the Pass view.
+Committing advances the snapshot to the currently-unmarked items from the previous
+snapshot and resets to the Pass tab.
+
+## Changes
+
+**`FolderLibrary`** (`Keeps/Keeps/Models/FolderLibrary.swift`)
+- Add `FilterMode` case: `.pass`.
+- Add `private(set) var passSnapshot: [PhotoItem]` — set on `openFolder` (all items
+  initially) and on `advancePass()`.
+- `filteredItems` computed property: for `.pass`, returns `passSnapshot`; for all
+  other modes, computed live from `items` + `marks` as today.
+- `setMark(_:for:)` unchanged — marks update live, and since `.pass` uses the stored
+  snapshot, items stay visible.
+- Add `func advancePass()`: sets `passSnapshot = items.filter { marks[$0.id] == nil }`,
+  sets `filterMode = .pass`, clamps `selectedIndex`.
+- Add computed `var passHasMarkedItems: Bool` for disabling the commit button.
+- `openFolder(url:)` sets `passSnapshot = scanned items`, resets `filterMode` to `.all`.
+
+**`ContentView`** (`Keeps/Keeps/ContentView.swift`)
+- Add `.pass` tag to the filter `Picker`: `Text("Pass").tag(FolderLibrary.FilterMode.pass)`.
+- Add a "Next Pass" toolbar button calling `library.advancePass()`, disabled when
+  `!library.passHasMarkedItems`.
+
+## What stays the same
+- All views already use `filteredItems`; no changes needed to `GridView`,
+  `ThumbnailView`, or `SingleImageView`.
+- The four global filter tabs behave exactly as today.
+
+## Verification
+1. Open a folder. Switch to the Pass tab — all photos visible.
+2. Mark several photos with `p` and `x`. Confirm they stay visible with badges.
+3. Switch to "Picked" — all picks shown globally. Switch to "Unmarked" — globally
+   unmarked. Switch back to "Pass" — full pass snapshot still intact.
+4. Hit "Next Pass" — Pass view now shows only the previously-unmarked items.
+5. Repeat; confirm picks/rejects from all passes visible in the global Picked/Rejected
+   tabs.
+6. Confirm "Next Pass" is disabled when nothing in the pass snapshot is marked.

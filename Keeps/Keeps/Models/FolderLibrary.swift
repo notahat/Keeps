@@ -19,8 +19,8 @@ class FolderLibrary {
 
     var filteredItems: [PhotoItem] {
         switch filterMode {
-        case .all:      return items
-        case .picked:   return items.filter { marks[$0.id] == .pick }
+        case .all: return items
+        case .picked: return items.filter { marks[$0.id] == .pick }
         case .rejected: return items.filter { marks[$0.id] == .reject }
         case .unmarked: return items.filter { marks[$0.id] == nil }
         }
@@ -48,8 +48,8 @@ class FolderLibrary {
     }
 
     private func scanFolder(url: URL) -> [PhotoItem] {
-        let rawExtensions: Set<String> = ["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr"]
-        let jpegExtensions: Set<String> = ["jpg", "jpeg"]
+        let rawExtensions: Set = ["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr"]
+        let jpegExtensions: Set = ["jpg", "jpeg"]
 
         guard let urls = try? FileManager.default.contentsOfDirectory(
             at: url,
