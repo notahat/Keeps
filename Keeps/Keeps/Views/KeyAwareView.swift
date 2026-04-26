@@ -24,9 +24,24 @@ struct KeyAwareView: NSViewRepresentable {
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            if let window, window.isKeyWindow {
-                window.makeFirstResponder(self)
+            if let window {
+                if window.isKeyWindow {
+                    window.makeFirstResponder(self)
+                } else {
+                    // Window may not be key yet at launch — claim focus when it becomes key.
+                    NotificationCenter.default.addObserver(
+                        self,
+                        selector: #selector(windowDidBecomeKey),
+                        name: NSWindow.didBecomeKeyNotification,
+                        object: window
+                    )
+                }
             }
+        }
+
+        @objc private func windowDidBecomeKey() {
+            window?.makeFirstResponder(self)
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
         }
 
         override func keyDown(with event: NSEvent) {
