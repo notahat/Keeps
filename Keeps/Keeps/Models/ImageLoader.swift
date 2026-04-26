@@ -11,11 +11,11 @@ import ImageIO
 final class ImageLoader {
     static let shared = ImageLoader()
 
-    private var cache: [String: NSImage] = [:]
+    private let cache = NSCache<NSString, NSImage>()
 
     func fullImage(for item: PhotoItem) async -> NSImage? {
-        let key = "\(item.sourceURL.path)@full"
-        if let cached = cache[key] { return cached }
+        let key = "\(item.sourceURL.path)@full" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
 
         let url = item.sourceURL
         let decoded = await Task.detached(priority: .userInitiated) {
@@ -24,13 +24,13 @@ final class ImageLoader {
         guard let cgImage = decoded else { return nil }
 
         let image = NSImage(cgImage: cgImage, size: .zero)
-        cache[key] = image
+        cache.setObject(image, forKey: key)
         return image
     }
 
     func thumbnail(for item: PhotoItem, maxPixelSize: Int) async -> NSImage? {
-        let key = "\(item.sourceURL.path)@\(maxPixelSize)"
-        if let cached = cache[key] { return cached }
+        let key = "\(item.sourceURL.path)@\(maxPixelSize)" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
 
         let url = item.sourceURL
         let decoded = await Task.detached(priority: .userInitiated) {
@@ -39,7 +39,7 @@ final class ImageLoader {
         guard let cgImage = decoded else { return nil }
 
         let image = NSImage(cgImage: cgImage, size: .zero)
-        cache[key] = image
+        cache.setObject(image, forKey: key)
         return image
     }
 
