@@ -15,7 +15,7 @@ struct ContentView: View {
             if library.items.isEmpty {
                 emptyState
             } else {
-                GridView(items: library.items)
+                GridView(library: library)
             }
         }
         .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")

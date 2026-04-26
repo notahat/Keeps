@@ -6,6 +6,9 @@ import AppKit
 /// is automatically cancelled if the cell scrolls out of view.
 struct ThumbnailView: View {
     let item: PhotoItem
+    var isSelected: Bool = false
+
+    @Environment(\.controlActiveState) private var controlActiveState
 
     // Request at 2x the display size for Retina screens.
     private static let displaySize: Int = 200
@@ -19,12 +22,16 @@ struct ThumbnailView: View {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
+                    .overlay {
+                        if isSelected && controlActiveState == .key {
+                            Rectangle().stroke(Color.accentColor, lineWidth: 3)
+                        }
+                    }
             } else {
                 Color(nsColor: .quaternaryLabelColor)
             }
         }
         .frame(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
-        .clipped()
         .task(id: item.id) {
             image = await ImageLoader.shared.thumbnail(for: item, maxPixelSize: Self.pixelSize)
         }

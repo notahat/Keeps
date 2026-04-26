@@ -7,10 +7,12 @@ import Observation
 class FolderLibrary {
     private(set) var items: [PhotoItem] = []
     private(set) var folderURL: URL?
+    var selectedIndex: Int?
 
     func openFolder(url: URL) {
         folderURL = url
         items = scanFolder(url: url)
+        selectedIndex = items.isEmpty ? nil : 0
     }
 
     private func scanFolder(url: URL) -> [PhotoItem] {
