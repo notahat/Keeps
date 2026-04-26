@@ -11,7 +11,7 @@ struct ThumbnailView: View {
     @Environment(\.controlActiveState) private var controlActiveState
 
     // Request at 2x the display size for Retina screens.
-    private static let displaySize: Int = 200
+    private static let displaySize: Int = 260
     private static let pixelSize: Int = displaySize * 2
 
     @State private var image: NSImage?
@@ -22,6 +22,7 @@ struct ThumbnailView: View {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
+                    .padding(3)
                     .overlay {
                         if isSelected && controlActiveState == .key {
                             Rectangle().stroke(Color.accentColor, lineWidth: 3)

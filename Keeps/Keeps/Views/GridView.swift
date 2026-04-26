@@ -7,8 +7,8 @@ struct GridView: View {
 
     @State private var columnCount: Int = 1
 
-    private let cellSize: CGFloat = 200
-    private let spacing: CGFloat = 2
+    private let cellSize: CGFloat = 260
+    private let spacing: CGFloat = 12
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: cellSize), spacing: spacing)]
