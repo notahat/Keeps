@@ -57,7 +57,6 @@ struct SingleImageView: View {
             deprioritizeCurrent()
         }
         .onChange(of: library.selectedIndex) {
-            image = nil
             deprioritizeCurrent()
             loadWindow()
         }

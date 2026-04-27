@@ -1,9 +1,11 @@
 import AppKit
+import Observation
 
 /// Schedules image decodes and caches results. Routes all decodes through a
 /// bounded OperationQueue: user-visible requests at high priority, background
 /// prefetch at low. Signals completion via NotificationCenter so that on-screen
 /// views can update without suspending on async/await.
+@Observable
 @MainActor
 final class ImageLoader {
     static let shared = ImageLoader()
@@ -42,6 +44,11 @@ final class ImageLoader {
 
     /// All in-flight full-image operations keyed by item identity.
     private var fullImageOps: [String: Operation] = [:]
+
+    /// The total number of decode operations currently queued or running.
+    var queueCount: Int {
+        thumbnailOps.count + fullImageOps.count
+    }
 
     // MARK: - Full images
 

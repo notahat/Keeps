@@ -23,39 +23,43 @@ struct ContentView: View {
         .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
         .navigationSubtitle(library.folderURL?.path ?? "")
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 16) {
-                    HStack(spacing: 2) {
-                        MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
-                            applyMark(.reject)
-                        }
-                        MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
-                            applyMark(nil)
-                        }
-                        MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
-                            applyMark(.pick)
-                        }
-                    }
-                    .imageScale(.medium)
-                    .font(.body)
-                    Picker("Filter", selection: Binding(
-                        get: { library.filterMode },
-                        set: { library.applyFilter($0) }
-                    )) {
-                        Text("All").tag(FolderLibrary.FilterMode.all)
-                        Text("Picked").tag(FolderLibrary.FilterMode.picked)
-                        Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
-                        Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize()
-                }
-            }
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
                 Button(action: openFolder) {
                     Image(systemName: "folder")
                 }
                 .help("Open Folder")
+            }
+
+            ToolbarItem(placement: .principal) {
+                Picker("Filter", selection: Binding(
+                    get: { library.filterMode },
+                    set: { library.applyFilter($0) }
+                )) {
+                    Text("All").tag(FolderLibrary.FilterMode.all)
+                    Text("Picked").tag(FolderLibrary.FilterMode.picked)
+                    Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
+                    Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+
+            ToolbarItem(placement: .status) {
+                LoadGraphView()
+            }
+
+            ToolbarItemGroup(placement: .primaryAction) {
+                ControlGroup {
+                    MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
+                        applyMark(.reject)
+                    }
+                    MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
+                        applyMark(nil)
+                    }
+                    MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
+                        applyMark(.pick)
+                    }
+                }
             }
         }
         .frame(minWidth: 400, minHeight: 300)
