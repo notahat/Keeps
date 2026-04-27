@@ -45,7 +45,13 @@ struct ContentView: View {
             }
 
             ToolbarItem(placement: .status) {
-                LoadGraphView()
+                HStack(spacing: 8) {
+                    Text("\(library.items.count) photos")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    LoadGraphView()
+                }
+                .padding(.leading, 8)
             }
 
             ToolbarItemGroup(placement: .primaryAction) {
