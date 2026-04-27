@@ -9,6 +9,8 @@ struct SingleImageView: View {
     var library: FolderLibrary
 
     @State private var image: NSImage?
+    @State private var markFeedback: FolderLibrary.Mark??
+    @State private var markFeedbackOpacity: Double = 0
 
     /// The item currently being loaded at high priority, tracked so it can be
     /// deprioritised when the user navigates away before it finishes.
@@ -37,6 +39,14 @@ struct SingleImageView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            if let mark = markFeedback {
+                MarkFeedbackLabel(mark: mark)
+                    .opacity(markFeedbackOpacity)
+                    .padding(.bottom, 24)
+                    .allowsHitTesting(false)
+            }
+        }
         .background {
             KeyAwareView { event in handleKeyEvent(event) }
         }
@@ -90,6 +100,7 @@ struct SingleImageView: View {
         }
         if let mark = markForKey(event.charactersIgnoringModifiers), let index = library.selectedIndex {
             library.setMark(mark, for: library.filteredItems[index])
+            flashMark(mark)
             let items = library.filteredItems
             library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
             return true
@@ -99,6 +110,17 @@ struct SingleImageView: View {
         guard count > 0, let current = library.selectedIndex else { return false }
         library.selectedIndex = max(0, min(count - 1, current + step))
         return true
+    }
+
+    private func flashMark(_ mark: FolderLibrary.Mark??) {
+        markFeedback = mark
+        markFeedbackOpacity = 1
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation(.easeOut(duration: 1.5)) {
+                markFeedbackOpacity = 0
+            }
+        }
     }
 
     /// Returns the mark (or nil to unmark) for f/s/d keys, or nil if not a mark key.
@@ -126,6 +148,46 @@ struct SingleImageView: View {
         case "h", "k": return -1
         case "l", "j": return 1
         default: return nil
+        }
+    }
+}
+
+private struct MarkFeedbackLabel: View {
+    let mark: FolderLibrary.Mark?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            icon
+            Text(message)
+                .font(.title3)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    @ViewBuilder private var icon: some View {
+        switch mark {
+        case .pick:
+            Image(systemName: "checkmark.circle.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .green)
+        case .reject:
+            Image(systemName: "x.circle.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .red)
+        case nil:
+            Image(systemName: "minus.circle")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var message: String {
+        switch mark {
+        case .pick: "Previous photo picked"
+        case .reject: "Previous photo rejected"
+        case nil: "Previous photo unmarked"
         }
     }
 }
