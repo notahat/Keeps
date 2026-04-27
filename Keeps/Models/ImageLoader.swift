@@ -20,6 +20,13 @@ final class ImageLoader {
 
     private let cache = ImageCache()
 
+    // Priority levels used across the decode queue. Higher tiers pre-empt lower
+    // ones, so the user always sees the image they're looking at decode first.
+    private static let currentImagePriority: Operation.QueuePriority = .veryHigh
+    private static let nearbyImagePriority: Operation.QueuePriority = .high
+    private static let visibleThumbnailPriority: Operation.QueuePriority = .low
+    private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
+
     /// Worker pool. maxConcurrentOperationCount controls decode parallelism —
     /// tune this to balance throughput against memory and responsiveness.
     private let decodeQueue: OperationQueue = {
@@ -49,13 +56,13 @@ final class ImageLoader {
         let key = fullImageKey(for: item)
         guard cache.fullImage(for: item) == nil else { return }
         if let op = fullImageOps[key] {
-            op.queuePriority = .veryHigh
+            op.queuePriority = Self.currentImagePriority
             return
         }
         let url = item.sourceURL
         fullImageOps[key] = makeOp(
             key: key,
-            priority: .veryHigh,
+            priority: Self.currentImagePriority,
             decode: { ImageDecoder.fullImage(from: url) },
             store: { ImageLoader.shared.cache.setFullImage($0, for: item) },
             itemID: item.id,
@@ -71,7 +78,7 @@ final class ImageLoader {
         let url = item.sourceURL
         fullImageOps[key] = makeOp(
             key: key,
-            priority: .high,
+            priority: Self.nearbyImagePriority,
             decode: { ImageDecoder.fullImage(from: url) },
             store: { ImageLoader.shared.cache.setFullImage($0, for: item) },
             itemID: item.id,
@@ -82,7 +89,7 @@ final class ImageLoader {
     /// Drops a full image back to background priority. Called when the view
     /// showing it leaves the screen.
     func deprioritizeFullImage(for item: PhotoItem) {
-        fullImageOps[fullImageKey(for: item)]?.queuePriority = .high
+        fullImageOps[fullImageKey(for: item)]?.queuePriority = Self.nearbyImagePriority
     }
 
     private func completeFullImageLoad(key: String, itemID: UUID) {
@@ -111,13 +118,13 @@ final class ImageLoader {
         let key = thumbnailKey(for: item, maxPixelSize: maxPixelSize)
         guard cache.thumbnail(for: item, maxPixelSize: maxPixelSize) == nil else { return }
         if let op = thumbnailOps[key] {
-            op.queuePriority = .low
+            op.queuePriority = Self.visibleThumbnailPriority
             return
         }
         let url = item.sourceURL
         thumbnailOps[key] = makeOp(
             key: key,
-            priority: .low,
+            priority: Self.visibleThumbnailPriority,
             decode: { ImageDecoder.thumbnail(from: url, maxPixelSize: maxPixelSize) },
             store: { ImageLoader.shared.cache.setThumbnail($0, for: item, maxPixelSize: maxPixelSize) },
             itemID: item.id,
@@ -128,7 +135,7 @@ final class ImageLoader {
     /// Drops a thumbnail back to background priority. Called when a grid cell
     /// leaves the viewport. Has no effect if the operation has already started.
     func deprioritizeThumbnail(for item: PhotoItem, maxPixelSize: Int) {
-        thumbnailOps[thumbnailKey(for: item, maxPixelSize: maxPixelSize)]?.queuePriority = .veryLow
+        thumbnailOps[thumbnailKey(for: item, maxPixelSize: maxPixelSize)]?.queuePriority = Self.backgroundPrefetchPriority
     }
 
     /// Queues background loads for all items. Cancels any previous prefetch ops
@@ -142,7 +149,7 @@ final class ImageLoader {
             let url = item.sourceURL
             thumbnailOps[key] = makeOp(
                 key: key,
-                priority: .veryLow,
+                priority: Self.backgroundPrefetchPriority,
                 decode: { ImageDecoder.thumbnail(from: url, maxPixelSize: maxPixelSize) },
                 store: { ImageLoader.shared.cache.setThumbnail($0, for: item, maxPixelSize: maxPixelSize) },
                 itemID: item.id,
@@ -155,7 +162,7 @@ final class ImageLoader {
     /// a user-visible request.
     private func cancelIdlePrefetch() {
         thumbnailOps = thumbnailOps.filter { _, op in
-            if op.queuePriority == .veryLow {
+            if op.queuePriority == Self.backgroundPrefetchPriority {
                 op.cancel()
                 return false
             }

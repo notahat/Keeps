@@ -59,6 +59,7 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 400, minHeight: 300)
+        .preferredColorScheme(.dark)
         .onAppear {
             restoreLastFolder()
         }
