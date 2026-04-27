@@ -43,6 +43,14 @@ class FolderLibrary {
         marks[item.id] = mark
     }
 
+    /// Marks the currently selected item and advances selection to the next one.
+    func applyMarkAndAdvance(_ mark: Mark?) {
+        guard let index = selectedIndex else { return }
+        setMark(mark, for: filteredItems[index])
+        let items = filteredItems
+        selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+    }
+
     func applyFilter(_ mode: FilterMode) {
         filterMode = mode
     }

@@ -98,11 +98,9 @@ struct SingleImageView: View {
             library.viewMode = .grid
             return true
         }
-        if let mark = event.markFromKey, let index = library.selectedIndex {
-            library.setMark(mark, for: library.filteredItems[index])
+        if let mark = event.markFromKey {
             flashMark(mark)
-            let items = library.filteredItems
-            library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+            library.applyMarkAndAdvance(mark)
             return true
         }
         guard let step = navigationStep(for: event) else { return false }
@@ -112,8 +110,8 @@ struct SingleImageView: View {
         return true
     }
 
-    private func flashMark(_ mark: FolderLibrary.Mark??) {
-        markFeedback = mark
+    private func flashMark(_ mark: FolderLibrary.Mark?) {
+        markFeedback = .some(mark)
         markFeedbackOpacity = 1
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))

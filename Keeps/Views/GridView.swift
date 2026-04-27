@@ -60,10 +60,8 @@ struct GridView: View {
             library.viewMode = .single
             return true
         }
-        if let mark = event.markFromKey, let index = library.selectedIndex {
-            library.setMark(mark, for: library.filteredItems[index])
-            let items = library.filteredItems
-            library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+        if let mark = event.markFromKey {
+            library.applyMarkAndAdvance(mark)
             return true
         }
         guard let direction = direction(for: event) else { return false }

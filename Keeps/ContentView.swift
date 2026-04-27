@@ -117,10 +117,7 @@ struct ContentView: View {
     }
 
     private func applyMark(_ mark: FolderLibrary.Mark?) {
-        guard let index = library.selectedIndex else { return }
-        library.setMark(mark, for: library.filteredItems[index])
-        let items = library.filteredItems
-        library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+        library.applyMarkAndAdvance(mark)
     }
 
     private static let bookmarkKey = "lastFolderBookmark"
