@@ -10,15 +10,10 @@ import Observation
 final class ImageLoader {
     static let shared = ImageLoader()
 
-    /// Posted on the main thread when a thumbnail finishes decoding. The userInfo
-    /// dictionary carries the item's UUID under thumbnailItemIDKey.
-    static let thumbnailLoadedNotification = Notification.Name("com.notahat.Keeps.thumbnailLoaded")
-    static let thumbnailItemIDKey = "itemID"
-
-    /// Posted on the main thread when a full image finishes decoding. The userInfo
-    /// dictionary carries the item's UUID under fullImageItemIDKey.
-    static let fullImageLoadedNotification = Notification.Name("com.notahat.Keeps.fullImageLoaded")
-    static let fullImageItemIDKey = "itemID"
+    /// Posted on the main thread when any image finishes decoding. The userInfo
+    /// dictionary carries the item's UUID under imageLoadedItemIDKey.
+    static let imageLoadedNotification = Notification.Name("com.notahat.Keeps.imageLoaded")
+    static let imageLoadedItemIDKey = "itemID"
 
     private let cache = ImageCache()
 
@@ -38,138 +33,98 @@ final class ImageLoader {
         return queue
     }()
 
-    /// All in-flight thumbnail operations keyed by item identity + size. Includes
+    /// All in-flight decode operations keyed by item identity + size. Includes
     /// both user-visible (high priority) and background prefetch (low priority) ops.
-    private var thumbnailOps: [String: Operation] = [:]
-
-    /// All in-flight full-image operations keyed by item identity.
-    private var fullImageOps: [String: Operation] = [:]
+    private var imageOps: [String: Operation] = [:]
 
     /// The total number of decode operations currently queued or running.
     var queueCount: Int {
-        thumbnailOps.count + fullImageOps.count
+        imageOps.count
     }
 
-    // MARK: - Full images
+    // MARK: - Public interface
 
-    /// Returns the cached full image immediately, or nil if not yet loaded.
-    func cachedFullImage(for item: PhotoItem) -> NSImage? {
-        cache.fullImage(for: item)
+    /// Returns the cached image immediately, or nil if not yet loaded.
+    func cachedImage(for item: PhotoItem, size: ImageSize) -> NSImage? {
+        cache.image(for: item, size: size)
     }
 
-    /// Starts loading a full image at high priority, or promotes an existing
-    /// operation. Called when a view needs the full image as soon as possible.
-    func requestFullImage(for item: PhotoItem) {
-        let key = fullImageKey(for: item)
-        guard cache.fullImage(for: item) == nil else { return }
-        if let op = fullImageOps[key] {
-            op.queuePriority = Self.currentImagePriority
+    /// Starts loading an image at high priority, or promotes an existing
+    /// operation. Called when a view needs the image as soon as possible.
+    func requestImage(for item: PhotoItem, size: ImageSize) {
+        let key = imageKey(for: item, size: size)
+        guard cache.image(for: item, size: size) == nil else { return }
+        if let op = imageOps[key] {
+            op.queuePriority = requestPriority(for: size)
             return
         }
-        let url = item.sourceURL
-        fullImageOps[key] = makeOp(
-            key: key,
-            priority: Self.currentImagePriority,
-            decode: { ImageDecoder.fullImage(from: url) },
-            store: { ImageLoader.shared.cache.setFullImage($0, for: item) },
-            itemID: item.id,
-            onComplete: { ImageLoader.shared.completeFullImageLoad(key: key, itemID: item.id) }
-        )
+        enqueueLoad(for: item, size: size, key: key, priority: requestPriority(for: size))
     }
 
-    /// Starts loading a full image at low priority if not already in flight.
-    /// Used to warm the cache for nearby images in SingleImageView.
-    func prefetchFullImage(for item: PhotoItem) {
-        let key = fullImageKey(for: item)
-        guard cache.fullImage(for: item) == nil, fullImageOps[key] == nil else { return }
-        let url = item.sourceURL
-        fullImageOps[key] = makeOp(
-            key: key,
-            priority: Self.nearbyImagePriority,
-            decode: { ImageDecoder.fullImage(from: url) },
-            store: { ImageLoader.shared.cache.setFullImage($0, for: item) },
-            itemID: item.id,
-            onComplete: { ImageLoader.shared.completeFullImageLoad(key: key, itemID: item.id) }
-        )
+    /// Drops an image back to prefetch priority. Called when the view showing
+    /// it leaves the screen.
+    func deprioritizeImage(for item: PhotoItem, size: ImageSize) {
+        imageOps[imageKey(for: item, size: size)]?.queuePriority = prefetchPriority(for: size)
     }
 
-    /// Drops a full image back to background priority. Called when the view
-    /// showing it leaves the screen.
-    func deprioritizeFullImage(for item: PhotoItem) {
-        fullImageOps[fullImageKey(for: item)]?.queuePriority = Self.nearbyImagePriority
-    }
-
-    private func completeFullImageLoad(key: String, itemID: UUID) {
-        fullImageOps.removeValue(forKey: key)
-        NotificationCenter.default.post(
-            name: ImageLoader.fullImageLoadedNotification,
-            object: nil,
-            userInfo: [ImageLoader.fullImageItemIDKey: itemID]
-        )
-    }
-
-    private func fullImageKey(for item: PhotoItem) -> String {
-        "\(item.id)@full"
-    }
-
-    // MARK: - Thumbnails
-
-    /// Returns the cached thumbnail immediately, or nil if not yet loaded.
-    func cachedThumbnail(for item: PhotoItem, maxPixelSize: Int) -> NSImage? {
-        cache.thumbnail(for: item, maxPixelSize: maxPixelSize)
-    }
-
-    /// Starts loading a thumbnail at high priority, or promotes an existing
-    /// prefetch. Called when a grid cell enters the visible viewport.
-    func requestThumbnail(for item: PhotoItem, maxPixelSize: Int) {
-        let key = thumbnailKey(for: item, maxPixelSize: maxPixelSize)
-        guard cache.thumbnail(for: item, maxPixelSize: maxPixelSize) == nil else { return }
-        if let op = thumbnailOps[key] {
-            op.queuePriority = Self.visibleThumbnailPriority
-            return
-        }
-        let url = item.sourceURL
-        thumbnailOps[key] = makeOp(
-            key: key,
-            priority: Self.visibleThumbnailPriority,
-            decode: { ImageDecoder.thumbnail(from: url, maxPixelSize: maxPixelSize) },
-            store: { ImageLoader.shared.cache.setThumbnail($0, for: item, maxPixelSize: maxPixelSize) },
-            itemID: item.id,
-            onComplete: { ImageLoader.shared.completeThumbnailLoad(key: key, itemID: item.id) }
-        )
-    }
-
-    /// Drops a thumbnail back to background priority. Called when a grid cell
-    /// leaves the viewport. Has no effect if the operation has already started.
-    func deprioritizeThumbnail(for item: PhotoItem, maxPixelSize: Int) {
-        thumbnailOps[thumbnailKey(for: item, maxPixelSize: maxPixelSize)]?.queuePriority = Self.backgroundPrefetchPriority
+    /// Starts loading an image at low priority if not already in flight.
+    func prefetchImage(for item: PhotoItem, size: ImageSize) {
+        let key = imageKey(for: item, size: size)
+        guard cache.image(for: item, size: size) == nil, imageOps[key] == nil else { return }
+        enqueueLoad(for: item, size: size, key: key, priority: prefetchPriority(for: size))
     }
 
     /// Queues background loads for all items. Cancels any previous prefetch ops
     /// that have not been promoted by a user request.
-    func prefetchThumbnails(for items: [PhotoItem], maxPixelSize: Int) {
-        cancelIdlePrefetch()
+    func prefetchImages(for items: [PhotoItem], size: ImageSize) {
+        cancelIdlePrefetch(size: size)
         for item in items {
-            let key = thumbnailKey(for: item, maxPixelSize: maxPixelSize)
-            guard cache.thumbnail(for: item, maxPixelSize: maxPixelSize) == nil,
-                  thumbnailOps[key] == nil else { continue }
-            let url = item.sourceURL
-            thumbnailOps[key] = makeOp(
-                key: key,
-                priority: Self.backgroundPrefetchPriority,
-                decode: { ImageDecoder.thumbnail(from: url, maxPixelSize: maxPixelSize) },
-                store: { ImageLoader.shared.cache.setThumbnail($0, for: item, maxPixelSize: maxPixelSize) },
-                itemID: item.id,
-                onComplete: { ImageLoader.shared.completeThumbnailLoad(key: key, itemID: item.id) }
-            )
+            prefetchImage(for: item, size: size)
         }
     }
 
-    /// Cancels ops that are still at low priority and have not been promoted to
-    /// a user-visible request.
-    private func cancelIdlePrefetch() {
-        thumbnailOps = thumbnailOps.filter { _, op in
-            if op.queuePriority == Self.backgroundPrefetchPriority {
+    // MARK: - Private
+
+    private func requestPriority(for size: ImageSize) -> Operation.QueuePriority {
+        switch size {
+        case .full: Self.currentImagePriority
+        case .thumbnail: Self.visibleThumbnailPriority
+        }
+    }
+
+    private func prefetchPriority(for size: ImageSize) -> Operation.QueuePriority {
+        switch size {
+        case .full: Self.nearbyImagePriority
+        case .thumbnail: Self.backgroundPrefetchPriority
+        }
+    }
+
+    private func imageKey(for item: PhotoItem, size: ImageSize) -> String {
+        switch size {
+        case let .thumbnail(maxPixelSize): "\(item.id)@\(maxPixelSize)"
+        case .full: "\(item.id)@full"
+        }
+    }
+
+    private func enqueueLoad(for item: PhotoItem, size: ImageSize, key: String, priority: Operation.QueuePriority) {
+        let url = item.sourceURL
+        imageOps[key] = makeOp(
+            priority: priority,
+            decode: { [size] in
+                switch size {
+                case .full: ImageDecoder.fullImage(from: url)
+                case let .thumbnail(maxPixelSize): ImageDecoder.thumbnail(from: url, maxPixelSize: maxPixelSize)
+                }
+            },
+            store: { [size] image in ImageLoader.shared.cache.setImage(image, for: item, size: size) },
+            onComplete: { ImageLoader.shared.completeImageLoad(key: key, itemID: item.id) }
+        )
+    }
+
+    private func cancelIdlePrefetch(size: ImageSize) {
+        let idlePriority = prefetchPriority(for: size)
+        imageOps = imageOps.filter { _, op in
+            if op.queuePriority == idlePriority {
                 op.cancel()
                 return false
             }
@@ -177,27 +132,19 @@ final class ImageLoader {
         }
     }
 
-    private func completeThumbnailLoad(key: String, itemID: UUID) {
-        thumbnailOps.removeValue(forKey: key)
+    private func completeImageLoad(key: String, itemID: UUID) {
+        imageOps.removeValue(forKey: key)
         NotificationCenter.default.post(
-            name: ImageLoader.thumbnailLoadedNotification,
+            name: ImageLoader.imageLoadedNotification,
             object: nil,
-            userInfo: [ImageLoader.thumbnailItemIDKey: itemID]
+            userInfo: [ImageLoader.imageLoadedItemIDKey: itemID]
         )
     }
 
-    private func thumbnailKey(for item: PhotoItem, maxPixelSize: Int) -> String {
-        "\(item.id)@\(maxPixelSize)"
-    }
-
-    // MARK: - Shared
-
     private func makeOp(
-        key _: String,
         priority: Operation.QueuePriority,
         decode: @escaping @Sendable () -> CGImage?,
         store: @escaping @MainActor (NSImage) -> Void,
-        itemID _: UUID,
         onComplete: @escaping @MainActor () -> Void
     ) -> Operation {
         let op = BlockOperation {

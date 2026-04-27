@@ -63,11 +63,11 @@ struct SingleImageView: View {
         .onChange(of: library.lastMarkEvent) { _, event in
             flashMark(event?.mark)
         }
-        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.fullImageLoadedNotification)) { notification in
+        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.imageLoadedNotification)) { notification in
             guard let item = selectedItem,
-                  (notification.userInfo?[ImageLoader.fullImageItemIDKey] as? UUID) == item.id
+                  (notification.userInfo?[ImageLoader.imageLoadedItemIDKey] as? UUID) == item.id
             else { return }
-            image = ImageLoader.shared.cachedFullImage(for: item)
+            image = ImageLoader.shared.cachedImage(for: item, size: .full)
         }
     }
 
@@ -81,16 +81,16 @@ struct SingleImageView: View {
         let items = library.filteredItems
         let item = items[index]
         highPriorityItem = item
-        image = ImageLoader.shared.cachedFullImage(for: item)
-        ImageLoader.shared.requestFullImage(for: item)
+        image = ImageLoader.shared.cachedImage(for: item, size: .full)
+        ImageLoader.shared.requestImage(for: item, size: .full)
         for idx in preloadIndices(around: index, in: items) {
-            ImageLoader.shared.prefetchFullImage(for: items[idx])
+            ImageLoader.shared.prefetchImage(for: items[idx], size: .full)
         }
     }
 
     private func deprioritizeCurrent() {
         if let item = highPriorityItem {
-            ImageLoader.shared.deprioritizeFullImage(for: item)
+            ImageLoader.shared.deprioritizeImage(for: item, size: .full)
             highPriorityItem = nil
         }
     }

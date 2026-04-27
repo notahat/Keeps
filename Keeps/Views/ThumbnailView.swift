@@ -15,6 +15,7 @@ struct ThumbnailView: View {
     // Request at 2x the display size for Retina screens.
     private static let displaySize: Int = 260
     static let pixelSize: Int = displaySize * 2
+    static let imageSize: ImageSize = .thumbnail(maxPixelSize: pixelSize)
 
     @State private var image: NSImage?
 
@@ -41,18 +42,18 @@ struct ThumbnailView: View {
         }
         .frame(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
         .onAppear {
-            if let cached = ImageLoader.shared.cachedThumbnail(for: item, maxPixelSize: Self.pixelSize) {
+            if let cached = ImageLoader.shared.cachedImage(for: item, size: Self.imageSize) {
                 image = cached
             } else {
-                ImageLoader.shared.requestThumbnail(for: item, maxPixelSize: Self.pixelSize)
+                ImageLoader.shared.requestImage(for: item, size: Self.imageSize)
             }
         }
         .onDisappear {
-            ImageLoader.shared.deprioritizeThumbnail(for: item, maxPixelSize: Self.pixelSize)
+            ImageLoader.shared.deprioritizeImage(for: item, size: Self.imageSize)
         }
-        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.thumbnailLoadedNotification)) { notification in
-            guard (notification.userInfo?[ImageLoader.thumbnailItemIDKey] as? UUID) == item.id else { return }
-            image = ImageLoader.shared.cachedThumbnail(for: item, maxPixelSize: Self.pixelSize)
+        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.imageLoadedNotification)) { notification in
+            guard (notification.userInfo?[ImageLoader.imageLoadedItemIDKey] as? UUID) == item.id else { return }
+            image = ImageLoader.shared.cachedImage(for: item, size: Self.imageSize)
         }
     }
 }
