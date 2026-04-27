@@ -1,9 +1,8 @@
-import Testing
 import Foundation
 @testable import Keeps
+import Testing
 
 struct FolderLibraryTests {
-
     @Test func producesNoItemsForEmptyFolder() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }

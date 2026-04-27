@@ -2,8 +2,9 @@ import AppKit
 import SwiftUI
 
 /// A fixed-size square cell that loads and displays a photo thumbnail.
-/// Shows a neutral placeholder while loading. Uses .task(id:) so the load
-/// is automatically cancelled if the cell scrolls out of view.
+/// Shows a neutral placeholder while loading. Requests high-priority loading
+/// on appear and deprioritises on disappear so that currently-visible cells
+/// are always decoded first.
 struct ThumbnailView: View {
     let item: PhotoItem
     var isSelected: Bool = false
@@ -13,7 +14,7 @@ struct ThumbnailView: View {
 
     // Request at 2x the display size for Retina screens.
     private static let displaySize: Int = 260
-    private static let pixelSize: Int = displaySize * 2
+    static let pixelSize: Int = displaySize * 2
 
     @State private var image: NSImage?
 
@@ -39,8 +40,19 @@ struct ThumbnailView: View {
             }
         }
         .frame(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
-        .task(id: item.id) {
-            image = await ImageLoader.shared.thumbnail(for: item, maxPixelSize: Self.pixelSize)
+        .onAppear {
+            if let cached = ImageLoader.shared.cachedThumbnail(for: item, maxPixelSize: Self.pixelSize) {
+                image = cached
+            } else {
+                ImageLoader.shared.requestThumbnail(for: item, maxPixelSize: Self.pixelSize)
+            }
+        }
+        .onDisappear {
+            ImageLoader.shared.deprioritizeThumbnail(for: item, maxPixelSize: Self.pixelSize)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.thumbnailLoadedNotification)) { notification in
+            guard (notification.userInfo?[ImageLoader.thumbnailItemIDKey] as? UUID) == item.id else { return }
+            image = ImageLoader.shared.cachedThumbnail(for: item, maxPixelSize: Self.pixelSize)
         }
     }
 }

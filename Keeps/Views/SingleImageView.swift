@@ -1,15 +1,18 @@
 import AppKit
-import os
 import SwiftUI
 
 /// Full-window view of a single photo. Esc or G returns to the grid. Left/right
 /// arrow keys and h/l navigate between photos; j/k also navigate linearly.
+/// The current image loads at high priority; the surrounding preload window loads
+/// at low priority and is left in the queue when navigating away.
 struct SingleImageView: View {
     var library: FolderLibrary
 
     @State private var image: NSImage?
 
-    private let signposter = OSSignposter(subsystem: "com.notahat.Keeps", category: "Navigation")
+    /// The item currently being loaded at high priority, tracked so it can be
+    /// deprioritised when the user navigates away before it finishes.
+    @State private var highPriorityItem: PhotoItem?
 
     var body: some View {
         Group {
@@ -18,30 +21,60 @@ struct SingleImageView: View {
                     .resizable()
                     .scaledToFit()
             } else {
-                Color(nsColor: .quaternaryLabelColor)
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.large)
+                    if let item = selectedItem {
+                        Text(item.stem)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             KeyAwareView { event in handleKeyEvent(event) }
         }
-        .task(id: library.selectedIndex) {
-            guard let index = library.selectedIndex else { image = nil; return }
-            let isCacheHit = ImageLoader.shared.isFullImageCached(for: library.filteredItems[index])
-            let intervalState = signposter.beginInterval("imageLoad", "\(isCacheHit ? "hit" : "miss")")
-            await withTaskGroup(of: (Int, NSImage?).self) { group in
-                for loadIndex in loadIndices(around: index) {
-                    group.addTask {
-                        await (loadIndex, ImageLoader.shared.fullImage(for: library.filteredItems[loadIndex]))
-                    }
-                }
-                for await (loadIndex, loadedImage) in group {
-                    if loadIndex == index {
-                        image = loadedImage
-                        signposter.endInterval("imageLoad", intervalState)
-                    }
-                }
-            }
+        .onAppear {
+            loadWindow()
+        }
+        .onDisappear {
+            deprioritizeCurrent()
+        }
+        .onChange(of: library.selectedIndex) {
+            image = nil
+            deprioritizeCurrent()
+            loadWindow()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.fullImageLoadedNotification)) { notification in
+            guard let item = selectedItem,
+                  (notification.userInfo?[ImageLoader.fullImageItemIDKey] as? UUID) == item.id
+            else { return }
+            image = ImageLoader.shared.cachedFullImage(for: item)
+        }
+    }
+
+    private var selectedItem: PhotoItem? {
+        guard let index = library.selectedIndex, index < library.filteredItems.count else { return nil }
+        return library.filteredItems[index]
+    }
+
+    private func loadWindow() {
+        guard let index = library.selectedIndex else { image = nil; return }
+        let items = library.filteredItems
+        let item = items[index]
+        highPriorityItem = item
+        image = ImageLoader.shared.cachedFullImage(for: item)
+        ImageLoader.shared.requestFullImage(for: item)
+        for idx in preloadIndices(around: index, in: items) {
+            ImageLoader.shared.prefetchFullImage(for: items[idx])
+        }
+    }
+
+    private func deprioritizeCurrent() {
+        if let item = highPriorityItem {
+            ImageLoader.shared.deprioritizeFullImage(for: item)
+            highPriorityItem = nil
         }
     }
 
@@ -57,10 +90,9 @@ struct SingleImageView: View {
         return true
     }
 
-    /// Loads current index plus 4 ahead and 2 behind to warm the cache.
-    private func loadIndices(around index: Int) -> [Int] {
-        let count = library.filteredItems.count
-        return (max(0, index - 2) ... min(count - 1, index + 4)).map(\.self)
+    /// Returns 4 indices ahead and 2 behind, excluding the current index.
+    private func preloadIndices(around index: Int, in items: [PhotoItem]) -> [Int] {
+        (max(0, index - 2) ... min(items.count - 1, index + 4)).filter { $0 != index }
     }
 
     private func navigationStep(for event: NSEvent) -> Int? {
