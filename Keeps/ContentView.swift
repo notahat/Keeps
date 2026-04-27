@@ -10,14 +10,21 @@ struct ContentView: View {
     /// access when the user switches to a different folder.
     @State private var securityScopedURL: URL?
 
+    private enum DisplayState { case empty, error(Error), grid, single }
+
+    private var displayState: DisplayState {
+        if let error = library.folderError { return .error(error) }
+        if library.items.isEmpty { return .empty }
+        return library.viewMode == .single ? .single : .grid
+    }
+
     var body: some View {
         Group {
-            if library.items.isEmpty {
-                emptyState
-            } else if library.viewMode == .single {
-                SingleImageView(library: library)
-            } else {
-                GridView(library: library)
+            switch displayState {
+            case .empty: emptyState
+            case let .error(error): errorState(error)
+            case .grid: GridView(library: library)
+            case .single: SingleImageView(library: library)
             }
         }
         .focusedSceneValue(\.library, library)
@@ -79,6 +86,17 @@ struct ContentView: View {
     private var emptyState: some View {
         Text("Open a folder to get started")
             .foregroundStyle(.secondary)
+    }
+
+    private func errorState(_ error: Error) -> some View {
+        VStack(spacing: 8) {
+            Text("Couldn't read folder")
+                .font(.headline)
+            Text(error.localizedDescription)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
     }
 
     private func openFolder() {

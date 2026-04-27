@@ -13,6 +13,7 @@ class FolderLibrary {
     private(set) var items: [PhotoItem] = []
     private(set) var folderURL: URL?
     private(set) var selectedItemID: UUID?
+    private(set) var folderError: Error?
     var viewMode: ViewMode = .grid
     private(set) var marks: [UUID: Mark] = [:]
     private(set) var filterMode: FilterMode = .all
@@ -73,21 +74,25 @@ class FolderLibrary {
 
     func openFolder(url: URL) {
         folderURL = url
-        items = scanFolder(url: url)
+        folderError = nil
+        do {
+            items = try scanFolder(url: url)
+        } catch {
+            items = []
+            folderError = error
+        }
         selectedItemID = items.first?.id
     }
 
-    private func scanFolder(url: URL) -> [PhotoItem] {
+    private func scanFolder(url: URL) throws -> [PhotoItem] {
         let rawExtensions: Set = ["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr"]
         let jpegExtensions: Set = ["jpg", "jpeg"]
 
-        guard let urls = try? FileManager.default.contentsOfDirectory(
+        let urls = try FileManager.default.contentsOfDirectory(
             at: url,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: .skipsHiddenFiles
-        ) else {
-            return []
-        }
+        )
 
         var rawByStem: [String: URL] = [:]
         var jpegByStem: [String: URL] = [:]
