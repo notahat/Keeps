@@ -10,13 +10,14 @@ class FolderLibrary {
     enum Mark { case pick, reject }
     enum FilterMode { case all, picked, rejected, unmarked }
 
-    private(set) var items: [PhotoItem] = []
     private(set) var folderURL: URL?
-    private(set) var selectedItemID: UUID?
     private(set) var folderError: Error?
+    private(set) var selectedItemID: UUID?
     var viewMode: ViewMode = .grid
-    private(set) var marks: [UUID: Mark] = [:]
     private(set) var filterMode: FilterMode = .all
+    private(set) var items: [PhotoItem] = []
+    private(set) var filteredItems: [PhotoItem] = []
+    private(set) var marks: [UUID: Mark] = [:]
 
     /// Set each time applyMarkAndAdvance is called, so observers can react to
     /// mark actions regardless of which code path triggered them.
@@ -46,17 +47,9 @@ class FolderLibrary {
         }
     }
 
-    var filteredItems: [PhotoItem] {
-        switch filterMode {
-        case .all: items
-        case .picked: items.filter { marks[$0.id] == .pick }
-        case .rejected: items.filter { marks[$0.id] == .reject }
-        case .unmarked: items.filter { marks[$0.id] == nil }
-        }
-    }
-
     func setMark(_ mark: Mark?, for item: PhotoItem) {
         marks[item.id] = mark
+        updateFilteredItems()
     }
 
     /// Marks the currently selected item and advances selection to the next one.
@@ -70,6 +63,16 @@ class FolderLibrary {
 
     func applyFilter(_ mode: FilterMode) {
         filterMode = mode
+        updateFilteredItems()
+    }
+
+    private func updateFilteredItems() {
+        filteredItems = switch filterMode {
+        case .all: items
+        case .picked: items.filter { marks[$0.id] == .pick }
+        case .rejected: items.filter { marks[$0.id] == .reject }
+        case .unmarked: items.filter { marks[$0.id] == nil }
+        }
     }
 
     func openFolder(url: URL) {
@@ -81,6 +84,7 @@ class FolderLibrary {
             items = []
             folderError = error
         }
+        updateFilteredItems()
         selectedItemID = items.first?.id
     }
 
