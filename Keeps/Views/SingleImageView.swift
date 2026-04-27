@@ -8,8 +8,10 @@ import SwiftUI
 struct SingleImageView: View {
     var library: FolderLibrary
 
+    private enum MarkFeedback { case hidden, showing(FolderLibrary.Mark?) }
+
     @State private var image: NSImage?
-    @State private var markFeedback: FolderLibrary.Mark??
+    @State private var markFeedback: MarkFeedback = .hidden
     @State private var markFeedbackOpacity: Double = 0
 
     /// The item currently being loaded at high priority, tracked so it can be
@@ -40,7 +42,7 @@ struct SingleImageView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            if let mark = markFeedback {
+            if case let .showing(mark) = markFeedback {
                 MarkFeedbackLabel(mark: mark)
                     .opacity(markFeedbackOpacity)
                     .padding(.bottom, 24)
@@ -108,7 +110,7 @@ struct SingleImageView: View {
     }
 
     private func flashMark(_ mark: FolderLibrary.Mark?) {
-        markFeedback = .some(mark)
+        markFeedback = .showing(mark)
         markFeedbackOpacity = 1
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))
