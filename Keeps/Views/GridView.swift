@@ -55,21 +55,12 @@ struct GridView: View {
 
     private enum Direction { case left, right, up, down }
 
-    private func markAction(for event: NSEvent) -> FolderLibrary.Mark?? {
-        switch event.charactersIgnoringModifiers {
-        case "f": .some(.pick)
-        case "s": .some(.reject)
-        case "d": .some(nil)
-        default: nil
-        }
-    }
-
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         if event.keyCode == .returnKey, library.selectedIndex != nil {
             library.viewMode = .single
             return true
         }
-        if let mark = markAction(for: event), let index = library.selectedIndex {
+        if let mark = event.markFromKey, let index = library.selectedIndex {
             library.setMark(mark, for: library.filteredItems[index])
             let items = library.filteredItems
             library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)

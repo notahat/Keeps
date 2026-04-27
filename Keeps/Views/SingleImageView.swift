@@ -98,7 +98,7 @@ struct SingleImageView: View {
             library.viewMode = .grid
             return true
         }
-        if let mark = markForKey(event.charactersIgnoringModifiers), let index = library.selectedIndex {
+        if let mark = event.markFromKey, let index = library.selectedIndex {
             library.setMark(mark, for: library.filteredItems[index])
             flashMark(mark)
             let items = library.filteredItems
@@ -120,16 +120,6 @@ struct SingleImageView: View {
             withAnimation(.easeOut(duration: 1.5)) {
                 markFeedbackOpacity = 0
             }
-        }
-    }
-
-    /// Returns the mark (or nil to unmark) for f/s/d keys, or nil if not a mark key.
-    private func markForKey(_ key: String?) -> FolderLibrary.Mark?? {
-        switch key {
-        case "f": .some(.pick)
-        case "s": .some(.reject)
-        case "d": .some(nil)
-        default: nil
         }
     }
 
