@@ -60,10 +60,6 @@ struct GridView: View {
             library.viewMode = .single
             return true
         }
-        if let mark = event.markFromKey {
-            library.applyMarkAndAdvance(mark)
-            return true
-        }
         guard let direction = direction(for: event) else { return false }
         let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }

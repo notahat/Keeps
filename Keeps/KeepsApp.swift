@@ -6,5 +6,8 @@ struct KeepsApp: App {
         WindowGroup {
             ContentView()
         }
+        .commands {
+            PhotoCommands()
+        }
     }
 }

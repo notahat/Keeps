@@ -20,6 +20,7 @@ struct ContentView: View {
                 GridView(library: library)
             }
         }
+        .focusedSceneValue(\.library, library)
         .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
         .navigationSubtitle(library.folderURL?.path ?? "")
         .toolbar {

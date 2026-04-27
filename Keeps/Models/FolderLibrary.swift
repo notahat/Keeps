@@ -17,6 +17,21 @@ class FolderLibrary {
     private(set) var marks: [UUID: Mark] = [:]
     private(set) var filterMode: FilterMode = .all
 
+    /// Set each time applyMarkAndAdvance is called, so observers can react to
+    /// mark actions regardless of which code path triggered them.
+    private(set) var lastMarkEvent: MarkEvent?
+
+    /// Uniquely identifies a single mark application, so observers can detect
+    /// repeated applications of the same mark value.
+    struct MarkEvent: Equatable {
+        let mark: Mark?
+        private let token = UUID()
+
+        static func == (lhs: MarkEvent, rhs: MarkEvent) -> Bool {
+            lhs.token == rhs.token
+        }
+    }
+
     /// The index of the selected item within the current filtered list, or nil if the
     /// selected item isn't present in the current filter. Setting this updates the
     /// selected item identity, so the selection follows the item across filter switches.
@@ -47,6 +62,7 @@ class FolderLibrary {
     func applyMarkAndAdvance(_ mark: Mark?) {
         guard let index = selectedIndex else { return }
         setMark(mark, for: filteredItems[index])
+        lastMarkEvent = MarkEvent(mark: mark)
         let items = filteredItems
         selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
     }

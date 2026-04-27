@@ -60,6 +60,9 @@ struct SingleImageView: View {
             deprioritizeCurrent()
             loadWindow()
         }
+        .onChange(of: library.lastMarkEvent) { _, event in
+            flashMark(event?.mark)
+        }
         .onReceive(NotificationCenter.default.publisher(for: ImageLoader.fullImageLoadedNotification)) { notification in
             guard let item = selectedItem,
                   (notification.userInfo?[ImageLoader.fullImageItemIDKey] as? UUID) == item.id
@@ -95,11 +98,6 @@ struct SingleImageView: View {
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         if event.keyCode == .escape || event.charactersIgnoringModifiers == "g" {
             library.viewMode = .grid
-            return true
-        }
-        if let mark = event.markFromKey {
-            flashMark(mark)
-            library.applyMarkAndAdvance(mark)
             return true
         }
         guard let step = navigationStep(for: event) else { return false }
