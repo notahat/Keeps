@@ -20,6 +20,11 @@ struct SingleImageView: View {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
+                    .overlay(alignment: .bottomLeading) {
+                        if let item = selectedItem, let mark = library.marks[item.id] {
+                            MarkBadge(mark: mark, fontSize: 40).padding(12)
+                        }
+                    }
             } else {
                 VStack(spacing: 12) {
                     ProgressView()
@@ -83,11 +88,27 @@ struct SingleImageView: View {
             library.viewMode = .grid
             return true
         }
+        if let mark = markForKey(event.charactersIgnoringModifiers), let index = library.selectedIndex {
+            library.setMark(mark, for: library.filteredItems[index])
+            let items = library.filteredItems
+            library.selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+            return true
+        }
         guard let step = navigationStep(for: event) else { return false }
         let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }
         library.selectedIndex = max(0, min(count - 1, current + step))
         return true
+    }
+
+    /// Returns the mark (or nil to unmark) for f/s/d keys, or nil if not a mark key.
+    private func markForKey(_ key: String?) -> FolderLibrary.Mark?? {
+        switch key {
+        case "f": .some(.pick)
+        case "s": .some(.reject)
+        case "d": .some(nil)
+        default: nil
+        }
     }
 
     /// Returns 4 indices ahead and 2 behind, excluding the current index.

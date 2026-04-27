@@ -58,14 +58,15 @@ struct ThumbnailView: View {
 }
 
 /// A small badge showing whether a photo has been picked or rejected.
-private struct MarkBadge: View {
+struct MarkBadge: View {
     let mark: FolderLibrary.Mark
+    var fontSize: CGFloat = 22
 
     var body: some View {
         Image(systemName: mark == .pick ? "checkmark.circle.fill" : "x.circle.fill")
             .symbolRenderingMode(.palette)
             .foregroundStyle(.white, mark == .pick ? Color.green : Color.red)
-            .font(.system(size: 22))
+            .font(.system(size: fontSize))
             .shadow(radius: 2)
     }
 }
