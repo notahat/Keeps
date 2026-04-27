@@ -22,19 +22,11 @@ struct MarkButton: View {
         .disabled(!isEnabled)
     }
 
-    @ViewBuilder private var icon: some View {
+    private var icon: some View {
         switch markAction {
-        case .pick:
-            Image(systemName: "checkmark.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .green)
-        case .reject:
-            Image(systemName: "x.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .red)
-        case .unmark:
-            Image(systemName: "minus.circle")
-                .foregroundStyle(.secondary)
+        case .pick: markIcon(for: .pick)
+        case .reject: markIcon(for: .reject)
+        case .unmark: markIcon(for: nil)
         }
     }
 

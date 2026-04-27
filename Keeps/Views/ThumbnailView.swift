@@ -64,9 +64,7 @@ struct MarkBadge: View {
     var fontSize: CGFloat = 22
 
     var body: some View {
-        Image(systemName: mark == .pick ? "checkmark.circle.fill" : "x.circle.fill")
-            .symbolRenderingMode(.palette)
-            .foregroundStyle(.white, mark == .pick ? Color.green : Color.red)
+        markIcon(for: mark)
             .font(.system(size: fontSize))
             .shadow(radius: 2)
     }

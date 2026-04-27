@@ -154,20 +154,8 @@ private struct MarkFeedbackLabel: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
-    @ViewBuilder private var icon: some View {
-        switch mark {
-        case .pick:
-            Image(systemName: "checkmark.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .green)
-        case .reject:
-            Image(systemName: "x.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .red)
-        case nil:
-            Image(systemName: "minus.circle")
-                .foregroundStyle(.secondary)
-        }
+    private var icon: some View {
+        markIcon(for: mark)
     }
 
     private var message: String {
