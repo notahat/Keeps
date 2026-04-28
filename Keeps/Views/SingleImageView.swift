@@ -17,6 +17,7 @@ struct SingleImageView: View {
     /// The item currently being loaded at high priority, tracked so it can be
     /// deprioritised when the user navigates away before it finishes.
     @State private var highPriorityItem: PhotoItem?
+    @State private var keyView: KeyAwareView.ResponderView?
 
     var body: some View {
         Group {
@@ -49,8 +50,11 @@ struct SingleImageView: View {
                     .allowsHitTesting(false)
             }
         }
+        .onTapGesture {
+            keyView?.window?.makeFirstResponder(keyView)
+        }
         .background {
-            KeyAwareView { event in handleKeyEvent(event) }
+            KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
         }
         .onAppear {
             loadWindow()

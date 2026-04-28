@@ -6,6 +6,7 @@ struct GridView: View {
     var library: FolderLibrary
 
     @State private var columnCount: Int = 1
+    @State private var keyView: KeyAwareView.ResponderView?
 
     private let cellSize: CGFloat = 260
     private let spacing: CGFloat = 12
@@ -28,6 +29,7 @@ struct GridView: View {
                             // double-tap timeout that onTapGesture(count: 1) would incur.
                             .simultaneousGesture(TapGesture().onEnded {
                                 library.selectedIndex = index
+                                keyView?.window?.makeFirstResponder(keyView)
                             })
                             .id(item.id)
                     }
@@ -38,7 +40,7 @@ struct GridView: View {
                 }
             }
             .background {
-                KeyAwareView { event in handleKeyEvent(event) }
+                KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
             }
             .onAppear {
                 if let index = library.selectedIndex {

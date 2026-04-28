@@ -7,10 +7,14 @@ import SwiftUI
 /// macOS, so this AppKit shim handles it instead.
 struct KeyAwareView: NSViewRepresentable {
     var onKeyDown: (NSEvent) -> Bool
+    /// Called once with the underlying NSView so callers can invoke
+    /// window?.makeFirstResponder(_:) to reclaim keyboard focus.
+    var onViewReady: ((ResponderView) -> Void)?
 
     func makeNSView(context _: Context) -> ResponderView {
         let view = ResponderView()
         view.onKeyDown = onKeyDown
+        onViewReady?(view)
         return view
     }
 

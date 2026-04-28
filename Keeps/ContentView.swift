@@ -19,64 +19,54 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Group {
-            switch displayState {
-            case .empty: emptyState
-            case let .error(error): errorState(error)
-            case .grid: GridView(library: library)
-            case .single: SingleImageView(library: library)
-            }
-        }
-        .focusedSceneValue(\.library, library)
-        .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
-        .navigationSubtitle(library.folderURL?.path ?? "")
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button(action: openFolder) {
-                    Image(systemName: "folder")
+        NavigationSplitView {
+            PassSidebarView(library: library)
+        } detail: {
+            Group {
+                switch displayState {
+                case .empty: emptyState
+                case let .error(error): errorState(error)
+                case .grid: GridView(library: library)
+                case .single: SingleImageView(library: library)
                 }
-                .help("Open Folder")
             }
-
-            ToolbarItem(placement: .principal) {
-                Picker("Filter", selection: Binding(
-                    get: { library.filterMode },
-                    set: { library.applyFilter($0) }
-                )) {
-                    Text("All").tag(FolderLibrary.FilterMode.all)
-                    Text("Picked").tag(FolderLibrary.FilterMode.picked)
-                    Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
-                    Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-            }
-
-            ToolbarItem(placement: .status) {
-                HStack(spacing: 8) {
-                    Text("\(library.items.count) photos")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    LoadGraphView()
-                }
-                .padding(.leading, 8)
-            }
-
-            ToolbarItemGroup(placement: .primaryAction) {
-                ControlGroup {
-                    MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
-                        applyMark(.reject)
+            .focusedSceneValue(\.library, library)
+            .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
+            .navigationSubtitle(library.folderURL?.path ?? "")
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Button(action: openFolder) {
+                        Image(systemName: "folder")
                     }
-                    MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
-                        applyMark(nil)
+                    .help("Open Folder")
+                }
+
+                ToolbarItem(placement: .status) {
+                    HStack(spacing: 8) {
+                        Text("\(library.filteredItems.count) photos")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        LoadGraphView()
                     }
-                    MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
-                        applyMark(.pick)
+                    .padding(.leading, 8)
+                }
+
+                ToolbarItemGroup(placement: .primaryAction) {
+                    ControlGroup {
+                        MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
+                            applyMark(.reject)
+                        }
+                        MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
+                            applyMark(nil)
+                        }
+                        MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
+                            applyMark(.pick)
+                        }
                     }
                 }
             }
         }
-        .frame(minWidth: 400, minHeight: 300)
+        .frame(minWidth: 500, minHeight: 300)
         .preferredColorScheme(.dark)
         .onAppear {
             restoreLastFolder()
