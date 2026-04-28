@@ -65,11 +65,11 @@ struct SingleImageView: View {
         .onChange(of: library.lastMarkEvent) { _, event in
             flashMark(event?.mark)
         }
-        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.imageLoadedNotification)) { notification in
+        .onReceive(NotificationCenter.default.publisher(for: ImagePipeline.imageLoadedNotification)) { notification in
             guard let item = selectedItem,
-                  (notification.userInfo?[ImageLoader.imageLoadedItemIDKey] as? UUID) == item.id
+                  (notification.userInfo?[ImagePipeline.imageLoadedItemIDKey] as? UUID) == item.id
             else { return }
-            image = ImageLoader.shared.cachedImage(for: item, size: .full)
+            image = ImagePipeline.shared.cachedImage(for: item, size: .full)
         }
     }
 
@@ -83,16 +83,16 @@ struct SingleImageView: View {
         let items = library.filteredItems
         let item = items[index]
         highPriorityItem = item
-        image = ImageLoader.shared.cachedImage(for: item, size: .full)
-        ImageLoader.shared.requestImage(for: item, size: .full)
+        image = ImagePipeline.shared.cachedImage(for: item, size: .full)
+        ImagePipeline.shared.requestImage(for: item, size: .full)
         for idx in preloadIndices(around: index, in: items) {
-            ImageLoader.shared.prefetchImage(for: items[idx], size: .full)
+            ImagePipeline.shared.prefetchImage(for: items[idx], size: .full)
         }
     }
 
     private func deprioritizeCurrent() {
         if let item = highPriorityItem {
-            ImageLoader.shared.deprioritizeImage(for: item, size: .full)
+            ImagePipeline.shared.deprioritizeImage(for: item, size: .full)
             highPriorityItem = nil
         }
     }

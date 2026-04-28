@@ -109,7 +109,7 @@ struct ContentView: View {
         stopCurrentAccess()
         saveBookmark(for: url)
         library.openFolder(url: url)
-        ImageLoader.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
+        ImagePipeline.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
     }
 
     private func restoreLastFolder() {
@@ -128,7 +128,7 @@ struct ContentView: View {
 
         if isStale { saveBookmark(for: url) }
         library.openFolder(url: url)
-        ImageLoader.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
+        ImagePipeline.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
     }
 
     private func stopCurrentAccess() {

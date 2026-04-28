@@ -42,18 +42,18 @@ struct ThumbnailView: View {
         }
         .frame(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
         .onAppear {
-            if let cached = ImageLoader.shared.cachedImage(for: item, size: Self.imageSize) {
+            if let cached = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize) {
                 image = cached
             } else {
-                ImageLoader.shared.requestImage(for: item, size: Self.imageSize)
+                ImagePipeline.shared.requestImage(for: item, size: Self.imageSize)
             }
         }
         .onDisappear {
-            ImageLoader.shared.deprioritizeImage(for: item, size: Self.imageSize)
+            ImagePipeline.shared.deprioritizeImage(for: item, size: Self.imageSize)
         }
-        .onReceive(NotificationCenter.default.publisher(for: ImageLoader.imageLoadedNotification)) { notification in
-            guard (notification.userInfo?[ImageLoader.imageLoadedItemIDKey] as? UUID) == item.id else { return }
-            image = ImageLoader.shared.cachedImage(for: item, size: Self.imageSize)
+        .onReceive(NotificationCenter.default.publisher(for: ImagePipeline.imageLoadedNotification)) { notification in
+            guard (notification.userInfo?[ImagePipeline.imageLoadedItemIDKey] as? UUID) == item.id else { return }
+            image = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize)
         }
     }
 }

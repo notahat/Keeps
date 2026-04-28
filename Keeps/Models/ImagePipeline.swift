@@ -1,16 +1,16 @@
 import AppKit
 import Observation
 
-/// Schedules image decodes and caches results. Routes all decodes through a
+/// Schedules image reads and caches results. Routes all reads through a
 /// bounded OperationQueue: user-visible requests at high priority, background
 /// prefetch at low. Signals completion via NotificationCenter so that on-screen
 /// views can update without suspending on async/await.
 @Observable
 @MainActor
-final class ImageLoader {
-    static let shared = ImageLoader()
+final class ImagePipeline {
+    static let shared = ImagePipeline()
 
-    /// Posted on the main thread when any image finishes decoding. The userInfo
+    /// Posted on the main thread when any image finishes loading. The userInfo
     /// dictionary carries the item's UUID under imageLoadedItemIDKey.
     static let imageLoadedNotification = Notification.Name("com.notahat.Keeps.imageLoaded")
     static let imageLoadedItemIDKey = "itemID"
@@ -18,26 +18,26 @@ final class ImageLoader {
     private let cache = ImageCache()
 
     // Priority levels used across the decode queue. Higher tiers pre-empt lower
-    // ones, so the user always sees the image they're looking at decode first.
+    // ones, so the user always sees the image they're looking at load first.
     private static let currentImagePriority: Operation.QueuePriority = .veryHigh
     private static let nearbyImagePriority: Operation.QueuePriority = .high
     private static let visibleThumbnailPriority: Operation.QueuePriority = .low
     private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
 
-    /// Worker pool. maxConcurrentOperationCount controls decode parallelism —
+    /// Worker pool. maxConcurrentOperationCount controls read parallelism —
     /// tune this to balance throughput against memory and responsiveness.
-    private let decodeQueue: OperationQueue = {
+    private let readQueue: OperationQueue = {
         let queue = OperationQueue()
-        queue.name = "com.notahat.Keeps.ImageLoader"
+        queue.name = "com.notahat.Keeps.ImagePipeline"
         queue.maxConcurrentOperationCount = 16
         return queue
     }()
 
-    /// All in-flight decode operations keyed by item identity + size. Includes
+    /// All in-flight read operations keyed by item identity + size. Includes
     /// both user-visible (high priority) and background prefetch (low priority) ops.
     private var imageOps: [String: Operation] = [:]
 
-    /// The total number of decode operations currently queued or running.
+    /// The total number of read operations currently queued or running.
     var queueCount: Int {
         imageOps.count
     }
@@ -110,14 +110,14 @@ final class ImageLoader {
         let url = item.sourceURL
         imageOps[key] = makeOp(
             priority: priority,
-            decode: { [size] in
+            read: { [size] in
                 switch size {
-                case .full: ImageDecoder.fullImage(from: url)
-                case let .thumbnail(maxPixelSize): ImageDecoder.thumbnail(from: url, maxPixelSize: maxPixelSize)
+                case .full: ImageReader.fullImage(from: url)
+                case let .thumbnail(maxPixelSize): ImageReader.thumbnail(from: url, maxPixelSize: maxPixelSize)
                 }
             },
-            store: { [size] image in ImageLoader.shared.cache.setImage(image, for: item, size: size) },
-            onComplete: { ImageLoader.shared.completeImageLoad(key: key, itemID: item.id) }
+            store: { [size] image in ImagePipeline.shared.cache.setImage(image, for: item, size: size) },
+            onComplete: { ImagePipeline.shared.completeImageLoad(key: key, itemID: item.id) }
         )
     }
 
@@ -135,20 +135,20 @@ final class ImageLoader {
     private func completeImageLoad(key: String, itemID: UUID) {
         imageOps.removeValue(forKey: key)
         NotificationCenter.default.post(
-            name: ImageLoader.imageLoadedNotification,
+            name: ImagePipeline.imageLoadedNotification,
             object: nil,
-            userInfo: [ImageLoader.imageLoadedItemIDKey: itemID]
+            userInfo: [ImagePipeline.imageLoadedItemIDKey: itemID]
         )
     }
 
     private func makeOp(
         priority: Operation.QueuePriority,
-        decode: @escaping @Sendable () -> CGImage?,
+        read: @escaping @Sendable () -> CGImage?,
         store: @escaping @MainActor (NSImage) -> Void,
         onComplete: @escaping @MainActor () -> Void
     ) -> Operation {
         let op = BlockOperation {
-            let cgImage = decode()
+            let cgImage = read()
             Task { @MainActor in
                 let image = cgImage.map { NSImage(cgImage: $0, size: .zero) }
                 if let image { store(image) }
@@ -156,7 +156,7 @@ final class ImageLoader {
             }
         }
         op.queuePriority = priority
-        decodeQueue.addOperation(op)
+        readQueue.addOperation(op)
         return op
     }
 }

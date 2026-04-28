@@ -8,7 +8,7 @@ struct LoadGraphView: View {
     @State private var peak: Int = 1
 
     private var fillFraction: Double {
-        Double(ImageLoader.shared.queueCount) / Double(peak)
+        Double(ImagePipeline.shared.queueCount) / Double(peak)
     }
 
     var body: some View {
@@ -22,7 +22,7 @@ struct LoadGraphView: View {
         .background(.secondary.opacity(0.2))
         .clipShape(Capsule())
         .padding(.horizontal, 6)
-        .onChange(of: ImageLoader.shared.queueCount) { _, count in
+        .onChange(of: ImagePipeline.shared.queueCount) { _, count in
             updatePeak(count: count)
         }
     }

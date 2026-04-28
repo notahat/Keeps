@@ -1,9 +1,9 @@
 import AppKit
 import ImageIO
 
-/// Pure functions for decoding images from files using CGImageSource. All
+/// Pure functions for reading images from files using CGImageSource. All
 /// methods are safe to call from any thread.
-enum ImageDecoder {
+enum ImageReader {
     /// Extracts the embedded JPEG preview from a RAW file at full size. Using
     /// kCGImageSourceCreateThumbnailFromImageIfAbsent: false ensures CGImageSource
     /// returns the pre-existing embedded preview rather than decoding the RAW data.
@@ -18,7 +18,7 @@ enum ImageDecoder {
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
-    /// Decodes a scaled-down thumbnail. For JPEGs, decodes from the full image
+    /// Reads a scaled-down thumbnail. For JPEGs, decodes from the full image
     /// data to avoid the tiny blurry EXIF thumbnail. For RAWs, uses the embedded
     /// full-res JPEG preview for speed.
     nonisolated static func thumbnail(from url: URL, maxPixelSize: Int) -> CGImage? {
