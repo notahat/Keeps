@@ -5,6 +5,7 @@ import SwiftUI
 /// state changes.
 struct ContentView: View {
     @State private var library = FolderLibrary()
+    @State private var persistence: LibraryPersistence?
 
     /// Tracks the security-scoped URL currently being accessed, so we can stop
     /// access when the user switches to a different folder.
@@ -112,8 +113,7 @@ struct ContentView: View {
 
         stopCurrentAccess()
         saveBookmark(for: url)
-        library.openFolder(url: url)
-        ImagePipeline.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
+        startSession(for: url)
     }
 
     private func restoreLastFolder() {
@@ -131,7 +131,16 @@ struct ContentView: View {
         securityScopedURL = url
 
         if isStale { saveBookmark(for: url) }
+        startSession(for: url)
+    }
+
+    private func startSession(for url: URL) {
+        persistence?.stop()
         library.openFolder(url: url)
+        let newPersistence = LibraryPersistence(folderURL: url)
+        newPersistence.restore(into: library)
+        newPersistence.startObserving(library)
+        persistence = newPersistence
         ImagePipeline.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
     }
 

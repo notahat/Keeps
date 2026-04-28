@@ -2,8 +2,9 @@ import Foundation
 import Observation
 
 /// Owns the photo items for a single open folder. Handles directory scanning,
-/// file pairing, selection, view mode, marking, pass-based review, and state
-/// persistence. Does not load image data — that's ImagePipeline's job.
+/// file pairing, selection, view mode, marking, and pass-based review. Does not
+/// load image data (that's ImagePipeline's job) or persist state (that's
+/// LibraryPersistence's job).
 ///
 /// Each pass stores its own picks and rejects. The photos visible in pass N are
 /// all photos not picked or rejected in passes 0..<N, so marks made in earlier
@@ -95,7 +96,6 @@ class FolderLibrary {
         if mark == .pick { passes[currentPassIndex].picks.insert(item.id) }
         else if mark == .reject { passes[currentPassIndex].rejects.insert(item.id) }
         if filterMode != .all { updateFilteredItems() }
-        saveState()
     }
 
     /// Marks the currently selected item and advances selection to the next one.
@@ -113,7 +113,6 @@ class FolderLibrary {
         currentPassIndex = passes.count - 1
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
-        saveState()
     }
 
     func applyFilter(_ mode: FilterMode) {
@@ -141,27 +140,35 @@ class FolderLibrary {
         )
     }
 
+    /// Scans the folder and resets library state. Call LibraryPersistence.restore(into:)
+    /// immediately after to set up passes.
     func openFolder(url: URL) {
         folderURL = url
         folderError = nil
         viewMode = .grid
+        passes = []
+        currentPassIndex = 0
         do {
             items = try scanFolder(url: url)
         } catch {
             items = []
-            passes = []
             folderError = error
             updateFilteredItems()
-            return
         }
+    }
 
-        loadState(knownItems: items)
+    /// Sets up a single empty pass. Called by LibraryPersistence when no saved state exists.
+    func initializeFreshPasses() {
+        passes = [Pass()]
+        currentPassIndex = 0
+        updateFilteredItems()
+        selectedItemID = filteredItems.first?.id
+    }
 
-        if passes.isEmpty {
-            passes = [Pass()]
-            currentPassIndex = 0
-        }
-
+    /// Applies passes restored from saved state. Called by LibraryPersistence after openFolder.
+    func applyRestoredPasses(_ restoredPasses: [Pass], currentPassIndex: Int) {
+        passes = restoredPasses
+        self.currentPassIndex = currentPassIndex
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
     }
@@ -211,44 +218,5 @@ class FolderLibrary {
                     jpegURL: jpegByStem[stem]
                 )
             }
-    }
-
-    // MARK: - Persistence
-
-    private var stateFileURL: URL? {
-        folderURL?.appendingPathComponent("keeps.json")
-    }
-
-    private func saveState() {
-        guard let url = stateFileURL else { return }
-        let stemByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.stem) })
-        let state = LibraryState(
-            passes: passes.map { pass in
-                LibraryState.Pass(
-                    picks: pass.picks.compactMap { stemByID[$0] }.sorted(),
-                    rejects: pass.rejects.compactMap { stemByID[$0] }.sorted()
-                )
-            }
-        )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try? encoder.encode(state)
-        try? data?.write(to: url)
-    }
-
-    private func loadState(knownItems: [PhotoItem]) {
-        guard let url = stateFileURL,
-              let data = try? Data(contentsOf: url),
-              let state = try? JSONDecoder().decode(LibraryState.self, from: data)
-        else { return }
-
-        let idByStem = Dictionary(uniqueKeysWithValues: knownItems.map { ($0.stem, $0.id) })
-        passes = state.passes.map { savedPass in
-            Pass(
-                picks: Set(savedPass.picks.compactMap { idByStem[$0] }),
-                rejects: Set(savedPass.rejects.compactMap { idByStem[$0] })
-            )
-        }
-        currentPassIndex = max(0, passes.count - 1)
     }
 }
