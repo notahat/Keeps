@@ -6,19 +6,15 @@ A macOS app for fast culling of RAW/JPEG photo collections.
 
 Culling:
 
-- Is our structure for passes right?
-  - We write a big list of stems to disk for each pass. Is that necessary?
-  - Should we just store the picks and rejects for each pass instead?
-    - That might make behaviour if you go back and edit a pass more sensible?
+- Inefficiencies in our new pass structure? Are we relculating things too much?
 - Wider sidebar default/minimum width...fixed width?
 - Seems like we write a lot of data each time...performance?
 - Is "Commit Pass" the right language?
 - Design and spacing of the passes in the sidebar
 - Can we let the grid have focus without so much hackery?
 - Does serialising deserve its own model?
-- Not clear if going back to previous pass and marking/unmarking behaves as expected
+- Edge case of marking something that has already been marked in a later pass
 - Actual error handling on saving
-- Default to have the final pass selected on load
 - Should the sidebar be on the right? Check out UI conventions
 - Default the sidebar to closed?
 

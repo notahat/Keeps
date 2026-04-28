@@ -50,12 +50,23 @@ class FolderLibrary {
         }
     }
 
+    private var currentPass: Pass? {
+        passes.isEmpty ? nil : passes[currentPassIndex]
+    }
+
+    private var currentPassPhotoIDs: Set<UUID> {
+        let previouslyMarked = passes[0 ..< currentPassIndex].reduce(into: Set<UUID>()) {
+            $0.formUnion($1.picks)
+            $0.formUnion($1.rejects)
+        }
+        return Set(items.map(\.id)).subtracting(previouslyMarked)
+    }
+
     /// Returns the mark for a photo in the currently viewed pass, or nil if unmarked.
     func mark(for id: UUID) -> Mark? {
-        guard !passes.isEmpty else { return nil }
-        let pass = passes[currentPassIndex]
-        if pass.picks.contains(id) { return .pick }
-        if pass.rejects.contains(id) { return .reject }
+        guard let currentPass else { return nil }
+        if currentPass.picks.contains(id) { return .pick }
+        if currentPass.rejects.contains(id) { return .reject }
         return nil
     }
 
@@ -156,18 +167,14 @@ class FolderLibrary {
     }
 
     private func updateFilteredItems() {
-        guard !passes.isEmpty else { filteredItems = []; return }
-        let markedInPreviousPasses = passes[0 ..< currentPassIndex].reduce(into: Set<UUID>()) {
-            $0.formUnion($1.picks)
-            $0.formUnion($1.rejects)
+        guard let currentPass else { filteredItems = []; return }
+        let visibleIDs = switch filterMode {
+        case .all: currentPassPhotoIDs
+        case .picked: currentPass.picks
+        case .rejected: currentPass.rejects
+        case .unmarked: currentPassPhotoIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
         }
-        let passItems = items.filter { !markedInPreviousPasses.contains($0.id) }
-        filteredItems = switch filterMode {
-        case .all: passItems
-        case .picked: passItems.filter { passes[currentPassIndex].picks.contains($0.id) }
-        case .rejected: passItems.filter { passes[currentPassIndex].rejects.contains($0.id) }
-        case .unmarked: passItems.filter { mark(for: $0.id) == nil }
-        }
+        filteredItems = items.filter { visibleIDs.contains($0.id) }
     }
 
     private func scanFolder(url: URL) throws -> [PhotoItem] {
