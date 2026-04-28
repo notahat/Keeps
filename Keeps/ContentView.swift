@@ -41,6 +41,20 @@ struct ContentView: View {
                     .help("Open Folder")
                 }
 
+                ToolbarItem(placement: .principal) {
+                    Picker("Filter", selection: Binding(
+                        get: { library.filterMode },
+                        set: { library.applyFilter($0) }
+                    )) {
+                        Text("All").tag(FolderLibrary.FilterMode.all)
+                        Text("Picked").tag(FolderLibrary.FilterMode.picked)
+                        Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
+                        Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                }
+
                 ToolbarItem(placement: .status) {
                     HStack(spacing: 8) {
                         Text("\(library.filteredItems.count) photos")

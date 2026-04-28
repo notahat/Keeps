@@ -12,6 +12,7 @@ import Observation
 class FolderLibrary {
     enum ViewMode { case grid, single }
     enum Mark: String, Codable { case pick, reject }
+    enum FilterMode { case all, picked, rejected, unmarked }
 
     struct PassStats {
         let total: Int
@@ -28,6 +29,7 @@ class FolderLibrary {
     private(set) var folderError: Error?
     private(set) var selectedItemID: UUID?
     var viewMode: ViewMode = .grid
+    var filterMode: FilterMode = .all
     private(set) var items: [PhotoItem] = []
     private(set) var filteredItems: [PhotoItem] = []
     private(set) var passes: [Pass] = []
@@ -81,6 +83,7 @@ class FolderLibrary {
         passes[currentPassIndex].rejects.remove(item.id)
         if mark == .pick { passes[currentPassIndex].picks.insert(item.id) }
         else if mark == .reject { passes[currentPassIndex].rejects.insert(item.id) }
+        if filterMode != .all { updateFilteredItems() }
         saveState()
     }
 
@@ -102,8 +105,15 @@ class FolderLibrary {
         saveState()
     }
 
+    func applyFilter(_ mode: FilterMode) {
+        filterMode = mode
+        updateFilteredItems()
+        selectedIndex = filteredItems.isEmpty ? nil : 0
+    }
+
     func selectPass(_ index: Int) {
         currentPassIndex = index
+        filterMode = .all
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
     }
@@ -151,7 +161,13 @@ class FolderLibrary {
             $0.formUnion($1.picks)
             $0.formUnion($1.rejects)
         }
-        filteredItems = items.filter { !markedInPreviousPasses.contains($0.id) }
+        let passItems = items.filter { !markedInPreviousPasses.contains($0.id) }
+        filteredItems = switch filterMode {
+        case .all: passItems
+        case .picked: passItems.filter { passes[currentPassIndex].picks.contains($0.id) }
+        case .rejected: passItems.filter { passes[currentPassIndex].rejects.contains($0.id) }
+        case .unmarked: passItems.filter { mark(for: $0.id) == nil }
+        }
     }
 
     private func scanFolder(url: URL) throws -> [PhotoItem] {
