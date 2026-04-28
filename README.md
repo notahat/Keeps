@@ -8,7 +8,7 @@ Culling:
 
 - Inefficiencies in our new pass structure? Are we relculating things too much?
 - Wider sidebar default/minimum width...fixed width?
-- Seems like we write a lot of data each time...performance?
+- Seems like we write a lot of data each time...performance? Background task? Periodic writes?
 - Is "Commit Pass" the right language?
 - Design and spacing of the passes in the sidebar
 - Can we let the grid have focus without so much hackery?
@@ -17,6 +17,8 @@ Culling:
 - Actual error handling on saving
 - Should the sidebar be on the right? Check out UI conventions
 - Default the sidebar to closed?
+- Have a way to delete the last pass
+  - Probably not earlier passes. Would that even make sense/
 
 General:
 

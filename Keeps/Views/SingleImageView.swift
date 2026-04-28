@@ -50,6 +50,18 @@ struct SingleImageView: View {
                     .allowsHitTesting(false)
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            if let index = library.selectedIndex {
+                Text("\(index + 1) / \(library.filteredItems.count)")
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.regularMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(12)
+                    .allowsHitTesting(false)
+            }
+        }
         .onTapGesture {
             keyView?.window?.makeFirstResponder(keyView)
         }
