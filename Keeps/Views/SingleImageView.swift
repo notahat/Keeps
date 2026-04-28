@@ -26,7 +26,7 @@ struct SingleImageView: View {
                     .resizable()
                     .scaledToFit()
                     .overlay(alignment: .bottomLeading) {
-                        if let item = selectedItem, let mark = library.marks[item.id] {
+                        if let item = selectedItem, let mark = library.mark(for: item.id) {
                             MarkBadge(mark: mark, fontSize: 40).padding(12)
                         }
                     }

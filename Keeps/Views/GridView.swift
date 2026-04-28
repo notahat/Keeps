@@ -20,7 +20,7 @@ struct GridView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: spacing) {
                     ForEach(Array(library.filteredItems.enumerated()), id: \.element.id) { index, item in
-                        ThumbnailView(item: item, isSelected: item.id == library.selectedItemID, mark: library.marks[item.id])
+                        ThumbnailView(item: item, isSelected: item.id == library.selectedItemID, mark: library.mark(for: item.id))
                             .onTapGesture(count: 2) {
                                 library.selectedIndex = index
                                 library.viewMode = .single

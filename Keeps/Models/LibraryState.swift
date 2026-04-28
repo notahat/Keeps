@@ -6,10 +6,9 @@ import Foundation
 /// folder moves.
 struct LibraryState: Codable {
     struct Pass: Codable {
-        var stems: [String]
-        var committedStats: FolderLibrary.PassStats?
+        var picks: [String]
+        var rejects: [String]
     }
 
-    var marks: [String: FolderLibrary.Mark]
     var passes: [Pass]
 }

@@ -4,20 +4,24 @@ import Observation
 /// Owns the photo items for a single open folder. Handles directory scanning,
 /// file pairing, selection, view mode, marking, pass-based review, and state
 /// persistence. Does not load image data — that's ImagePipeline's job.
+///
+/// Each pass stores its own picks and rejects. The photos visible in pass N are
+/// all photos not picked or rejected in passes 0..<N, so marks made in earlier
+/// passes automatically hide those photos from later ones.
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
     enum Mark: String, Codable { case pick, reject }
 
-    struct PassStats: Codable {
+    struct PassStats {
+        let total: Int
         let picks: Int
         let rejects: Int
     }
 
-    struct Pass: Codable {
-        var photoIDs: [UUID] // var so the current pass can grow via pullToCurrentPass
-        /// Frozen at commit time. Nil for the current (latest) pass.
-        var committedStats: PassStats?
+    struct Pass {
+        var picks: Set<UUID> = []
+        var rejects: Set<UUID> = []
     }
 
     private(set) var folderURL: URL?
@@ -26,7 +30,6 @@ class FolderLibrary {
     var viewMode: ViewMode = .grid
     private(set) var items: [PhotoItem] = []
     private(set) var filteredItems: [PhotoItem] = []
-    private(set) var marks: [UUID: Mark] = [:]
     private(set) var passes: [Pass] = []
     private(set) var currentPassIndex: Int = 0
 
@@ -45,6 +48,15 @@ class FolderLibrary {
         }
     }
 
+    /// Returns the mark for a photo in the currently viewed pass, or nil if unmarked.
+    func mark(for id: UUID) -> Mark? {
+        guard !passes.isEmpty else { return nil }
+        let pass = passes[currentPassIndex]
+        if pass.picks.contains(id) { return .pick }
+        if pass.rejects.contains(id) { return .reject }
+        return nil
+    }
+
     /// The index of the selected item within the current filtered list, or nil if the
     /// selected item isn't present in the current filter. Setting this updates the
     /// selected item identity, so the selection follows the item across pass switches.
@@ -58,14 +70,17 @@ class FolderLibrary {
         }
     }
 
-    /// True when the current pass has at least one marked photo, enabling commit.
+    /// True when the last pass has at least one marked photo, enabling commit.
     var canAdvancePass: Bool {
-        guard !passes.isEmpty else { return false }
-        return passes[currentPassIndex].photoIDs.contains { marks[$0] != nil }
+        guard let pass = passes.last else { return false }
+        return !pass.picks.isEmpty || !pass.rejects.isEmpty
     }
 
     func setMark(_ mark: Mark?, for item: PhotoItem) {
-        marks[item.id] = mark
+        passes[currentPassIndex].picks.remove(item.id)
+        passes[currentPassIndex].rejects.remove(item.id)
+        if mark == .pick { passes[currentPassIndex].picks.insert(item.id) }
+        else if mark == .reject { passes[currentPassIndex].rejects.insert(item.id) }
         saveState()
     }
 
@@ -78,24 +93,12 @@ class FolderLibrary {
         selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
     }
 
-    /// Creates a new pass containing only the undecided photos from the current pass.
+    /// Creates a new pass. Photos not marked in the current pass will appear in it.
     func advancePass() {
-        let undecidedIDs = passes[currentPassIndex].photoIDs.filter { marks[$0] == nil }
-        passes[currentPassIndex].committedStats = stats(for: passes[currentPassIndex])
-        passes.append(Pass(photoIDs: undecidedIDs, committedStats: nil))
+        passes.append(Pass())
         currentPassIndex = passes.count - 1
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
-        saveState()
-    }
-
-    /// Unmarks a photo and adds it to the current pass if not already present.
-    func pullToCurrentPass(item: PhotoItem) {
-        marks[item.id] = nil
-        if !passes[currentPassIndex].photoIDs.contains(item.id) {
-            passes[currentPassIndex].photoIDs.append(item.id)
-        }
-        updateFilteredItems()
         saveState()
     }
 
@@ -105,11 +108,15 @@ class FolderLibrary {
         selectedIndex = filteredItems.isEmpty ? nil : 0
     }
 
-    func stats(for pass: Pass) -> PassStats {
-        if let frozen = pass.committedStats { return frozen }
+    func stats(for index: Int) -> PassStats {
+        let markedInPreviousPasses = passes[0 ..< index].reduce(into: Set<UUID>()) {
+            $0.formUnion($1.picks)
+            $0.formUnion($1.rejects)
+        }
         return PassStats(
-            picks: pass.photoIDs.filter { marks[$0] == .pick }.count,
-            rejects: pass.photoIDs.filter { marks[$0] == .reject }.count
+            total: items.filter { !markedInPreviousPasses.contains($0.id) }.count,
+            picks: passes[index].picks.count,
+            rejects: passes[index].rejects.count
         )
     }
 
@@ -130,15 +137,8 @@ class FolderLibrary {
         loadState(knownItems: items)
 
         if passes.isEmpty {
-            passes = [Pass(photoIDs: items.map(\.id), committedStats: nil)]
+            passes = [Pass()]
             currentPassIndex = 0
-        } else {
-            // Add photos added to the folder since the last session to the current pass.
-            let allPassIDs = Set(passes.flatMap(\.photoIDs))
-            let newIDs = items.map(\.id).filter { !allPassIDs.contains($0) }
-            if !newIDs.isEmpty {
-                passes[currentPassIndex].photoIDs.append(contentsOf: newIDs)
-            }
         }
 
         updateFilteredItems()
@@ -147,8 +147,11 @@ class FolderLibrary {
 
     private func updateFilteredItems() {
         guard !passes.isEmpty else { filteredItems = []; return }
-        let passIDs = Set(passes[currentPassIndex].photoIDs)
-        filteredItems = items.filter { passIDs.contains($0.id) }
+        let markedInPreviousPasses = passes[0 ..< currentPassIndex].reduce(into: Set<UUID>()) {
+            $0.formUnion($1.picks)
+            $0.formUnion($1.rejects)
+        }
+        filteredItems = items.filter { !markedInPreviousPasses.contains($0.id) }
     }
 
     private func scanFolder(url: URL) throws -> [PhotoItem] {
@@ -197,13 +200,10 @@ class FolderLibrary {
         guard let url = stateFileURL else { return }
         let stemByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.stem) })
         let state = LibraryState(
-            marks: Dictionary(uniqueKeysWithValues: marks.compactMap { id, mark in
-                stemByID[id].map { ($0, mark) }
-            }),
             passes: passes.map { pass in
                 LibraryState.Pass(
-                    stems: pass.photoIDs.compactMap { stemByID[$0] },
-                    committedStats: pass.committedStats
+                    picks: pass.picks.compactMap { stemByID[$0] }.sorted(),
+                    rejects: pass.rejects.compactMap { stemByID[$0] }.sorted()
                 )
             }
         )
@@ -220,14 +220,11 @@ class FolderLibrary {
         else { return }
 
         let idByStem = Dictionary(uniqueKeysWithValues: knownItems.map { ($0.stem, $0.id) })
-        marks = Dictionary(uniqueKeysWithValues: state.marks.compactMap { stem, mark in
-            idByStem[stem].map { ($0, mark) }
-        })
-        // Filter out any saved stems that no longer exist in the folder.
-        passes = state.passes.compactMap { savedPass in
-            let photoIDs = savedPass.stems.compactMap { idByStem[$0] }
-            guard !photoIDs.isEmpty else { return nil }
-            return Pass(photoIDs: photoIDs, committedStats: savedPass.committedStats)
+        passes = state.passes.map { savedPass in
+            Pass(
+                picks: Set(savedPass.picks.compactMap { idByStem[$0] }),
+                rejects: Set(savedPass.rejects.compactMap { idByStem[$0] })
+            )
         }
         currentPassIndex = max(0, passes.count - 1)
     }

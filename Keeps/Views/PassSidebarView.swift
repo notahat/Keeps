@@ -11,7 +11,7 @@ struct PassSidebarView: View {
             PassRowView(
                 number: index + 1,
                 pass: library.passes[index],
-                stats: library.stats(for: library.passes[index])
+                stats: library.stats(for: index)
             )
             .tag(index)
         }
@@ -46,7 +46,7 @@ private struct PassRowView: View {
                 .font(.headline)
             HStack(spacing: 12) {
                 Image(systemName: "photo")
-                Text("\(pass.photoIDs.count)")
+                Text("\(stats.total)")
                 markIcon(for: .pick)
                     .foregroundStyle(.green)
                 Text("\(stats.picks)")
