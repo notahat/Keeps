@@ -10,6 +10,9 @@ struct PhotoItem: Identifiable {
     let rawURL: URL?
     let jpegURL: URL?
 
+    /// The file's creation date, used for chronological sort order.
+    let capturedAt: Date
+
     /// The URL to use for image loading. Prefers the RAW file so we can extract its
     /// embedded JPEG; falls back to a standalone JPEG.
     var sourceURL: URL {

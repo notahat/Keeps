@@ -185,14 +185,19 @@ class FolderLibrary {
     }
 
     private func scanFolder(url: URL) throws -> [PhotoItem] {
-        let rawExtensions: Set = ["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr"]
-        let jpegExtensions: Set = ["jpg", "jpeg"]
-
         let urls = try FileManager.default.contentsOfDirectory(
             at: url,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: .skipsHiddenFiles
         )
+        let (rawByStem, jpegByStem) = pairFilesByType(urls: urls)
+        return buildSortedItems(rawByStem: rawByStem, jpegByStem: jpegByStem)
+    }
+
+    /// Groups URLs into RAW and JPEG dictionaries keyed by filename stem.
+    private func pairFilesByType(urls: [URL]) -> (rawByStem: [String: URL], jpegByStem: [String: URL]) {
+        let rawExtensions: Set = ["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr"]
+        let jpegExtensions: Set = ["jpg", "jpeg"]
 
         var rawByStem: [String: URL] = [:]
         var jpegByStem: [String: URL] = [:]
@@ -207,16 +212,27 @@ class FolderLibrary {
             }
         }
 
+        return (rawByStem, jpegByStem)
+    }
+
+    /// Builds PhotoItems from paired file dictionaries, sorted by creation date.
+    private func buildSortedItems(rawByStem: [String: URL], jpegByStem: [String: URL]) -> [PhotoItem] {
         let allStems = Set(rawByStem.keys).union(jpegByStem.keys)
         return allStems
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-            .map { stem in
-                PhotoItem(
+            .map { stem -> PhotoItem in
+                let sourceURL = jpegByStem[stem] ?? rawByStem[stem]!
+                return PhotoItem(
                     id: UUID(),
                     stem: stem,
                     rawURL: rawByStem[stem],
-                    jpegURL: jpegByStem[stem]
+                    jpegURL: jpegByStem[stem],
+                    capturedAt: creationDate(of: sourceURL)
                 )
             }
+            .sorted { $0.capturedAt < $1.capturedAt }
+    }
+
+    private func creationDate(of url: URL) -> Date {
+        (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date(timeIntervalSince1970: 0)
     }
 }
