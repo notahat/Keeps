@@ -7,7 +7,7 @@ import Observation
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
-    enum Mark: Codable { case pick, reject }
+    enum Mark: String, Codable { case pick, reject }
 
     struct PassStats: Codable {
         let picks: Int
@@ -15,7 +15,6 @@ class FolderLibrary {
     }
 
     struct Pass: Codable {
-        let number: Int
         var photoIDs: [UUID] // var so the current pass can grow via pullToCurrentPass
         /// Frozen at commit time. Nil for the current (latest) pass.
         var committedStats: PassStats?
@@ -83,7 +82,7 @@ class FolderLibrary {
     func advancePass() {
         let undecidedIDs = passes[currentPassIndex].photoIDs.filter { marks[$0] == nil }
         passes[currentPassIndex].committedStats = stats(for: passes[currentPassIndex])
-        passes.append(Pass(number: passes.count + 1, photoIDs: undecidedIDs, committedStats: nil))
+        passes.append(Pass(photoIDs: undecidedIDs, committedStats: nil))
         currentPassIndex = passes.count - 1
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
@@ -128,11 +127,10 @@ class FolderLibrary {
             return
         }
 
-        let knownIDs = Set(items.map(\.id))
-        loadState(knownIDs: knownIDs)
+        loadState(knownItems: items)
 
         if passes.isEmpty {
-            passes = [Pass(number: 1, photoIDs: items.map(\.id))]
+            passes = [Pass(photoIDs: items.map(\.id), committedStats: nil)]
             currentPassIndex = 0
         } else {
             // Add photos added to the folder since the last session to the current pass.
@@ -181,7 +179,7 @@ class FolderLibrary {
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
             .map { stem in
                 PhotoItem(
-                    id: UUID.forPhoto(folderURL: url, stem: stem),
+                    id: UUID(),
                     stem: stem,
                     rawURL: rawByStem[stem],
                     jpegURL: jpegByStem[stem]
@@ -197,21 +195,40 @@ class FolderLibrary {
 
     private func saveState() {
         guard let url = stateFileURL else { return }
-        let data = try? JSONEncoder().encode(LibraryState(marks: marks, passes: passes, currentPassIndex: currentPassIndex))
+        let stemByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.stem) })
+        let state = LibraryState(
+            marks: Dictionary(uniqueKeysWithValues: marks.compactMap { id, mark in
+                stemByID[id].map { ($0, mark) }
+            }),
+            passes: passes.map { pass in
+                LibraryState.Pass(
+                    stems: pass.photoIDs.compactMap { stemByID[$0] },
+                    committedStats: pass.committedStats
+                )
+            }
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try? encoder.encode(state)
         try? data?.write(to: url)
     }
 
-    private func loadState(knownIDs: Set<UUID>) {
+    private func loadState(knownItems: [PhotoItem]) {
         guard let url = stateFileURL,
               let data = try? Data(contentsOf: url),
               let state = try? JSONDecoder().decode(LibraryState.self, from: data)
         else { return }
 
-        marks = state.marks.filter { knownIDs.contains($0.key) }
-        // Filter out any saved photo IDs that no longer exist in the folder.
-        passes = state.passes.map { pass in
-            Pass(number: pass.number, photoIDs: pass.photoIDs.filter { knownIDs.contains($0) })
-        }.filter { !$0.photoIDs.isEmpty }
-        currentPassIndex = min(state.currentPassIndex, max(0, passes.count - 1))
+        let idByStem = Dictionary(uniqueKeysWithValues: knownItems.map { ($0.stem, $0.id) })
+        marks = Dictionary(uniqueKeysWithValues: state.marks.compactMap { stem, mark in
+            idByStem[stem].map { ($0, mark) }
+        })
+        // Filter out any saved stems that no longer exist in the folder.
+        passes = state.passes.compactMap { savedPass in
+            let photoIDs = savedPass.stems.compactMap { idByStem[$0] }
+            guard !photoIDs.isEmpty else { return nil }
+            return Pass(photoIDs: photoIDs, committedStats: savedPass.committedStats)
+        }
+        currentPassIndex = max(0, passes.count - 1)
     }
 }

@@ -9,6 +9,7 @@ struct PassSidebarView: View {
     var body: some View {
         List(library.passes.indices, id: \.self, selection: passSelection) { index in
             PassRowView(
+                number: index + 1,
                 pass: library.passes[index],
                 stats: library.stats(for: library.passes[index])
             )
@@ -35,12 +36,13 @@ struct PassSidebarView: View {
 }
 
 private struct PassRowView: View {
+    let number: Int
     let pass: FolderLibrary.Pass
     let stats: FolderLibrary.PassStats
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Pass \(pass.number)")
+            Text("Pass \(number)")
                 .font(.headline)
             HStack(spacing: 12) {
                 Image(systemName: "photo")
