@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Sidebar listing all review passes with pick/reject/undecided counts. Tapping
-/// a pass switches the main view to that pass's photos. The "Commit Pass" button
+/// a pass switches the main view to that pass's photos. The "Start Next Pass" button
 /// creates a new pass from the current pass's undecided photos.
 struct PassSidebarView: View {
     var library: FolderLibrary
@@ -15,12 +15,13 @@ struct PassSidebarView: View {
             )
             .tag(index)
         }
+        .navigationSplitViewColumnWidth(200)
         .safeAreaInset(edge: .bottom) {
-            Button("Commit Pass") {
-                library.advancePass()
+            Button("Start Next Pass") {
+                library.startNextPass()
             }
             .buttonStyle(.borderedProminent)
-            .disabled(!library.canAdvancePass)
+            .disabled(!library.canStartNextPass)
             .padding()
             .frame(maxWidth: .infinity)
         }
@@ -44,19 +45,23 @@ private struct PassRowView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Pass \(number)")
                 .font(.headline)
-            HStack(spacing: 12) {
-                Image(systemName: "photo")
-                Text("\(stats.total)")
-                markIcon(for: .pick)
-                    .foregroundStyle(.green)
-                Text("\(stats.picks)")
-                markIcon(for: .reject)
-                    .foregroundStyle(.red)
-                Text("\(stats.rejects)")
+            HStack(spacing: 10) {
+                statCell(icon: Image(systemName: "photo"), count: stats.total)
+                statCell(icon: markIcon(for: .pick).foregroundStyle(.green), count: stats.picks)
+                statCell(icon: markIcon(for: .reject).foregroundStyle(.red), count: stats.rejects)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
+    }
+
+    private func statCell(icon: some View, count: Int) -> some View {
+        HStack(spacing: 3) {
+            icon
+            Text("\(count)")
+                .monospacedDigit()
+                .frame(minWidth: 28, alignment: .leading)
+        }
     }
 }

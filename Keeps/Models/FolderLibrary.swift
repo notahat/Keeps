@@ -84,8 +84,8 @@ class FolderLibrary {
         }
     }
 
-    /// True when the last pass has at least one marked photo, enabling commit.
-    var canAdvancePass: Bool {
+    /// True when the last pass has at least one marked photo, enabling the next pass.
+    var canStartNextPass: Bool {
         guard let pass = passes.last else { return false }
         return !pass.picks.isEmpty || !pass.rejects.isEmpty
     }
@@ -108,7 +108,7 @@ class FolderLibrary {
     }
 
     /// Creates a new pass. Photos not marked in the current pass will appear in it.
-    func advancePass() {
+    func startNextPass() {
         passes.append(Pass())
         currentPassIndex = passes.count - 1
         updateFilteredItems()
