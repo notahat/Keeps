@@ -85,10 +85,12 @@ struct FolderLibraryTests {
         #expect(library.items.count == 1)
     }
 
-    @Test func sortsCaseInsensitivelyByStem() throws {
+    @Test func sortsByFileCreationDate() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
+        // Files are created sequentially, so creation-date order matches
+        // the order we create them here.
         try makeFile(named: "bravo.jpg", in: folder)
         try makeFile(named: "Alpha.jpg", in: folder)
         try makeFile(named: "charlie.jpg", in: folder)
@@ -96,7 +98,7 @@ struct FolderLibraryTests {
         let library = FolderLibrary()
         library.openFolder(url: folder)
 
-        #expect(library.items.map(\.stem) == ["Alpha", "bravo", "charlie"])
+        #expect(library.items.map(\.stem) == ["bravo", "Alpha", "charlie"])
     }
 
     @Test func sourceURLPrefersRawOverJpeg() throws {
@@ -110,19 +112,5 @@ struct FolderLibraryTests {
         library.openFolder(url: folder)
 
         #expect(library.items[0].sourceURL.pathExtension.lowercased() == "nef")
-    }
-
-    // MARK: - Helpers
-
-    private func makeTemporaryFolder() throws -> URL {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        return url
-    }
-
-    private func makeFile(named name: String, in folder: URL) throws {
-        let url = folder.appendingPathComponent(name)
-        try Data().write(to: url)
     }
 }
