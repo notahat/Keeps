@@ -21,3 +21,9 @@ General:
 - Zooming/panning
 - IOSurface creation failure messages in console — investigate source (CMPhoto, may be system-level not our code)
 - Add a way to view the RAW image
+
+Snippet for backing out of sorting:
+
+```sh
+for dir in Picked Rejected Undecided; do [ -d "$dir" ] && mv "$dir"/* . && rmdir "$dir"; done
+```

@@ -46,7 +46,7 @@ struct PassTests {
         #expect(library.filteredItems[0].id == library.items[2].id)
     }
 
-    @Test func selectPassSwitchesPassAndResetsFilter() throws {
+    @Test @MainActor func selectPassSwitchesPassAndResetsFilter() throws {
         let library = try makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.startNextPass()

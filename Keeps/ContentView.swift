@@ -11,6 +11,10 @@ struct ContentView: View {
     /// access when the user switches to a different folder.
     @State private var securityScopedURL: URL?
 
+    @State private var showingSortConfirmation = false
+    @State private var showingSortComplete = false
+    @State private var sortError: String?
+
     private enum DisplayState { case empty, error(Error), grid, single }
 
     private var displayState: DisplayState {
@@ -32,65 +36,80 @@ struct ContentView: View {
                 }
             }
             .focusedSceneValue(\.library, library)
+            .focusedSceneValue(\.sortPhotosAction, library.items.isEmpty ? nil : {
+                showingSortConfirmation = true
+            })
             .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
             .navigationSubtitle(library.folderURL?.path ?? "")
-            .toolbar {
-                ToolbarItem(placement: .navigation) {
-                    Button(action: openFolder) {
-                        Image(systemName: "folder")
-                    }
-                    .help("Open Folder")
-                }
-
-                ToolbarItem(placement: .principal) {
-                    Picker("Filter", selection: Binding(
-                        get: { library.filterMode },
-                        set: { library.applyFilter($0) }
-                    )) {
-                        Text("All").tag(FolderLibrary.FilterMode.all)
-                        Text("Picked").tag(FolderLibrary.FilterMode.picked)
-                        Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
-                        Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize()
-                }
-
-                ToolbarItem(placement: .status) {
-                    HStack(spacing: 8) {
-                        LoadGraphView()
-                        HStack(spacing: 3) {
-                            Text("\(library.filteredItems.count)")
-                                .monospacedDigit()
-                                .frame(minWidth: 28, alignment: .trailing)
-                            Text("photos")
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(.leading, 4)
-                    .padding(.trailing, 12)
-                }
-
-                ToolbarItemGroup(placement: .primaryAction) {
-                    ControlGroup {
-                        MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
-                            applyMark(.reject)
-                        }
-                        MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
-                            applyMark(nil)
-                        }
-                        MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
-                            applyMark(.pick)
-                        }
-                    }
-                }
-            }
+            .toolbar { toolbar }
         }
         .frame(minWidth: 500, minHeight: 300)
         .preferredColorScheme(.dark)
+        .modifier(SortDialogs(
+            showingConfirmation: $showingSortConfirmation,
+            showingComplete: $showingSortComplete,
+            error: Binding(
+                get: { sortError },
+                set: { sortError = $0 }
+            ),
+            onSort: performSort,
+            onDismissComplete: closeFolder
+        ))
         .onAppear {
             restoreLastFolder()
+        }
+    }
+
+    @ToolbarContentBuilder private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            Button(action: openFolder) {
+                Image(systemName: "folder")
+            }
+            .help("Open Folder")
+        }
+
+        ToolbarItem(placement: .principal) {
+            Picker("Filter", selection: Binding(
+                get: { library.filterMode },
+                set: { library.applyFilter($0) }
+            )) {
+                Text("All").tag(FolderLibrary.FilterMode.all)
+                Text("Picked").tag(FolderLibrary.FilterMode.picked)
+                Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
+                Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+            }
+            .pickerStyle(.segmented)
+            .fixedSize()
+        }
+
+        ToolbarItem(placement: .status) {
+            HStack(spacing: 8) {
+                LoadGraphView()
+                HStack(spacing: 3) {
+                    Text("\(library.filteredItems.count)")
+                        .monospacedDigit()
+                        .frame(minWidth: 28, alignment: .trailing)
+                    Text("photos")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .padding(.leading, 4)
+            .padding(.trailing, 12)
+        }
+
+        ToolbarItemGroup(placement: .primaryAction) {
+            ControlGroup {
+                MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
+                    applyMark(.reject)
+                }
+                MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
+                    applyMark(nil)
+                }
+                MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
+                    applyMark(.pick)
+                }
+            }
         }
     }
 
@@ -164,11 +183,71 @@ struct ContentView: View {
         UserDefaults.standard.set(data, forKey: Self.bookmarkKey)
     }
 
+    private func performSort() {
+        guard let folderURL = library.folderURL else { return }
+        let plan = library.sortPlan()
+        let moves = PhotoSorter.plannedMoves(folderURL: folderURL, sortPlan: plan)
+        do {
+            try PhotoSorter.execute(folderURL: folderURL, moves: moves)
+            persistence?.stop()
+            try PhotoSorter.deleteKeepsJSON(in: folderURL)
+            showingSortComplete = true
+        } catch {
+            sortError = error.localizedDescription
+        }
+    }
+
+    private func closeFolder() {
+        persistence?.stop()
+        persistence = nil
+        library.close()
+        stopCurrentAccess()
+        UserDefaults.standard.removeObject(forKey: Self.bookmarkKey)
+    }
+
     private func applyMark(_ mark: FolderLibrary.Mark?) {
         library.applyMarkAndAdvance(mark)
     }
 
     private static let bookmarkKey = "lastFolderBookmark"
+}
+
+/// Bundles the confirmation dialog, success alert, and error alert for the
+/// sort-photos-into-folders action.
+private struct SortDialogs: ViewModifier {
+    @Binding var showingConfirmation: Bool
+    @Binding var showingComplete: Bool
+    @Binding var error: String?
+    var onSort: () -> Void
+    var onDismissComplete: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                "Sort Photos into Folders?",
+                isPresented: $showingConfirmation
+            ) {
+                Button("Sort", role: .destructive) { onSort() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will move all photos into Picked, Rejected, and Undecided folders and close the current session. This cannot be undone from within Keeps.")
+            }
+            .alert("Sorting Complete", isPresented: $showingComplete) {
+                Button("OK") { onDismissComplete() }
+            } message: {
+                Text("Photos have been sorted into folders.")
+            }
+            .alert("Sorting Failed", isPresented: Binding(
+                get: { error != nil },
+                set: { if !$0 { error = nil } }
+            )) {
+                Button("OK") {}
+            } message: {
+                if let error {
+                    Text(error)
+                }
+            }
+    }
 }
 
 #Preview {

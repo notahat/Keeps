@@ -8,6 +8,7 @@ struct KeepsApp: App {
         }
         .commands {
             PhotoCommands()
+            FolderCommands()
         }
     }
 }

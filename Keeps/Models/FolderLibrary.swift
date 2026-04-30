@@ -128,6 +128,35 @@ class FolderLibrary {
         selectedIndex = filteredItems.isEmpty ? nil : 0
     }
 
+    /// Returns the cumulative mark for a photo across all passes. The last
+    /// pass to mark the photo wins. Returns nil if never marked.
+    func cumulativeMark(for id: UUID) -> Mark? {
+        for pass in passes.reversed() {
+            if pass.picks.contains(id) { return .pick }
+            if pass.rejects.contains(id) { return .reject }
+        }
+        return nil
+    }
+
+    /// Groups all photos by their cumulative mark for sorting into folders.
+    func sortPlan() -> [Mark?: [PhotoItem]] {
+        Dictionary(grouping: items) { cumulativeMark(for: $0.id) }
+    }
+
+    /// Resets the library to its initial empty state.
+    func close() {
+        folderURL = nil
+        folderError = nil
+        items = []
+        filteredItems = []
+        passes = []
+        currentPassIndex = 0
+        selectedItemID = nil
+        viewMode = .grid
+        filterMode = .all
+        lastMarkEvent = nil
+    }
+
     func stats(for index: Int) -> PassStats {
         let markedInPreviousPasses = passes[0 ..< index].reduce(into: Set<UUID>()) {
             $0.formUnion($1.picks)
