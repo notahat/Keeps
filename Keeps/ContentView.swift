@@ -36,6 +36,7 @@ struct ContentView: View {
                 }
             }
             .focusedSceneValue(\.library, library)
+            .focusedSceneValue(\.openFolderAction, { openFolder() })
             .focusedSceneValue(\.sortPhotosAction, library.items.isEmpty ? nil : {
                 showingSortConfirmation = true
             })
@@ -114,8 +115,11 @@ struct ContentView: View {
     }
 
     private var emptyState: some View {
-        Text("Open a folder to get started")
-            .foregroundStyle(.secondary)
+        VStack(spacing: 12) {
+            Text("Open a folder of photos to get started")
+                .foregroundStyle(.secondary)
+            Button("Open Folder...", action: openFolder)
+        }
     }
 
     private func errorState(_ error: Error) -> some View {

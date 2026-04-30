@@ -21,6 +21,8 @@ General:
 - Zooming/panning
 - IOSurface creation failure messages in console — investigate source (CMPhoto, may be system-level not our code)
 - Add a way to view the RAW image
+- Opening a folder with no photos in it leaves you at the "Open a folder of photos to get started" message...confusing
+  - Maybe we should not open a window unless its attached to a folder of photos
 
 Snippet for backing out of sorting:
 
