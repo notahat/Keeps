@@ -219,6 +219,12 @@ class FolderLibrary {
         return groups.contains { $0.itemIDs.contains(id) }
     }
 
+    /// Removes the group that contains the currently selected photo, if any.
+    func ungroupSelectedItem() {
+        guard let id = selectedItemID else { return }
+        groups.removeAll { $0.itemIDs.contains(id) }
+    }
+
     /// Creates a group from the current selection range. Requires at least two items.
     /// Items already in other groups are moved into the new group.
     func createGroupFromSelection() {

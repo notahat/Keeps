@@ -24,6 +24,8 @@ struct PhotoCommands: Commands {
             Button("Group Selection") { library?.createGroupFromSelection() }
                 .keyboardShortcut("g", modifiers: [])
                 .disabled((library?.selectedRangeItems.count ?? 0) < 2)
+            Button("Ungroup") { library?.ungroupSelectedItem() }
+                .disabled(library?.selectedItemIsGrouped != true)
         }
     }
 }

@@ -103,6 +103,37 @@ struct GroupingTests {
         #expect(!firstGroup.itemIDs.contains(itemID2))
     }
 
+    @Test func ungroupSelectedItemRemovesItsGroup() throws {
+        let library = try makeLibrary(photoCount: 5)
+
+        library.selectItem(at: 1)
+        library.extendSelection(to: 3)
+        library.createGroupFromSelection()
+        library.selectItem(at: 2)
+        library.ungroupSelectedItem()
+
+        #expect(library.groups.isEmpty)
+        #expect(library.groupColor(for: library.items[2].id) == nil)
+    }
+
+    @Test func ungroupSelectedItemLeavesOtherGroupsIntact() throws {
+        let library = try makeLibrary(photoCount: 6)
+
+        library.selectItem(at: 0)
+        library.extendSelection(to: 1)
+        library.createGroupFromSelection()
+
+        library.selectItem(at: 2)
+        library.extendSelection(to: 3)
+        library.createGroupFromSelection()
+
+        library.selectItem(at: 0)
+        library.ungroupSelectedItem()
+
+        #expect(library.groups.count == 1)
+        #expect(library.groupColor(for: library.items[2].id) != nil)
+    }
+
     @Test func closeClearsGroups() throws {
         let library = try makeLibrary(photoCount: 5)
 
