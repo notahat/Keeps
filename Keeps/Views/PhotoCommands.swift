@@ -28,6 +28,9 @@ struct PhotoCommands: Commands {
                 .disabled(library?.selectedItemIsGrouped != true)
             Button("Reject Rest of Group") { library?.rejectRestOfGroup() }
                 .disabled(library?.selectedItemIsGrouped != true)
+            Button("Focus Group") { library?.focusSelectedItemGroup() }
+                .keyboardShortcut("/", modifiers: [])
+                .disabled(library?.selectedItemIsGrouped != true)
         }
     }
 }

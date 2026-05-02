@@ -226,6 +226,14 @@ class FolderLibrary {
         return false
     }
 
+    /// The color of the currently focused group, or nil if not in group focus mode.
+    var focusedGroupColor: Color? {
+        guard case let .group(groupID) = filterMode,
+              let group = groups.first(where: { $0.id == groupID })
+        else { return nil }
+        return FolderLibrary.groupColors[group.colorIndex]
+    }
+
     /// Focuses the grid on the group containing the selected photo, keeping the
     /// current selection in place.
     func focusSelectedItemGroup() {

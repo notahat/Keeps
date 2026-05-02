@@ -71,13 +71,22 @@ struct ContentView: View {
 
         ToolbarItem(placement: .principal) {
             Picker("Filter", selection: Binding(
-                get: { library.filterMode },
-                set: { library.applyFilter($0) }
+                get: { FilterOption(library.filterMode) },
+                set: { option in
+                    switch option {
+                    case .all: library.applyFilter(.all)
+                    case .picked: library.applyFilter(.picked)
+                    case .rejected: library.applyFilter(.rejected)
+                    case .unmarked: library.applyFilter(.unmarked)
+                    case .group: library.focusSelectedItemGroup()
+                    }
+                }
             )) {
-                Text("All").tag(FolderLibrary.FilterMode.all)
-                Text("Picked").tag(FolderLibrary.FilterMode.picked)
-                Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
-                Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+                Text("All").tag(FilterOption.all)
+                Text("Picked").tag(FilterOption.picked)
+                Text("Rejected").tag(FilterOption.rejected)
+                Text("Unmarked").tag(FilterOption.unmarked)
+                groupFilterLabel.tag(FilterOption.group)
             }
             .pickerStyle(.segmented)
             .fixedSize()
@@ -213,7 +222,30 @@ struct ContentView: View {
         library.applyMarkAndAdvance(mark)
     }
 
+    private var groupFilterLabel: some View {
+        HStack(spacing: 4) {
+            if let color = library.focusedGroupColor {
+                Circle().fill(color).frame(width: 8, height: 8)
+            }
+            Text("Group")
+        }
+    }
+
     private static let bookmarkKey = "lastFolderBookmark"
+}
+
+private enum FilterOption: Equatable, Hashable {
+    case all, picked, rejected, unmarked, group
+
+    init(_ filterMode: FolderLibrary.FilterMode) {
+        switch filterMode {
+        case .all: self = .all
+        case .picked: self = .picked
+        case .rejected: self = .rejected
+        case .unmarked: self = .unmarked
+        case .group: self = .group
+        }
+    }
 }
 
 /// Bundles the confirmation dialog, success alert, and error alert for the
