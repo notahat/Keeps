@@ -14,7 +14,7 @@ import SwiftUI
 class FolderLibrary {
     enum ViewMode { case grid, single }
     enum Mark: String, Codable { case pick, reject }
-    enum FilterMode { case all, picked, rejected, unmarked }
+    enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked, group(UUID) }
 
     struct PassStats {
         let total: Int
@@ -165,6 +165,7 @@ class FolderLibrary {
     func startNextPass() {
         passes.append(Pass())
         currentPassIndex = passes.count - 1
+        filterMode = .all
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
         rangeAnchorID = nil
@@ -219,10 +220,34 @@ class FolderLibrary {
         return groups.contains { $0.itemIDs.contains(id) }
     }
 
-    /// Removes the group that contains the currently selected photo, if any.
+    /// True when the grid is filtered to a single group.
+    var isGroupFocused: Bool {
+        if case .group = filterMode { return true }
+        return false
+    }
+
+    /// Focuses the grid on the group containing the selected photo, keeping the
+    /// current selection in place.
+    func focusSelectedItemGroup() {
+        guard let id = selectedItemID,
+              let group = groups.first(where: { $0.itemIDs.contains(id) })
+        else { return }
+        filterMode = .group(group.id)
+        updateFilteredItems()
+        rangeAnchorID = selectedItemID
+    }
+
+    /// Removes the group that contains the currently selected photo. Resets group
+    /// focus if the focused group is the one being deleted.
     func ungroupSelectedItem() {
-        guard let id = selectedItemID else { return }
+        guard let id = selectedItemID,
+              let group = groups.first(where: { $0.itemIDs.contains(id) })
+        else { return }
+        if filterMode == .group(group.id) {
+            filterMode = .all
+        }
         groups.removeAll { $0.itemIDs.contains(id) }
+        updateFilteredItems()
     }
 
     /// Rejects all members of the selected photo's group that are visible in the
@@ -336,11 +361,18 @@ class FolderLibrary {
 
     private func updateFilteredItems() {
         guard let currentPass else { filteredItems = []; return }
+        let passIDs = currentPassPhotoIDs
         let visibleIDs = switch filterMode {
-        case .all: currentPassPhotoIDs
+        case .all: passIDs
         case .picked: currentPass.picks
         case .rejected: currentPass.rejects
-        case .unmarked: currentPassPhotoIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
+        case .unmarked: passIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
+        case let .group(groupID):
+            if let group = groups.first(where: { $0.id == groupID }) {
+                passIDs.intersection(group.itemIDs)
+            } else {
+                passIDs
+            }
         }
         filteredItems = items.filter { visibleIDs.contains($0.id) }
     }
