@@ -26,6 +26,8 @@ struct PhotoCommands: Commands {
                 .disabled((library?.selectedRangeItems.count ?? 0) < 2)
             Button("Ungroup") { library?.ungroupSelectedItem() }
                 .disabled(library?.selectedItemIsGrouped != true)
+            Button("Reject Rest of Group") { library?.rejectRestOfGroup() }
+                .disabled(library?.selectedItemIsGrouped != true)
         }
     }
 }

@@ -225,6 +225,24 @@ class FolderLibrary {
         groups.removeAll { $0.itemIDs.contains(id) }
     }
 
+    /// Rejects all members of the selected photo's group that are visible in the
+    /// current pass and not already picked. Picks are left untouched.
+    func rejectRestOfGroup() {
+        guard let id = selectedItemID,
+              let group = groups.first(where: { $0.itemIDs.contains(id) }),
+              let currentPass
+        else { return }
+        let passPhotoIDs = currentPassPhotoIDs
+        let itemsToReject = items.filter {
+            group.itemIDs.contains($0.id)
+                && passPhotoIDs.contains($0.id)
+                && !currentPass.picks.contains($0.id)
+        }
+        for item in itemsToReject {
+            setMark(.reject, for: item)
+        }
+    }
+
     /// Creates a group from the current selection range. Requires at least two items.
     /// Items already in other groups are moved into the new group.
     func createGroupFromSelection() {
