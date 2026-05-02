@@ -65,14 +65,14 @@ struct SelectionTests {
         #expect(library.selectionRange == nil)
     }
 
-    @Test func applyMarkAndAdvanceClearsRange() throws {
+    @Test func applyMarkAndAdvancePreservesRangeForBulkMark() throws {
         let library = try makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
         library.applyMarkAndAdvance(.pick)
 
-        #expect(library.selectionRange == library.selectedIndex.map { $0 ... $0 })
+        #expect(library.selectionRange == 1 ... 3)
     }
 
     @Test func applyFilterClearsRange() throws {

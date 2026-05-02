@@ -127,14 +127,25 @@ class FolderLibrary {
         if filterMode != .all { updateFilteredItems() }
     }
 
-    /// Marks the currently selected item and advances selection to the next one.
+    /// Marks the selected item(s) and advances. When a multi-item range is selected,
+    /// marks all items in the range without advancing or collapsing the range, so
+    /// the user can easily undo an accidental bulk mark. When a single item is
+    /// selected, marks it and moves to the next item.
     func applyMarkAndAdvance(_ mark: Mark?) {
         guard let index = selectedIndex else { return }
-        setMark(mark, for: filteredItems[index])
-        lastMarkEvent = MarkEvent(mark: mark)
-        let items = filteredItems
-        selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
-        rangeAnchorID = selectedItemID
+        if let range = selectionRange, range.count > 1 {
+            let itemsToMark = Array(filteredItems[range])
+            for item in itemsToMark {
+                setMark(mark, for: item)
+            }
+            lastMarkEvent = MarkEvent(mark: mark)
+        } else {
+            setMark(mark, for: filteredItems[index])
+            lastMarkEvent = MarkEvent(mark: mark)
+            let items = filteredItems
+            selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+            rangeAnchorID = selectedItemID
+        }
     }
 
     /// Creates a new pass. Photos not marked in the current pass will appear in it.
