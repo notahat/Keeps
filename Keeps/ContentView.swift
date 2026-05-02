@@ -36,7 +36,7 @@ struct ContentView: View {
                 }
             }
             .focusedSceneValue(\.library, library)
-            .focusedSceneValue(\.openFolderAction, { openFolder() })
+            .focusedSceneValue(\.openFolderAction) { openFolder() }
             .focusedSceneValue(\.sortPhotosAction, library.items.isEmpty ? nil : {
                 showingSortConfirmation = true
             })

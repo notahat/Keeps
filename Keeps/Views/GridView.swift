@@ -20,18 +20,27 @@ struct GridView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: spacing) {
                     ForEach(Array(library.filteredItems.enumerated()), id: \.element.id) { index, item in
-                        ThumbnailView(item: item, isSelected: item.id == library.selectedItemID, mark: library.mark(for: item.id))
-                            .onTapGesture(count: 2) {
-                                library.selectedIndex = index
-                                library.viewMode = .single
+                        ThumbnailView(
+                            item: item,
+                            isSelected: item.id == library.selectedItemID,
+                            isInSelectionRange: library.selectionRange?.contains(index) ?? false,
+                            mark: library.mark(for: item.id)
+                        )
+                        .onTapGesture(count: 2) {
+                            library.selectItem(at: index)
+                            library.viewMode = .single
+                        }
+                        // simultaneousGesture fires immediately without waiting for the
+                        // double-tap timeout that onTapGesture(count: 1) would incur.
+                        .simultaneousGesture(TapGesture().onEnded {
+                            if NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
+                                library.extendSelection(to: index)
+                            } else {
+                                library.selectItem(at: index)
                             }
-                            // simultaneousGesture fires immediately without waiting for the
-                            // double-tap timeout that onTapGesture(count: 1) would incur.
-                            .simultaneousGesture(TapGesture().onEnded {
-                                library.selectedIndex = index
-                                keyView?.window?.makeFirstResponder(keyView)
-                            })
-                            .id(item.id)
+                            keyView?.window?.makeFirstResponder(keyView)
+                        })
+                        .id(item.id)
                     }
                 }
                 .padding(spacing)
@@ -65,11 +74,16 @@ struct GridView: View {
         guard let direction = direction(for: event) else { return false }
         let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }
-        library.selectedIndex = switch direction {
+        let newIndex = switch direction {
         case .left: max(0, current - 1)
         case .right: min(count - 1, current + 1)
         case .up: current - columnCount >= 0 ? current - columnCount : current
         case .down: current + columnCount < count ? current + columnCount : current
+        }
+        if event.modifierFlags.contains(.shift) {
+            library.extendSelection(to: newIndex)
+        } else {
+            library.selectItem(at: newIndex)
         }
         return true
     }
@@ -82,7 +96,8 @@ struct GridView: View {
         case .upArrow: return .up
         default: break
         }
-        switch event.charactersIgnoringModifiers {
+        // Use lowercased() so shift+vi-key also extends selection.
+        switch event.charactersIgnoringModifiers?.lowercased() {
         case "h": return .left
         case "l": return .right
         case "j": return .down

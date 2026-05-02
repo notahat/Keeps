@@ -121,7 +121,7 @@ struct SingleImageView: View {
         guard let step = navigationStep(for: event) else { return false }
         let count = library.filteredItems.count
         guard count > 0, let current = library.selectedIndex else { return false }
-        library.selectedIndex = max(0, min(count - 1, current + step))
+        library.selectItem(at: max(0, min(count - 1, current + step)))
         return true
     }
 

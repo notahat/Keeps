@@ -8,6 +8,7 @@ import SwiftUI
 struct ThumbnailView: View {
     let item: PhotoItem
     var isSelected: Bool = false
+    var isInSelectionRange: Bool = false
     var mark: FolderLibrary.Mark?
 
     @Environment(\.controlActiveState) private var controlActiveState
@@ -26,6 +27,11 @@ struct ThumbnailView: View {
                     .resizable()
                     .scaledToFit()
                     .padding(3)
+                    .overlay {
+                        if isInSelectionRange {
+                            Rectangle().fill(Color.accentColor.opacity(0.2))
+                        }
+                    }
                     .overlay {
                         if isSelected, controlActiveState == .key {
                             Rectangle().stroke(Color.accentColor, lineWidth: 3)

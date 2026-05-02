@@ -29,6 +29,7 @@ class FolderLibrary {
     private(set) var folderURL: URL?
     private(set) var folderError: Error?
     private(set) var selectedItemID: UUID?
+    private(set) var rangeAnchorID: UUID?
     var viewMode: ViewMode = .grid
     var filterMode: FilterMode = .all
     private(set) var items: [PhotoItem] = []
@@ -84,6 +85,34 @@ class FolderLibrary {
         }
     }
 
+    /// The range of filteredItems indices spanned by the current selection, or nil if
+    /// no anchor has been set. Used to render range highlights in the grid.
+    var selectionRange: ClosedRange<Int>? {
+        guard let selectedIndex,
+              let anchorID = rangeAnchorID,
+              let anchorIndex = filteredItems.firstIndex(where: { $0.id == anchorID })
+        else { return nil }
+        return min(anchorIndex, selectedIndex) ... max(anchorIndex, selectedIndex)
+    }
+
+    /// Selects the item at the given index and sets it as the range anchor, collapsing
+    /// any existing range selection.
+    func selectItem(at index: Int) {
+        guard filteredItems.indices.contains(index) else { return }
+        selectedIndex = index
+        rangeAnchorID = filteredItems[index].id
+    }
+
+    /// Extends the selection from the current anchor to the given index. If no anchor
+    /// is set, uses the current selection as the anchor.
+    func extendSelection(to index: Int) {
+        guard filteredItems.indices.contains(index) else { return }
+        if rangeAnchorID == nil {
+            rangeAnchorID = selectedItemID
+        }
+        selectedIndex = index
+    }
+
     /// True when the last pass has at least one marked photo, enabling the next pass.
     var canStartNextPass: Bool {
         guard let pass = passes.last else { return false }
@@ -105,6 +134,7 @@ class FolderLibrary {
         lastMarkEvent = MarkEvent(mark: mark)
         let items = filteredItems
         selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
+        rangeAnchorID = selectedItemID
     }
 
     /// Creates a new pass. Photos not marked in the current pass will appear in it.
@@ -113,12 +143,14 @@ class FolderLibrary {
         currentPassIndex = passes.count - 1
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
+        rangeAnchorID = nil
     }
 
     func applyFilter(_ mode: FilterMode) {
         filterMode = mode
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
+        rangeAnchorID = nil
     }
 
     func selectPass(_ index: Int) {
@@ -126,6 +158,7 @@ class FolderLibrary {
         filterMode = .all
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
+        rangeAnchorID = nil
     }
 
     /// Returns the cumulative mark for a photo across all passes. The last
@@ -152,6 +185,7 @@ class FolderLibrary {
         passes = []
         currentPassIndex = 0
         selectedItemID = nil
+        rangeAnchorID = nil
         viewMode = .grid
         filterMode = .all
         lastMarkEvent = nil
