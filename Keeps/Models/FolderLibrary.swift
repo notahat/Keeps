@@ -293,10 +293,12 @@ class FolderLibrary {
         }
     }
 
-    /// Sets up a single empty pass. Called by LibraryPersistence when no saved state exists.
+    /// Sets up a single empty pass and clears groups. Called by LibraryPersistence
+    /// when no saved state exists.
     func initializeFreshPasses() {
         passes = [Pass()]
         currentPassIndex = 0
+        groups = []
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
     }
@@ -307,6 +309,11 @@ class FolderLibrary {
         self.currentPassIndex = currentPassIndex
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
+    }
+
+    /// Applies groups restored from saved state. Called by LibraryPersistence after openFolder.
+    func applyRestoredGroups(_ restoredGroups: [PhotoGroup]) {
+        groups = restoredGroups
     }
 
     private func updateFilteredItems() {

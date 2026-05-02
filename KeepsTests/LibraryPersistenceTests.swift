@@ -104,14 +104,87 @@ struct LibraryPersistenceTests {
         #expect(decoded.passes[1].rejects == [])
     }
 
-    private func writeKeepsJson(to folder: URL, passes: [[String: [String]]]) throws {
+    @Test func groupsRoundTripThroughSaveAndRestore() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        try makeFile(named: "IMG_0001.CR3", in: folder)
+        try makeFile(named: "IMG_0002.CR3", in: folder)
+        try makeFile(named: "IMG_0003.CR3", in: folder)
+
+        let library = FolderLibrary()
+        library.openFolder(url: folder)
+        let persistence = LibraryPersistence(folderURL: folder)
+        persistence.restore(into: library)
+
+        library.selectItem(at: 0)
+        library.extendSelection(to: 1)
+        library.createGroupFromSelection()
+        let savedColor = library.groupColor(for: library.items[0].id)
+
+        persistence.save(library)
+
+        let library2 = FolderLibrary()
+        library2.openFolder(url: folder)
+        let persistence2 = LibraryPersistence(folderURL: folder)
+        persistence2.restore(into: library2)
+
+        #expect(library2.groups.count == 1)
+        #expect(library2.groupColor(for: library2.items[0].id) == savedColor)
+        #expect(library2.groupColor(for: library2.items[1].id) == savedColor)
+        #expect(library2.groupColor(for: library2.items[2].id) == nil)
+    }
+
+    @Test func restoreDropsOrphanedStemsInGroups() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        try makeFile(named: "IMG_0001.CR3", in: folder)
+        // keeps.json references IMG_0002 in a group but it no longer exists on disk.
+        try writeKeepsJson(
+            to: folder,
+            passes: [["picks": [], "rejects": []]],
+            groups: [LibraryState.PhotoGroup(id: UUID(), colorIndex: 0, stems: ["IMG_0001", "IMG_0002"])]
+        )
+
+        let library = FolderLibrary()
+        library.openFolder(url: folder)
+        let persistence = LibraryPersistence(folderURL: folder)
+        persistence.restore(into: library)
+
+        #expect(library.groups.count == 1)
+        #expect(library.groups[0].itemIDs.count == 1)
+    }
+
+    @Test func restoreWithNoGroupsKeyInJsonLoadsCleanly() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        try makeFile(named: "IMG_0001.CR3", in: folder)
+        // Write old-format JSON with no "groups" key.
+        let oldFormatJSON = #"{"passes":[{"picks":[],"rejects":[]}]}"#
+        try oldFormatJSON.data(using: .utf8)?.write(to: folder.appendingPathComponent("keeps.json"))
+
+        let library = FolderLibrary()
+        library.openFolder(url: folder)
+        let persistence = LibraryPersistence(folderURL: folder)
+        persistence.restore(into: library)
+
+        #expect(library.groups.isEmpty)
+    }
+
+    private func writeKeepsJson(
+        to folder: URL,
+        passes: [[String: [String]]],
+        groups: [LibraryState.PhotoGroup] = []
+    ) throws {
         let passObjects = passes.map { dict in
             LibraryState.Pass(
                 picks: dict["picks"] ?? [],
                 rejects: dict["rejects"] ?? []
             )
         }
-        let state = LibraryState(passes: passObjects)
+        let state = LibraryState(passes: passObjects, groups: groups)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(state)
