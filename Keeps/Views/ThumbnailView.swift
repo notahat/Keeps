@@ -10,6 +10,7 @@ struct ThumbnailView: View {
     var isSelected: Bool = false
     var isInSelectionRange: Bool = false
     var mark: FolderLibrary.Mark?
+    var groupColor: Color?
 
     @Environment(\.controlActiveState) private var controlActiveState
 
@@ -40,6 +41,11 @@ struct ThumbnailView: View {
                     .overlay(alignment: .bottomLeading) {
                         if let mark {
                             MarkBadge(mark: mark).padding(6)
+                        }
+                    }
+                    .overlay(alignment: .bottom) {
+                        if let groupColor {
+                            Rectangle().fill(groupColor).frame(height: 4)
                         }
                     }
             } else {

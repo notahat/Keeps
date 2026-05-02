@@ -20,6 +20,10 @@ struct PhotoCommands: Commands {
             Button("Unmark") { library?.applyMarkAndAdvance(nil) }
                 .keyboardShortcut("d", modifiers: [])
                 .disabled(library?.selectedIndex == nil)
+            Divider()
+            Button("Group Selection") { library?.createGroupFromSelection() }
+                .keyboardShortcut("g", modifiers: [])
+                .disabled((library?.selectedRangeItems.count ?? 0) < 2)
         }
     }
 }

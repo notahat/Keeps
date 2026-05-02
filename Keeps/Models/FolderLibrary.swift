@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 
 /// Owns the photo items for a single open folder. Handles directory scanning,
 /// file pairing, selection, view mode, marking, and pass-based review. Does not
@@ -26,6 +27,17 @@ class FolderLibrary {
         var rejects: Set<UUID> = []
     }
 
+    /// A named set of photos treated as a visual group, identified by a color bar
+    /// on their thumbnails. Stored by item ID in memory; translated to stems for
+    /// persistence so groups survive folder moves.
+    struct PhotoGroup {
+        var id: UUID
+        var colorIndex: Int
+        var itemIDs: Set<UUID>
+    }
+
+    static let groupColors: [Color] = [.orange, .purple, .cyan, .yellow, .pink, .mint]
+
     private(set) var folderURL: URL?
     private(set) var folderError: Error?
     private(set) var selectedItemID: UUID?
@@ -36,6 +48,7 @@ class FolderLibrary {
     private(set) var filteredItems: [PhotoItem] = []
     private(set) var passes: [Pass] = []
     private(set) var currentPassIndex: Int = 0
+    private(set) var groups: [PhotoGroup] = []
 
     /// Set each time applyMarkAndAdvance is called, so observers can react to
     /// mark actions regardless of which code path triggered them.
@@ -187,6 +200,48 @@ class FolderLibrary {
         Dictionary(grouping: items) { cumulativeMark(for: $0.id) }
     }
 
+    /// The items spanned by the current selection range, or an empty array if no
+    /// multi-item range is active.
+    var selectedRangeItems: [PhotoItem] {
+        guard let range = selectionRange else { return [] }
+        return Array(filteredItems[range])
+    }
+
+    /// The color assigned to the group that contains this photo, or nil if ungrouped.
+    func groupColor(for id: UUID) -> Color? {
+        guard let group = groups.first(where: { $0.itemIDs.contains(id) }) else { return nil }
+        return FolderLibrary.groupColors[group.colorIndex]
+    }
+
+    /// True when the currently selected photo belongs to any group.
+    var selectedItemIsGrouped: Bool {
+        guard let id = selectedItemID else { return false }
+        return groups.contains { $0.itemIDs.contains(id) }
+    }
+
+    /// Creates a group from the current selection range. Requires at least two items.
+    /// Items already in other groups are moved into the new group.
+    func createGroupFromSelection() {
+        let items = selectedRangeItems
+        guard items.count >= 2 else { return }
+        let newIDs = Set(items.map(\.id))
+        for index in groups.indices {
+            groups[index].itemIDs.subtract(newIDs)
+        }
+        groups.removeAll { $0.itemIDs.isEmpty }
+        groups.append(PhotoGroup(id: UUID(), colorIndex: nextGroupColorIndex(), itemIDs: newIDs))
+    }
+
+    /// Picks the color index used least often among existing groups.
+    private func nextGroupColorIndex() -> Int {
+        let colorCount = FolderLibrary.groupColors.count
+        var usageCounts = Array(repeating: 0, count: colorCount)
+        for group in groups {
+            usageCounts[group.colorIndex % colorCount] += 1
+        }
+        return usageCounts.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
+    }
+
     /// Resets the library to its initial empty state.
     func close() {
         folderURL = nil
@@ -200,6 +255,7 @@ class FolderLibrary {
         viewMode = .grid
         filterMode = .all
         lastMarkEvent = nil
+        groups = []
     }
 
     func stats(for index: Int) -> PassStats {
