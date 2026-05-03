@@ -1,77 +1,39 @@
 # Keeps
 
-## Code Formatting
+## The UUID/stem duality
 
-Run `swiftformat` after making any Swift code changes. The `.swiftformat` config at the repo root sets Swift 6.
+Photos have two identifiers:
 
-## Architecture Overview
+- **UUID** (`id`) — used everywhere in memory.
+- **stem** — the filename without extension (e.g. `IMG_001`), used in
+  `keeps.json` on disk.
 
-Keeps is a macOS photo culling app. The user opens a folder of photos, marks them as picks/rejects across multiple passes, then imports the picks into Lightroom Cloud.
+Stems are used for persistence so that saved state survives folder moves.
+Whenever you touch code that crosses the memory/disk boundary, make sure you're
+translating between them. `LibraryPersistence` owns this translation.
 
-### Key Types
+## Pass visibility
 
-**`PhotoItem`** (`Models/PhotoItem.swift`) — one photo or matched RAW+JPEG pair. Identified
-in memory by `UUID id`, and on disk by `stem` (filename without extension, e.g. `IMG_001`).
-At least one of `rawURL`/`jpegURL` is always non-nil.
+A photo is visible in pass N only if it has not been marked (pick or reject) in
+any earlier pass. `FolderLibrary.updateFilteredItems()` enforces this rule — be
+careful when modifying filtering logic.
 
-**`FolderLibrary`** (`Models/FolderLibrary.swift`) — `@Observable` main state manager. Owns
-`items: [PhotoItem]`, `passes: [Pass]`, `currentPassIndex`, `selectedItemID`, `viewMode`,
-`filterMode`. A `Pass` is a `struct` with `picks: Set<UUID>` and `rejects: Set<UUID>`.
+## Groups
 
-**`Mark`** — `enum { case pick, reject }`. `nil` means unmarked.
+Groups let the user associate related shots (e.g. a burst sequence) so they can
+be culled together. Groups interact with pass visibility: focusing a group shows
+only that group's photos that are visible in the current pass.
 
-**`LibraryState`** (`Models/LibraryState.swift`) — `Codable` on-disk representation. Stores
-passes as `[String]` arrays of stems (not UUIDs) so state survives folder moves.
+## Concurrency
 
-**`LibraryPersistence`** (`Models/LibraryPersistence.swift`) — reads/writes `keeps.json` in
-the open folder. Auto-saves via `withObservationTracking` whenever `library.passes` changes.
-Translates between stems (on disk) and UUIDs (in memory).
+The image pipeline uses `OperationQueue` and `NotificationCenter` — not
+`async/await` or Swift actors. `ImagePipeline` is `@MainActor` and posts
+`imageLoadedNotification` when a load completes. If you're adding image-loading
+code, follow this pattern rather than reaching for Swift concurrency.
 
-**`ImagePipeline`** (`Models/ImagePipeline.swift`) — singleton async image loader with four
-priority tiers (veryHigh/high/low/veryLow). Posts `imageLoadedNotification` when done.
+## Auto-save
 
-**`ImageReader`** (`Models/ImageReader.swift`) — pure functions for reading RAW previews and
-JPEGs. `ImageCache` wraps `NSCache`.
-
-### Pass Architecture
-
-A photo is visible in pass N if it is not marked (pick or reject) in any earlier pass. This
-allows progressive culling: mark obvious rejects in pass 0, then work through unmarked photos
-in pass 1, etc.
-
-### Persistence
-
-`keeps.json` is a runtime file written by the app into each opened photo folder — it is not
-part of the source tree. Format:
-
-```json
-{
-  "passes": [
-    { "picks": ["IMG_001", "IMG_003"], "rejects": ["IMG_002"] }
-  ]
-}
-```
-
-Stems (not UUIDs) are used so state survives folder moves. The file is created on first mark
-and auto-saved on every subsequent change.
-
-### File Scanning
-
-RAW extensions: `cr2, cr3, nef, arw, dng, raf, orf, rw2, rw1, 3fr`. JPEG: `jpg, jpeg`.
-Files are paired by stem, sorted by file creation date.
-
-### Key Source Files
-
-| File | Purpose |
-|------|---------|
-| `Models/PhotoItem.swift` | Photo data model |
-| `Models/FolderLibrary.swift` | Main state (folder, passes, marks, filtering) |
-| `Models/LibraryState.swift` | Codable on-disk state |
-| `Models/LibraryPersistence.swift` | reads/writes `keeps.json`, UUID ↔ stem bridge |
-| `Models/ImagePipeline.swift` | Async image loader with priority queue |
-| `Models/ImageReader.swift` | Pure RAW preview extraction and JPEG decode |
-| `ContentView.swift` | Root view, folder selection, security-scoped sandbox access |
-| `Views/GridView.swift` | Thumbnail grid with keyboard nav |
-| `Views/SingleImageView.swift` | Full-screen single photo view |
-| `Views/PassSidebarView.swift` | Pass list and "Start Next Pass" |
-| `Views/PhotoCommands.swift` | Menu commands: Pick (f), Reject (s), Unmark (d) |
+`LibraryPersistence` uses `withObservationTracking` to watch `FolderLibrary`
+state and write `keeps.json` automatically on every change. If you add new state
+that needs persisting, add it to `LibraryState` and `LibraryPersistence` — the
+observation tracking picks it up automatically.
