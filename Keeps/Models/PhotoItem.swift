@@ -4,6 +4,12 @@ import Foundation
 /// JPEG, or a matched RAW+JPEG pair sharing the same filename stem.
 ///
 /// At least one of rawURL or jpegURL is always non-nil.
+///
+/// Photos have two identifiers that serve different purposes: `id` (UUID) is used
+/// everywhere in memory; `stem` (filename without extension, e.g. "IMG_001") is
+/// used in keeps.json on disk. Stems are used for persistence so that saved state
+/// survives folder moves. Code that crosses the memory/disk boundary must translate
+/// between them — LibraryPersistence owns this translation.
 struct PhotoItem: Identifiable {
     let id: UUID
     let stem: String
