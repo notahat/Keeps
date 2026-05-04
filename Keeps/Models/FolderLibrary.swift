@@ -333,7 +333,7 @@ class FolderLibrary {
         case .rejected: currentPass.rejects
         case .unmarked: passIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
         case let .group(groupID):
-            if let group = groupStore.groups.first(where: { $0.id == groupID }) {
+            if let group = groupStore.group(withID: groupID) {
                 passIDs.intersection(group.itemIDs)
             } else {
                 passIDs

@@ -105,6 +105,20 @@ struct GroupStoreTests {
         #expect(store.group(containing: UUID()) == nil)
     }
 
+    @Test func groupWithIDFindsTheGroup() {
+        var store = GroupStore()
+        let groupID = store.addGroup(itemIDs: [UUID()])
+
+        #expect(store.group(withID: groupID)?.id == groupID)
+    }
+
+    @Test func groupWithIDReturnsNilForUnknownID() {
+        var store = GroupStore()
+        store.addGroup(itemIDs: [UUID()])
+
+        #expect(store.group(withID: UUID()) == nil)
+    }
+
     @Test func colorForItemReturnsTheGroupsColor() {
         var store = GroupStore()
         let id = UUID()

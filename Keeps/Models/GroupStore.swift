@@ -22,6 +22,11 @@ struct GroupStore {
         groups.first { $0.itemIDs.contains(itemID) }
     }
 
+    /// Returns the group with the given ID, or nil if no such group exists.
+    func group(withID groupID: UUID) -> PhotoGroup? {
+        groups.first { $0.id == groupID }
+    }
+
     /// Returns the color of the group containing the given photo, or nil if
     /// the photo isn't in any group.
     func color(forItem itemID: UUID) -> Color? {
@@ -32,7 +37,7 @@ struct GroupStore {
     /// Returns the color of the group with the given ID, or nil if no such
     /// group exists.
     func color(forGroup groupID: UUID) -> Color? {
-        guard let group = groups.first(where: { $0.id == groupID }) else { return nil }
+        guard let group = group(withID: groupID) else { return nil }
         return GroupStore.colors[group.colorIndex]
     }
 
