@@ -7,10 +7,6 @@ struct ContentView: View {
     @State private var library = FolderLibrary()
     @State private var persistence: LibraryPersistence?
 
-    /// Tracks the security-scoped URL currently being accessed, so we can stop
-    /// access when the user switches to a different folder.
-    @State private var securityScopedURL: URL?
-
     @State private var showingSortConfirmation = false
     @State private var showingSortComplete = false
     @State private var sortError: String?
@@ -149,7 +145,6 @@ struct ContentView: View {
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
-        stopCurrentAccess()
         saveBookmark(for: url)
         startSession(for: url)
     }
@@ -165,9 +160,6 @@ struct ContentView: View {
             bookmarkDataIsStale: &isStale
         ) else { return }
 
-        guard url.startAccessingSecurityScopedResource() else { return }
-        securityScopedURL = url
-
         if isStale { saveBookmark(for: url) }
         startSession(for: url)
     }
@@ -180,11 +172,6 @@ struct ContentView: View {
         newPersistence.startObserving(library)
         persistence = newPersistence
         ImagePipeline.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
-    }
-
-    private func stopCurrentAccess() {
-        securityScopedURL?.stopAccessingSecurityScopedResource()
-        securityScopedURL = nil
     }
 
     private func saveBookmark(for url: URL) {
@@ -214,7 +201,6 @@ struct ContentView: View {
         persistence?.stop()
         persistence = nil
         library.close()
-        stopCurrentAccess()
         UserDefaults.standard.removeObject(forKey: Self.bookmarkKey)
     }
 

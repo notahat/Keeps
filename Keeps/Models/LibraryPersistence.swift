@@ -4,14 +4,26 @@ import Foundation
 /// Owns the translation between the UUID-based in-memory representation and
 /// the stem-based on-disk representation so state survives folder moves.
 ///
+/// Also owns the security-scoped resource access for the folder — access begins
+/// on init and ends on deinit, so the folder remains accessible as long as this
+/// object is alive.
+///
 /// Call restore(into:) after openFolder, then startObserving(_:) to begin
-/// auto-saving on changes. Call stop() before opening a new folder.
+/// auto-saving on changes. Call stop() to halt auto-saving before opening a
+/// new folder.
 final class LibraryPersistence {
+    private let folderURL: URL
     private let fileURL: URL
     private var isActive = true
 
     init(folderURL: URL) {
+        self.folderURL = folderURL
         fileURL = folderURL.appendingPathComponent("keeps.json")
+        _ = folderURL.startAccessingSecurityScopedResource()
+    }
+
+    deinit {
+        folderURL.stopAccessingSecurityScopedResource()
     }
 
     /// Stops auto-saving. Call before creating a new instance for a new folder.
