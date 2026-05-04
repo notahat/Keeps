@@ -59,10 +59,12 @@ enum PhotoSorter {
     private static func movesForItem(_ item: PhotoItem, destination: URL) -> [Move] {
         var moves: [Move] = []
         if let rawURL = item.rawURL {
-            moves.append(Move(source: rawURL, destination: destination.appendingPathComponent(rawURL.lastPathComponent)))
+            let dest = destination.appendingPathComponent(rawURL.lastPathComponent)
+            moves.append(Move(source: rawURL, destination: dest))
         }
         if let jpegURL = item.jpegURL {
-            moves.append(Move(source: jpegURL, destination: destination.appendingPathComponent(jpegURL.lastPathComponent)))
+            let dest = destination.appendingPathComponent(jpegURL.lastPathComponent)
+            moves.append(Move(source: jpegURL, destination: dest))
         }
         return moves
     }

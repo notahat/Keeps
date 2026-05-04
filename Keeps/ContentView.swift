@@ -252,7 +252,10 @@ private struct SortDialogs: ViewModifier {
                 Button("Sort", role: .destructive) { onSort() }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This will move all photos into Picked, Rejected, and Undecided folders and close the current session. This cannot be undone from within Keeps.")
+                Text(
+                    "This will move all photos into Picked, Rejected, and Undecided folders " +
+                        "and close the current session. This cannot be undone from within Keeps."
+                )
             }
             .alert("Sorting Complete", isPresented: $showingComplete) {
                 Button("OK") { onDismissComplete() }

@@ -22,6 +22,7 @@ struct PhotoItem: Identifiable {
     /// The URL to use for image loading. Prefers the RAW file so we can extract its
     /// embedded JPEG; falls back to a standalone JPEG.
     var sourceURL: URL {
-        rawURL ?? jpegURL!
+        // swiftlint:disable:next force_unwrapping
+        rawURL ?? jpegURL! // Safe: the class invariant guarantees at least one URL is non-nil.
     }
 }

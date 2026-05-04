@@ -135,8 +135,11 @@ class FolderLibrary {
     func setMark(_ mark: Mark?, for item: PhotoItem) {
         passes[currentPassIndex].picks.remove(item.id)
         passes[currentPassIndex].rejects.remove(item.id)
-        if mark == .pick { passes[currentPassIndex].picks.insert(item.id) }
-        else if mark == .reject { passes[currentPassIndex].rejects.insert(item.id) }
+        if mark == .pick {
+            passes[currentPassIndex].picks.insert(item.id)
+        } else if mark == .reject {
+            passes[currentPassIndex].rejects.insert(item.id)
+        }
         if filterMode != .all { updateFilteredItems() }
     }
 
@@ -426,6 +429,8 @@ class FolderLibrary {
         let allStems = Set(rawByStem.keys).union(jpegByStem.keys)
         return allStems
             .map { stem -> PhotoItem in
+                // stem is in allStems (the union), so it must be in rawByStem if not jpegByStem.
+                // swiftlint:disable:next force_unwrapping
                 let sourceURL = jpegByStem[stem] ?? rawByStem[stem]!
                 return PhotoItem(
                     id: UUID(),
