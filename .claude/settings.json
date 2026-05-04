@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash(xcodebuild *)",
+      "Bash(swiftformat *)",
+      "Bash(swiftlint *)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
