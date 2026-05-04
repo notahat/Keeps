@@ -2,6 +2,7 @@ import Foundation
 @testable import Keeps
 import Testing
 
+@MainActor
 struct FilterTests {
     @Test func filterAllShowsAllCurrentPassPhotos() throws {
         let library = try makeLibrary(photoCount: 3)
