@@ -11,6 +11,12 @@ import Foundation
 /// Call restore(into:) after openFolder, then startObserving(_:) to begin
 /// auto-saving on changes. Call stop() to halt auto-saving before opening a
 /// new folder.
+///
+/// To add new persistent state: add a field to LibraryState (and its JSON
+/// coding), read it in restore(into:), and write it in save(_:). The
+/// withObservationTracking in startObserving(_:) already watches the relevant
+/// FolderLibrary properties — just make sure the new state is part of passes
+/// or groups, or add it to the tracking block.
 final class LibraryPersistence {
     private let folderURL: URL
     private let fileURL: URL

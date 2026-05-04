@@ -367,6 +367,11 @@ class FolderLibrary {
         groups = restoredGroups
     }
 
+    /// Recomputes filteredItems from the current pass and filter mode. The pass
+    /// visibility rule (a photo is visible only if unmarked in all earlier passes)
+    /// is applied first; the filter mode then selects a subset of those photos.
+    /// Group filters intersect the group's members with the pass-visible set, so
+    /// pass visibility always takes precedence over group membership.
     private func updateFilteredItems() {
         guard let currentPass else { filteredItems = []; return }
         let passIDs = currentPassPhotoIDs
