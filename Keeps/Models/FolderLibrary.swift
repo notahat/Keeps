@@ -355,7 +355,7 @@ class FolderLibrary {
         passes = []
         currentPassIndex = 0
         do {
-            items = try scanFolder(url: url)
+            items = try FolderScanner.scan(url: url)
         } catch {
             items = []
             folderError = error
@@ -407,59 +407,5 @@ class FolderLibrary {
             }
         }
         filteredItems = items.filter { visibleIDs.contains($0.id) }
-    }
-
-    private func scanFolder(url: URL) throws -> [PhotoItem] {
-        let urls = try FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: .skipsHiddenFiles
-        )
-        let (rawByStem, jpegByStem) = pairFilesByType(urls: urls)
-        return buildSortedItems(rawByStem: rawByStem, jpegByStem: jpegByStem)
-    }
-
-    /// Groups URLs into RAW and JPEG dictionaries keyed by filename stem.
-    private func pairFilesByType(urls: [URL]) -> (rawByStem: [String: URL], jpegByStem: [String: URL]) {
-        let rawExtensions: Set = ["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr"]
-        let jpegExtensions: Set = ["jpg", "jpeg"]
-
-        var rawByStem: [String: URL] = [:]
-        var jpegByStem: [String: URL] = [:]
-
-        for fileURL in urls {
-            let ext = fileURL.pathExtension.lowercased()
-            let stem = fileURL.deletingPathExtension().lastPathComponent
-            if rawExtensions.contains(ext) {
-                rawByStem[stem] = fileURL
-            } else if jpegExtensions.contains(ext) {
-                jpegByStem[stem] = fileURL
-            }
-        }
-
-        return (rawByStem, jpegByStem)
-    }
-
-    /// Builds PhotoItems from paired file dictionaries, sorted by creation date.
-    private func buildSortedItems(rawByStem: [String: URL], jpegByStem: [String: URL]) -> [PhotoItem] {
-        let allStems = Set(rawByStem.keys).union(jpegByStem.keys)
-        return allStems
-            .map { stem -> PhotoItem in
-                // stem is in allStems (the union), so it must be in rawByStem if not jpegByStem.
-                // swiftlint:disable:next force_unwrapping
-                let sourceURL = jpegByStem[stem] ?? rawByStem[stem]!
-                return PhotoItem(
-                    id: UUID(),
-                    stem: stem,
-                    rawURL: rawByStem[stem],
-                    jpegURL: jpegByStem[stem],
-                    capturedAt: creationDate(of: sourceURL)
-                )
-            }
-            .sorted { $0.capturedAt < $1.capturedAt }
-    }
-
-    private func creationDate(of url: URL) -> Date {
-        (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date(timeIntervalSince1970: 0)
     }
 }
