@@ -52,6 +52,16 @@ struct ContentView: View {
             onSort: performSort,
             onDismissComplete: closeFolder
         ))
+        .alert("Couldn't Save Changes", isPresented: Binding(
+            get: { library.saveError != nil },
+            set: { if !$0 { library.clearSaveError() } }
+        )) {
+            Button("OK") {}
+        } message: {
+            if let error = library.saveError {
+                Text(error.localizedDescription)
+            }
+        }
         .onAppear {
             restoreLastFolder()
         }

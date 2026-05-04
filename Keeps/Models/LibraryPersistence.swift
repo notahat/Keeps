@@ -68,7 +68,8 @@ final class LibraryPersistence {
     }
 
     /// Begins observing the library and saving to disk whenever pass or group
-    /// state changes.
+    /// state changes. Save failures are reported to the library so the UI can
+    /// alert the user.
     @MainActor
     func startObserving(_ library: FolderLibrary) {
         withObservationTracking {
@@ -77,14 +78,21 @@ final class LibraryPersistence {
         } onChange: {
             Task { @MainActor in
                 guard self.isActive else { return }
-                self.save(library)
+                do {
+                    try self.save(library)
+                } catch {
+                    library.recordSaveError(error)
+                }
                 self.startObserving(library)
             }
         }
     }
 
+    /// Writes the library's pass and group state to keeps.json. Throws if the
+    /// data cannot be encoded or written; callers are expected to surface the
+    /// failure rather than swallow it, so the user knows their marks are at risk.
     @MainActor
-    func save(_ library: FolderLibrary) {
+    func save(_ library: FolderLibrary) throws {
         let stemByID = Dictionary(uniqueKeysWithValues: library.items.map { ($0.id, $0.stem) })
         let state = LibraryState(
             passes: library.passes.map { pass in
@@ -103,7 +111,7 @@ final class LibraryPersistence {
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try? encoder.encode(state)
-        try? data?.write(to: fileURL)
+        let data = try encoder.encode(state)
+        try data.write(to: fileURL)
     }
 }

@@ -40,6 +40,9 @@ class FolderLibrary {
 
     private(set) var folderURL: URL?
     private(set) var folderError: Error?
+    /// Set when LibraryPersistence fails to write keeps.json. The UI observes
+    /// this to alert the user that their marks may not have been saved.
+    private(set) var saveError: Error?
     private(set) var selectedItemID: UUID?
     private(set) var rangeAnchorID: UUID?
     var viewMode: ViewMode = .grid
@@ -306,6 +309,7 @@ class FolderLibrary {
     func close() {
         folderURL = nil
         folderError = nil
+        saveError = nil
         items = []
         filteredItems = []
         passes = []
@@ -316,6 +320,18 @@ class FolderLibrary {
         filterMode = .all
         lastMarkEvent = nil
         groups = []
+    }
+
+    /// Reports a failure to persist library state to disk. Called by
+    /// LibraryPersistence when keeps.json could not be written.
+    func recordSaveError(_ error: Error) {
+        saveError = error
+    }
+
+    /// Clears any reported save error. Called by the UI after the user has
+    /// acknowledged the failure.
+    func clearSaveError() {
+        saveError = nil
     }
 
     func stats(for index: Int) -> PassStats {

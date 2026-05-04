@@ -122,7 +122,7 @@ struct LibraryPersistenceTests {
         library.createGroupFromSelection()
         let savedColor = library.groupColor(for: library.items[0].id)
 
-        persistence.save(library)
+        try persistence.save(library)
 
         let library2 = FolderLibrary()
         library2.openFolder(url: folder)
@@ -154,6 +154,54 @@ struct LibraryPersistenceTests {
 
         #expect(library.groups.count == 1)
         #expect(library.groups[0].itemIDs.count == 1)
+    }
+
+    @Test func saveThrowsWhenFileCannotBeWritten() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        try makeFile(named: "IMG_0001.CR3", in: folder)
+        // Pre-create a directory at the keeps.json path so that the save's
+        // file write cannot succeed.
+        try FileManager.default.createDirectory(
+            at: folder.appendingPathComponent("keeps.json"),
+            withIntermediateDirectories: false
+        )
+
+        let library = FolderLibrary()
+        library.openFolder(url: folder)
+        let persistence = LibraryPersistence(folderURL: folder)
+        persistence.restore(into: library)
+
+        #expect(throws: (any Error).self) {
+            try persistence.save(library)
+        }
+    }
+
+    @Test func observedSaveFailureRecordsErrorOnLibrary() async throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        try makeFile(named: "IMG_0001.CR3", in: folder)
+        try FileManager.default.createDirectory(
+            at: folder.appendingPathComponent("keeps.json"),
+            withIntermediateDirectories: false
+        )
+
+        let library = FolderLibrary()
+        library.openFolder(url: folder)
+        let persistence = LibraryPersistence(folderURL: folder)
+        persistence.restore(into: library)
+        persistence.startObserving(library)
+
+        // Trigger an observed change. The save runs on the next main-actor turn;
+        // yield until the observation closure has had a chance to run.
+        library.applyMarkAndAdvance(.pick)
+        for _ in 0 ..< 10 where library.saveError == nil {
+            await Task.yield()
+        }
+
+        #expect(library.saveError != nil)
     }
 
     @Test func restoreWithNoGroupsKeyInJsonLoadsCleanly() throws {
