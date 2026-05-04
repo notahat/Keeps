@@ -8,7 +8,7 @@ import SwiftUI
 struct SingleImageView: View {
     var library: FolderLibrary
 
-    private enum MarkFeedback { case hidden, showing(FolderLibrary.Mark?) }
+    private enum MarkFeedback { case hidden, showing(PassStore.Mark?) }
 
     @State private var image: NSImage?
     @State private var markFeedback: MarkFeedback = .hidden
@@ -130,7 +130,7 @@ struct SingleImageView: View {
         return true
     }
 
-    private func flashMark(_ mark: FolderLibrary.Mark?) {
+    private func flashMark(_ mark: PassStore.Mark?) {
         markFeedback = .showing(mark)
         markFeedbackOpacity = 1
         Task { @MainActor in
@@ -161,7 +161,7 @@ struct SingleImageView: View {
 }
 
 private struct MarkFeedbackLabel: View {
-    let mark: FolderLibrary.Mark?
+    let mark: PassStore.Mark?
 
     var body: some View {
         HStack(spacing: 8) {

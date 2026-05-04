@@ -214,7 +214,7 @@ struct ContentView: View {
         UserDefaults.standard.removeObject(forKey: Self.bookmarkKey)
     }
 
-    private func applyMark(_ mark: FolderLibrary.Mark?) {
+    private func applyMark(_ mark: PassStore.Mark?) {
         library.applyMarkAndAdvance(mark)
     }
 

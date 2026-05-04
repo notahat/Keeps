@@ -2,30 +2,15 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// Owns the photo items for a single open folder. Handles directory scanning,
-/// file pairing, selection, view mode, marking, and pass-based review. Does not
-/// load image data (that's ImagePipeline's job) or persist state (that's
+/// Owns the photo items for a single open folder and orchestrates the
+/// sub-stores that hold pass/mark and group state. Handles selection, view
+/// mode, filtering, and the cross-cutting actions that span sub-stores. Does
+/// not load image data (that's ImagePipeline's job) or persist state (that's
 /// LibraryPersistence's job).
-///
-/// Each pass stores its own picks and rejects. The photos visible in pass N are
-/// all photos not picked or rejected in passes 0..<N, so marks made in earlier
-/// passes automatically hide those photos from later ones.
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
-    enum Mark: String, Codable { case pick, reject }
     enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked, group(UUID) }
-
-    struct PassStats {
-        let total: Int
-        let picks: Int
-        let rejects: Int
-    }
-
-    struct Pass {
-        var picks: Set<UUID> = []
-        var rejects: Set<UUID> = []
-    }
 
     /// A named set of photos treated as a visual group, identified by a color bar
     /// on their thumbnails. Stored by item ID in memory; translated to stems for
@@ -49,9 +34,41 @@ class FolderLibrary {
     var filterMode: FilterMode = .all
     private(set) var items: [PhotoItem] = []
     private(set) var filteredItems: [PhotoItem] = []
-    private(set) var passes: [Pass] = []
-    private(set) var currentPassIndex: Int = 0
+    private var passStore = PassStore()
     private(set) var groups: [PhotoGroup] = []
+
+    var passes: [PassStore.Pass] {
+        passStore.passes
+    }
+
+    var currentPassIndex: Int {
+        passStore.currentPassIndex
+    }
+
+    var canStartNextPass: Bool {
+        passStore.canStartNextPass
+    }
+
+    /// Returns the mark for a photo in the currently viewed pass, or nil if unmarked.
+    func mark(for id: UUID) -> PassStore.Mark? {
+        passStore.mark(for: id)
+    }
+
+    /// Returns the cumulative mark for a photo across all passes. The last
+    /// pass to mark the photo wins. Returns nil if never marked.
+    func cumulativeMark(for id: UUID) -> PassStore.Mark? {
+        passStore.cumulativeMark(for: id)
+    }
+
+    /// Groups all photos by their cumulative mark for sorting into folders.
+    func sortPlan() -> [PassStore.Mark?: [PhotoItem]] {
+        passStore.sortPlan(items: items)
+    }
+
+    /// Pick/reject/total counts for the pass at the given index.
+    func stats(for index: Int) -> PassStore.PassStats {
+        passStore.stats(for: index, items: items)
+    }
 
     /// Set each time applyMarkAndAdvance is called, so observers can react to
     /// mark actions regardless of which code path triggered them.
@@ -60,32 +77,12 @@ class FolderLibrary {
     /// Uniquely identifies a single mark application, so observers can detect
     /// repeated applications of the same mark value.
     struct MarkEvent: Equatable {
-        let mark: Mark?
+        let mark: PassStore.Mark?
         private let token = UUID()
 
         static func == (lhs: MarkEvent, rhs: MarkEvent) -> Bool {
             lhs.token == rhs.token
         }
-    }
-
-    private var currentPass: Pass? {
-        passes.isEmpty ? nil : passes[currentPassIndex]
-    }
-
-    private var currentPassPhotoIDs: Set<UUID> {
-        let previouslyMarked = passes[0 ..< currentPassIndex].reduce(into: Set<UUID>()) {
-            $0.formUnion($1.picks)
-            $0.formUnion($1.rejects)
-        }
-        return Set(items.map(\.id)).subtracting(previouslyMarked)
-    }
-
-    /// Returns the mark for a photo in the currently viewed pass, or nil if unmarked.
-    func mark(for id: UUID) -> Mark? {
-        guard let currentPass else { return nil }
-        if currentPass.picks.contains(id) { return .pick }
-        if currentPass.rejects.contains(id) { return .reject }
-        return nil
     }
 
     /// The index of the selected item within the current filtered list, or nil if the
@@ -129,20 +126,11 @@ class FolderLibrary {
         selectedIndex = index
     }
 
-    /// True when the last pass has at least one marked photo, enabling the next pass.
-    var canStartNextPass: Bool {
-        guard let pass = passes.last else { return false }
-        return !pass.picks.isEmpty || !pass.rejects.isEmpty
-    }
-
-    func setMark(_ mark: Mark?, for item: PhotoItem) {
-        passes[currentPassIndex].picks.remove(item.id)
-        passes[currentPassIndex].rejects.remove(item.id)
-        if mark == .pick {
-            passes[currentPassIndex].picks.insert(item.id)
-        } else if mark == .reject {
-            passes[currentPassIndex].rejects.insert(item.id)
-        }
+    /// Sets, changes, or clears the mark for a photo in the current pass.
+    /// Recomputes the filtered list when a non-`.all` filter is active so the
+    /// view reflects the new mark.
+    func setMark(_ mark: PassStore.Mark?, for item: PhotoItem) {
+        passStore.setMark(mark, for: item.id)
         if filterMode != .all { updateFilteredItems() }
     }
 
@@ -150,7 +138,7 @@ class FolderLibrary {
     /// marks all items in the range without advancing or collapsing the range, so
     /// the user can easily undo an accidental bulk mark. When a single item is
     /// selected, marks it and moves to the next item.
-    func applyMarkAndAdvance(_ mark: Mark?) {
+    func applyMarkAndAdvance(_ mark: PassStore.Mark?) {
         guard let index = selectedIndex else { return }
         if let range = selectionRange, range.count > 1 {
             let itemsToMark = Array(filteredItems[range])
@@ -167,10 +155,10 @@ class FolderLibrary {
         }
     }
 
-    /// Creates a new pass. Photos not marked in the current pass will appear in it.
+    /// Creates a new pass and resets filter and selection. Photos not marked in the
+    /// previous pass appear in the new one.
     func startNextPass() {
-        passes.append(Pass())
-        currentPassIndex = passes.count - 1
+        passStore.startNextPass()
         filterMode = .all
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
@@ -184,27 +172,13 @@ class FolderLibrary {
         rangeAnchorID = nil
     }
 
+    /// Switches to the pass at the given index and resets filter and selection.
     func selectPass(_ index: Int) {
-        currentPassIndex = index
+        passStore.selectPass(index)
         filterMode = .all
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
         rangeAnchorID = nil
-    }
-
-    /// Returns the cumulative mark for a photo across all passes. The last
-    /// pass to mark the photo wins. Returns nil if never marked.
-    func cumulativeMark(for id: UUID) -> Mark? {
-        for pass in passes.reversed() {
-            if pass.picks.contains(id) { return .pick }
-            if pass.rejects.contains(id) { return .reject }
-        }
-        return nil
-    }
-
-    /// Groups all photos by their cumulative mark for sorting into folders.
-    func sortPlan() -> [Mark?: [PhotoItem]] {
-        Dictionary(grouping: items) { cumulativeMark(for: $0.id) }
     }
 
     /// The items spanned by the current selection range, or an empty array if no
@@ -269,9 +243,9 @@ class FolderLibrary {
     func rejectRestOfGroup() {
         guard let id = selectedItemID,
               let group = groups.first(where: { $0.itemIDs.contains(id) }),
-              let currentPass
+              let currentPass = passStore.currentPass
         else { return }
-        let passPhotoIDs = currentPassPhotoIDs
+        let passPhotoIDs = passStore.currentPassPhotoIDs(items: items)
         let itemsToReject = items.filter {
             group.itemIDs.contains($0.id)
                 && passPhotoIDs.contains($0.id)
@@ -312,8 +286,7 @@ class FolderLibrary {
         saveError = nil
         items = []
         filteredItems = []
-        passes = []
-        currentPassIndex = 0
+        passStore.reset()
         selectedItemID = nil
         rangeAnchorID = nil
         viewMode = .grid
@@ -334,26 +307,13 @@ class FolderLibrary {
         saveError = nil
     }
 
-    func stats(for index: Int) -> PassStats {
-        let markedInPreviousPasses = passes[0 ..< index].reduce(into: Set<UUID>()) {
-            $0.formUnion($1.picks)
-            $0.formUnion($1.rejects)
-        }
-        return PassStats(
-            total: items.filter { !markedInPreviousPasses.contains($0.id) }.count,
-            picks: passes[index].picks.count,
-            rejects: passes[index].rejects.count
-        )
-    }
-
     /// Scans the folder and resets library state. Call LibraryPersistence.restore(into:)
     /// immediately after to set up passes.
     func openFolder(url: URL) {
         folderURL = url
         folderError = nil
         viewMode = .grid
-        passes = []
-        currentPassIndex = 0
+        passStore.reset()
         do {
             items = try FolderScanner.scan(url: url)
         } catch {
@@ -366,17 +326,15 @@ class FolderLibrary {
     /// Sets up a single empty pass and clears groups. Called by LibraryPersistence
     /// when no saved state exists.
     func initializeFreshPasses() {
-        passes = [Pass()]
-        currentPassIndex = 0
+        passStore.initializeFresh()
         groups = []
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
     }
 
     /// Applies passes restored from saved state. Called by LibraryPersistence after openFolder.
-    func applyRestoredPasses(_ restoredPasses: [Pass], currentPassIndex: Int) {
-        passes = restoredPasses
-        self.currentPassIndex = currentPassIndex
+    func applyRestoredPasses(_ restoredPasses: [PassStore.Pass], currentPassIndex: Int) {
+        passStore.applyRestored(passes: restoredPasses, currentPassIndex: currentPassIndex)
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
     }
@@ -392,8 +350,8 @@ class FolderLibrary {
     /// Group filters intersect the group's members with the pass-visible set, so
     /// pass visibility always takes precedence over group membership.
     private func updateFilteredItems() {
-        guard let currentPass else { filteredItems = []; return }
-        let passIDs = currentPassPhotoIDs
+        guard let currentPass = passStore.currentPass else { filteredItems = []; return }
+        let passIDs = passStore.currentPassPhotoIDs(items: items)
         let visibleIDs = switch filterMode {
         case .all: passIDs
         case .picked: currentPass.picks

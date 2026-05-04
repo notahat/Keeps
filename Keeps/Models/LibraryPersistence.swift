@@ -51,7 +51,7 @@ final class LibraryPersistence {
 
         let idByStem = Dictionary(uniqueKeysWithValues: library.items.map { ($0.stem, $0.id) })
         let passes = state.passes.map { savedPass in
-            FolderLibrary.Pass(
+            PassStore.Pass(
                 picks: Set(savedPass.picks.compactMap { idByStem[$0] }),
                 rejects: Set(savedPass.rejects.compactMap { idByStem[$0] })
             )

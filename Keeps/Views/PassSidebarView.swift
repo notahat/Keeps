@@ -38,8 +38,8 @@ struct PassSidebarView: View {
 
 private struct PassRowView: View {
     let number: Int
-    let pass: FolderLibrary.Pass
-    let stats: FolderLibrary.PassStats
+    let pass: PassStore.Pass
+    let stats: PassStore.PassStats
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

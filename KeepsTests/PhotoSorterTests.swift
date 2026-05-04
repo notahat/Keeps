@@ -10,7 +10,7 @@ struct PhotoSorterTests {
             rawURL: folder.appendingPathComponent("IMG_001.CR3"),
             jpegURL: nil, capturedAt: Date()
         )
-        let sortPlan: [FolderLibrary.Mark?: [PhotoItem]] = [.pick: [item]]
+        let sortPlan: [PassStore.Mark?: [PhotoItem]] = [.pick: [item]]
 
         let moves = PhotoSorter.plannedMoves(folderURL: folder, sortPlan: sortPlan)
 
@@ -27,7 +27,7 @@ struct PhotoSorterTests {
             jpegURL: folder.appendingPathComponent("IMG_001.jpg"),
             capturedAt: Date()
         )
-        let sortPlan: [FolderLibrary.Mark?: [PhotoItem]] = [.reject: [item]]
+        let sortPlan: [PassStore.Mark?: [PhotoItem]] = [.reject: [item]]
 
         let moves = PhotoSorter.plannedMoves(folderURL: folder, sortPlan: sortPlan)
 
@@ -42,7 +42,7 @@ struct PhotoSorterTests {
             rawURL: folder.appendingPathComponent("IMG_001.CR3"),
             jpegURL: nil, capturedAt: Date()
         )
-        let sortPlan: [FolderLibrary.Mark?: [PhotoItem]] = [nil: [item]]
+        let sortPlan: [PassStore.Mark?: [PhotoItem]] = [nil: [item]]
 
         let moves = PhotoSorter.plannedMoves(folderURL: folder, sortPlan: sortPlan)
 
@@ -58,7 +58,7 @@ struct PhotoSorterTests {
             jpegURL: folder.appendingPathComponent("IMG_001.jpg"),
             capturedAt: Date()
         )
-        let sortPlan: [FolderLibrary.Mark?: [PhotoItem]] = [.pick: [item]]
+        let sortPlan: [PassStore.Mark?: [PhotoItem]] = [.pick: [item]]
 
         let moves = PhotoSorter.plannedMoves(folderURL: folder, sortPlan: sortPlan)
 

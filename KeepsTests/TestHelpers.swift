@@ -13,6 +13,20 @@ func makeFile(named name: String, in folder: URL) throws {
     try Data().write(to: url)
 }
 
+/// Creates synthetic PhotoItems with placeholder URLs for store-level tests
+/// that don't need a real folder. Capture dates increase with the index.
+func makePhotoItems(count: Int) -> [PhotoItem] {
+    (1 ... count).map { index in
+        PhotoItem(
+            id: UUID(),
+            stem: String(format: "IMG_%04d", index),
+            rawURL: URL(fileURLWithPath: "/tmp/IMG_\(index).CR3"),
+            jpegURL: nil,
+            capturedAt: Date(timeIntervalSince1970: TimeInterval(index))
+        )
+    }
+}
+
 /// Creates a FolderLibrary with the given number of photos and an
 /// initialized first pass, ready for marking tests.
 func makeLibrary(photoCount: Int) throws -> FolderLibrary {
