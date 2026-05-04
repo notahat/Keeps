@@ -57,7 +57,7 @@ final class LibraryPersistence {
             )
         }
         let groups = state.groups.map { savedGroup in
-            FolderLibrary.PhotoGroup(
+            GroupStore.PhotoGroup(
                 id: savedGroup.id,
                 colorIndex: savedGroup.colorIndex,
                 itemIDs: Set(savedGroup.stems.compactMap { idByStem[$0] })

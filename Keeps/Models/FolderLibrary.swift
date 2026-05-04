@@ -12,17 +12,6 @@ class FolderLibrary {
     enum ViewMode { case grid, single }
     enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked, group(UUID) }
 
-    /// A named set of photos treated as a visual group, identified by a color bar
-    /// on their thumbnails. Stored by item ID in memory; translated to stems for
-    /// persistence so groups survive folder moves.
-    struct PhotoGroup {
-        var id: UUID
-        var colorIndex: Int
-        var itemIDs: Set<UUID>
-    }
-
-    static let groupColors: [Color] = [.orange, .purple, .cyan, .yellow, .pink, .mint]
-
     private(set) var folderURL: URL?
     private(set) var folderError: Error?
     /// Set when LibraryPersistence fails to write keeps.json. The UI observes
@@ -35,7 +24,11 @@ class FolderLibrary {
     private(set) var items: [PhotoItem] = []
     private(set) var filteredItems: [PhotoItem] = []
     private var passStore = PassStore()
-    private(set) var groups: [PhotoGroup] = []
+    private var groupStore = GroupStore()
+
+    var groups: [GroupStore.PhotoGroup] {
+        groupStore.groups
+    }
 
     var passes: [PassStore.Pass] {
         passStore.passes
@@ -190,14 +183,13 @@ class FolderLibrary {
 
     /// The color assigned to the group that contains this photo, or nil if ungrouped.
     func groupColor(for id: UUID) -> Color? {
-        guard let group = groups.first(where: { $0.itemIDs.contains(id) }) else { return nil }
-        return FolderLibrary.groupColors[group.colorIndex]
+        groupStore.color(forItem: id)
     }
 
     /// True when the currently selected photo belongs to any group.
     var selectedItemIsGrouped: Bool {
         guard let id = selectedItemID else { return false }
-        return groups.contains { $0.itemIDs.contains(id) }
+        return groupStore.group(containing: id) != nil
     }
 
     /// True when the grid is filtered to a single group.
@@ -208,17 +200,15 @@ class FolderLibrary {
 
     /// The color of the currently focused group, or nil if not in group focus mode.
     var focusedGroupColor: Color? {
-        guard case let .group(groupID) = filterMode,
-              let group = groups.first(where: { $0.id == groupID })
-        else { return nil }
-        return FolderLibrary.groupColors[group.colorIndex]
+        guard case let .group(groupID) = filterMode else { return nil }
+        return groupStore.color(forGroup: groupID)
     }
 
     /// Focuses the grid on the group containing the selected photo, keeping the
     /// current selection in place.
     func focusSelectedItemGroup() {
         guard let id = selectedItemID,
-              let group = groups.first(where: { $0.itemIDs.contains(id) })
+              let group = groupStore.group(containing: id)
         else { return }
         filterMode = .group(group.id)
         updateFilteredItems()
@@ -229,12 +219,12 @@ class FolderLibrary {
     /// focus if the focused group is the one being deleted.
     func ungroupSelectedItem() {
         guard let id = selectedItemID,
-              let group = groups.first(where: { $0.itemIDs.contains(id) })
+              let group = groupStore.group(containing: id)
         else { return }
         if filterMode == .group(group.id) {
             filterMode = .all
         }
-        groups.removeAll { $0.itemIDs.contains(id) }
+        groupStore.removeGroup(containing: id)
         updateFilteredItems()
     }
 
@@ -242,7 +232,7 @@ class FolderLibrary {
     /// current pass and not already picked. Picks are left untouched.
     func rejectRestOfGroup() {
         guard let id = selectedItemID,
-              let group = groups.first(where: { $0.itemIDs.contains(id) }),
+              let group = groupStore.group(containing: id),
               let currentPass = passStore.currentPass
         else { return }
         let passPhotoIDs = passStore.currentPassPhotoIDs(items: items)
@@ -261,22 +251,7 @@ class FolderLibrary {
     func createGroupFromSelection() {
         let items = selectedRangeItems
         guard items.count >= 2 else { return }
-        let newIDs = Set(items.map(\.id))
-        for index in groups.indices {
-            groups[index].itemIDs.subtract(newIDs)
-        }
-        groups.removeAll { $0.itemIDs.isEmpty }
-        groups.append(PhotoGroup(id: UUID(), colorIndex: nextGroupColorIndex(), itemIDs: newIDs))
-    }
-
-    /// Picks the color index used least often among existing groups.
-    private func nextGroupColorIndex() -> Int {
-        let colorCount = FolderLibrary.groupColors.count
-        var usageCounts = Array(repeating: 0, count: colorCount)
-        for group in groups {
-            usageCounts[group.colorIndex % colorCount] += 1
-        }
-        return usageCounts.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
+        groupStore.addGroup(itemIDs: Set(items.map(\.id)))
     }
 
     /// Resets the library to its initial empty state.
@@ -287,12 +262,12 @@ class FolderLibrary {
         items = []
         filteredItems = []
         passStore.reset()
+        groupStore.reset()
         selectedItemID = nil
         rangeAnchorID = nil
         viewMode = .grid
         filterMode = .all
         lastMarkEvent = nil
-        groups = []
     }
 
     /// Reports a failure to persist library state to disk. Called by
@@ -327,7 +302,7 @@ class FolderLibrary {
     /// when no saved state exists.
     func initializeFreshPasses() {
         passStore.initializeFresh()
-        groups = []
+        groupStore.reset()
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
     }
@@ -340,8 +315,8 @@ class FolderLibrary {
     }
 
     /// Applies groups restored from saved state. Called by LibraryPersistence after openFolder.
-    func applyRestoredGroups(_ restoredGroups: [PhotoGroup]) {
-        groups = restoredGroups
+    func applyRestoredGroups(_ restoredGroups: [GroupStore.PhotoGroup]) {
+        groupStore.applyRestored(restoredGroups)
     }
 
     /// Recomputes filteredItems from the current pass and filter mode. The pass
@@ -358,7 +333,7 @@ class FolderLibrary {
         case .rejected: currentPass.rejects
         case .unmarked: passIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
         case let .group(groupID):
-            if let group = groups.first(where: { $0.id == groupID }) {
+            if let group = groupStore.groups.first(where: { $0.id == groupID }) {
                 passIDs.intersection(group.itemIDs)
             } else {
                 passIDs
