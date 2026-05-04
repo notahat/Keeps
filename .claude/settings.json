@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "jq -r '.tool_input.file_path' | { read -r f; echo \"$f\" | grep -q '\\.swift$' && swiftformat \"$f\"; } 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r f; echo \"$f\" | grep -q '\\.swift$' && command -v swiftlint > /dev/null && swiftlint lint --quiet \"$f\"; } 2>/dev/null || true"
           }
         ]
       }

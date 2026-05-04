@@ -1,0 +1,13 @@
+disabled_rules:
+  # SwiftUI uses these patterns extensively.
+  - trailing_closure
+  - multiple_closures_with_trailing_closure
+
+opt_in_rules:
+  - empty_count
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+
+line_length:
+  warning: 120
+  error: 200
