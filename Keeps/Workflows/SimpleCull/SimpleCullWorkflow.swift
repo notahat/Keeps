@@ -155,7 +155,7 @@ class SimpleCullWorkflow {
         return Array(filteredItems[range])
     }
 
-    /// Reports a failure to persist library state to disk. Called by the
+    /// Reports a failure to persist workflow state to disk. Called by the
     /// persistence observation when keeps.json could not be written.
     func recordSaveError(_ error: Error) {
         saveError = error

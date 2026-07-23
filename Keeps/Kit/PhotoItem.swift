@@ -1,6 +1,6 @@
 import Foundation
 
-/// Represents one photo in the library — either a standalone RAW file, a standalone
+/// Represents one photo in the open folder — either a standalone RAW file, a standalone
 /// JPEG, or a matched RAW+JPEG pair sharing the same filename stem.
 ///
 /// At least one of rawURL or jpegURL is always non-nil.

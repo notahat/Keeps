@@ -3,7 +3,7 @@ import Foundation
 /// Scans a folder and produces the list of photos found inside, pairing RAW
 /// and JPEG files that share a filename stem and sorting the result by file
 /// creation date. Pure file-system reader: does not load image data, mutate
-/// any state, or know anything about the rest of the library.
+/// any state, or know anything about the rest of the app.
 enum FolderScanner {
     private static let rawExtensions: Set<String> = [
         "cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr",

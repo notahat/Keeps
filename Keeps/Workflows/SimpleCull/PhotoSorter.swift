@@ -2,7 +2,7 @@ import Foundation
 
 /// Moves photos into Picked/, Rejected/, and Undecided/ subdirectories based
 /// on their cumulative marks. One-shot destructive operation used as the final
-/// step after culling. Does not handle any library or UI state.
+/// step after culling. Does not handle any workflow or UI state.
 enum PhotoSorter {
     struct Move {
         let source: URL
