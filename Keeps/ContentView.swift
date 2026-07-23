@@ -31,7 +31,7 @@ struct ContentView: View {
             switch displayState {
             case .empty: emptyState
             case let .error(error): errorState(error)
-            case let .grid(library): GridView(library: library)
+            case let .grid(library): SimpleCullGridScreen(library: library)
             case let .single(library): SingleImageView(library: library)
             }
         }
