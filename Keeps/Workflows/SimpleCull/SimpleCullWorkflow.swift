@@ -29,11 +29,6 @@ class SimpleCullWorkflow {
         markStore.mark(for: id)
     }
 
-    /// Groups all photos by their mark for sorting into folders.
-    func sortPlan() -> [MarkStore.Mark?: [PhotoItem]] {
-        markStore.sortPlan(items: items)
-    }
-
     /// Set each time applyMarkAndAdvance is called, so observers can react to
     /// mark actions regardless of which code path triggered them.
     private(set) var lastMarkEvent: MarkEvent?

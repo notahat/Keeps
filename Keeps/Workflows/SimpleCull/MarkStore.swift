@@ -2,7 +2,7 @@ import Foundation
 
 /// Flat per-photo marks for the simple culling workflow. One mark per photo:
 /// setting a mark replaces any existing one, and nil clears it. Pure data
-/// store — does not know about filtering, selection, or persistence.
+/// store — does not know about selection or persistence.
 struct MarkStore {
     enum Mark: String, Codable { case pick, reject }
 
@@ -16,11 +16,6 @@ struct MarkStore {
     /// Sets, changes, or clears the mark for a photo. Passing nil unmarks.
     mutating func setMark(_ mark: Mark?, for id: UUID) {
         marks[id] = mark
-    }
-
-    /// Groups photos by their mark for sorting into folders.
-    func sortPlan(items: [PhotoItem]) -> [Mark?: [PhotoItem]] {
-        Dictionary(grouping: items) { marks[$0.id] }
     }
 
     /// Replaces all marks with restored state.

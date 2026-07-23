@@ -14,7 +14,7 @@ struct ContentView: View {
                 errorState(folderError)
             } else if let session, !session.items.isEmpty {
                 // The one wiring line a workflow experiment replaces.
-                SimpleCullRootView(session: session, onSortComplete: closeFolder)
+                SimpleCullRootView(session: session)
                     .id(session.folderURL)
             } else {
                 emptyState
@@ -103,12 +103,6 @@ struct ContentView: View {
             relativeTo: nil
         )
         UserDefaults.standard.set(data, forKey: Self.bookmarkKey)
-    }
-
-    private func closeFolder() {
-        session = nil
-        folderError = nil
-        UserDefaults.standard.removeObject(forKey: Self.bookmarkKey)
     }
 
     private static let bookmarkKey = "lastFolderBookmark"

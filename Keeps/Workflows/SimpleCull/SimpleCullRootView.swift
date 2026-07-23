@@ -2,22 +2,13 @@ import SwiftUI
 
 /// The root view of the simple culling workflow for one folder session.
 /// Owns the workflow state and its persistence, routes between the grid and
-/// single-image screens, and provides the toolbar, sort flow, and
-/// save-error alert. The shell hosts this view and knows nothing else about
-/// the workflow.
+/// single-image screens, and provides the toolbar and save-error alert. The
+/// shell hosts this view and knows nothing else about the workflow.
 struct SimpleCullRootView: View {
     let session: FolderSession
 
-    /// Called after a destructive sort completes so the shell can close the
-    /// folder.
-    var onSortComplete: () -> Void
-
     @State private var workflow: SimpleCullWorkflow?
     @State private var persistence: WorkflowPersistence<SimpleCullState>?
-
-    @State private var showingSortConfirmation = false
-    @State private var showingSortComplete = false
-    @State private var sortError: String?
 
     var body: some View {
         Group {
@@ -35,16 +26,6 @@ struct SimpleCullRootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar { toolbar }
-        .modifier(SortDialogs(
-            showingConfirmation: $showingSortConfirmation,
-            showingComplete: $showingSortComplete,
-            error: Binding(
-                get: { sortError },
-                set: { sortError = $0 }
-            ),
-            onSort: performSort,
-            onDismissComplete: onSortComplete
-        ))
         .alert("Couldn't Save Changes", isPresented: Binding(
             get: { workflow?.saveError != nil },
             set: {
@@ -97,13 +78,6 @@ struct SimpleCullRootView: View {
                         workflow.applyMarkAndAdvance(.pick)
                     }
                 }
-
-                Button {
-                    showingSortConfirmation = true
-                } label: {
-                    Image(systemName: "square.grid.3x1.folder.badge.plus")
-                }
-                .help("Sort Photos into Folders")
             }
         }
     }
@@ -129,67 +103,5 @@ struct SimpleCullRootView: View {
         workflow = newWorkflow
         persistence = newPersistence
         ImagePipeline.shared.prefetchImages(for: session.items, size: ThumbnailImage.imageSize)
-    }
-
-    /// Moves the photos into Picked/Rejected/Undecided folders and deletes
-    /// keeps.json. Destructive and final: on success the completion alert
-    /// hands control back to the shell to close the folder.
-    private func performSort() {
-        guard let workflow, let persistence else { return }
-        let folderURL = session.folderURL
-        let moves = PhotoSorter.plannedMoves(folderURL: folderURL, sortPlan: workflow.sortPlan())
-        do {
-            try PhotoSorter.execute(folderURL: folderURL, moves: moves)
-            persistence.stop()
-            try PhotoSorter.deleteKeepsJSON(in: folderURL)
-            showingSortComplete = true
-        } catch {
-            sortError = error.localizedDescription
-        }
-    }
-}
-
-/// Bundles the confirmation dialog, success alert, and error alert for the
-/// sort-photos-into-folders action.
-private struct SortDialogs: ViewModifier {
-    @Binding var showingConfirmation: Bool
-    @Binding var showingComplete: Bool
-    @Binding var error: String?
-    var onSort: () -> Void
-    var onDismissComplete: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .confirmationDialog(
-                "Sort Photos into Folders?",
-                isPresented: $showingConfirmation
-            ) {
-                Button("Sort", role: .destructive) { onSort() }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(
-                    "This will move all photos into Picked, Rejected, and Undecided folders " +
-                        "and close the current session. This cannot be undone from within Keeps."
-                )
-            }
-            .alert("Sorting Complete", isPresented: $showingComplete) {
-                Button("OK") { onDismissComplete() }
-            } message: {
-                Text("Photos have been sorted into folders.")
-            }
-            .alert("Sorting Failed", isPresented: Binding(
-                get: { error != nil },
-                set: {
-                    if !$0 {
-                        error = nil
-                    }
-                }
-            )) {
-                Button("OK") {}
-            } message: {
-                if let error {
-                    Text(error)
-                }
-            }
     }
 }

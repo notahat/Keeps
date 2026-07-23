@@ -38,19 +38,6 @@ struct MarkStoreTests {
         #expect(store.mark(for: id) == nil)
     }
 
-    @Test func sortPlanGroupsItemsByMark() {
-        var store = MarkStore()
-        let items = makePhotoItems(count: 3)
-        store.setMark(.pick, for: items[0].id)
-        store.setMark(.reject, for: items[1].id)
-
-        let plan = store.sortPlan(items: items)
-
-        #expect(plan[.pick]?.map(\.id) == [items[0].id])
-        #expect(plan[.reject]?.map(\.id) == [items[1].id])
-        #expect(plan[nil]?.map(\.id) == [items[2].id])
-    }
-
     @Test func applyRestoredReplacesAllMarks() {
         var store = MarkStore()
         let oldID = UUID()
