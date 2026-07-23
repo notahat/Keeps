@@ -14,7 +14,14 @@ struct KeyAwareView: NSViewRepresentable {
     func makeNSView(context _: Context) -> ResponderView {
         let view = ResponderView()
         view.onKeyDown = onKeyDown
-        onViewReady?(view)
+        // makeNSView runs during the view update pass, and callers store the
+        // view in @State. Defer the callback so that write lands outside the
+        // pass; a synchronous call triggers "Modifying state during view
+        // update" undefined behaviour.
+        let onViewReady = onViewReady
+        Task { @MainActor in
+            onViewReady?(view)
+        }
         return view
     }
 
@@ -51,7 +58,9 @@ struct KeyAwareView: NSViewRepresentable {
         }
 
         override func keyDown(with event: NSEvent) {
-            if onKeyDown?(event) != true { super.keyDown(with: event) }
+            if onKeyDown?(event) != true {
+                super.keyDown(with: event)
+            }
         }
     }
 }
