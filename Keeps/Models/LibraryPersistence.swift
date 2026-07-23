@@ -37,9 +37,8 @@ final class LibraryPersistence {
         isActive = false
     }
 
-    /// Restores saved passes and groups into the library. Falls back to a fresh
-    /// single pass and empty groups if no saved state exists. Call immediately
-    /// after openFolder.
+    /// Restores saved passes into the library. Falls back to a fresh single
+    /// pass if no saved state exists. Call immediately after openFolder.
     func restore(into library: FolderLibrary) {
         guard let data = try? Data(contentsOf: fileURL),
               let state = try? JSONDecoder().decode(LibraryState.self, from: data),
@@ -56,25 +55,16 @@ final class LibraryPersistence {
                 rejects: Set(savedPass.rejects.compactMap { idByStem[$0] })
             )
         }
-        let groups = state.groups.map { savedGroup in
-            GroupStore.PhotoGroup(
-                id: savedGroup.id,
-                colorIndex: savedGroup.colorIndex,
-                itemIDs: Set(savedGroup.stems.compactMap { idByStem[$0] })
-            )
-        }
         library.applyRestoredPasses(passes, currentPassIndex: max(0, passes.count - 1))
-        library.applyRestoredGroups(groups)
     }
 
-    /// Begins observing the library and saving to disk whenever pass or group
-    /// state changes. Save failures are reported to the library so the UI can
+    /// Begins observing the library and saving to disk whenever pass state
+    /// changes. Save failures are reported to the library so the UI can
     /// alert the user.
     @MainActor
     func startObserving(_ library: FolderLibrary) {
         withObservationTracking {
             _ = library.passes
-            _ = library.groups
         } onChange: {
             Task { @MainActor in
                 guard self.isActive else { return }
@@ -88,8 +78,8 @@ final class LibraryPersistence {
         }
     }
 
-    /// Writes the library's pass and group state to keeps.json. Throws if the
-    /// data cannot be encoded or written; callers are expected to surface the
+    /// Writes the library's pass state to keeps.json. Throws if the data
+    /// cannot be encoded or written; callers are expected to surface the
     /// failure rather than swallow it, so the user knows their marks are at risk.
     @MainActor
     func save(_ library: FolderLibrary) throws {
@@ -99,13 +89,6 @@ final class LibraryPersistence {
                 LibraryState.Pass(
                     picks: pass.picks.compactMap { stemByID[$0] }.sorted(),
                     rejects: pass.rejects.compactMap { stemByID[$0] }.sorted()
-                )
-            },
-            groups: library.groups.map { group in
-                LibraryState.PhotoGroup(
-                    id: group.id,
-                    colorIndex: group.colorIndex,
-                    stems: group.itemIDs.compactMap { stemByID[$0] }.sorted()
                 )
             }
         )

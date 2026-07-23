@@ -50,11 +50,6 @@ struct SingleImageView: View {
                     .allowsHitTesting(false)
             }
         }
-        .overlay(alignment: .bottom) {
-            if let item = selectedItem, let color = library.groupColor(for: item.id) {
-                Rectangle().fill(color).frame(height: 4).allowsHitTesting(false)
-            }
-        }
         .overlay(alignment: .bottomTrailing) {
             if let index = library.selectedIndex {
                 Text("\(index + 1) / \(library.filteredItems.count)")

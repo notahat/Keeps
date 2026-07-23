@@ -24,8 +24,7 @@ struct GridView: View {
                             item: item,
                             isSelected: item.id == library.selectedItemID,
                             isInSelectionRange: library.selectionRange?.contains(index) ?? false,
-                            mark: library.mark(for: item.id),
-                            groupColor: library.groupColor(for: item.id)
+                            mark: library.mark(for: item.id)
                         )
                         .onTapGesture(count: 2) {
                             library.selectItem(at: index)

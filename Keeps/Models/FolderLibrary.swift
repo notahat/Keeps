@@ -1,16 +1,15 @@
 import Foundation
 import Observation
-import SwiftUI
 
 /// Owns the photo items for a single open folder and orchestrates the
-/// sub-stores that hold pass/mark and group state. Handles selection, view
-/// mode, filtering, and the cross-cutting actions that span sub-stores. Does
-/// not load image data (that's ImagePipeline's job) or persist state (that's
+/// sub-store that holds pass/mark state. Handles selection, view mode,
+/// filtering, and the cross-cutting actions that span concerns. Does not
+/// load image data (that's ImagePipeline's job) or persist state (that's
 /// LibraryPersistence's job).
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
-    enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked, group(UUID) }
+    enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked }
 
     private(set) var folderURL: URL?
     private(set) var folderError: Error?
@@ -24,11 +23,6 @@ class FolderLibrary {
     private(set) var items: [PhotoItem] = []
     private(set) var filteredItems: [PhotoItem] = []
     private var passStore = PassStore()
-    private var groupStore = GroupStore()
-
-    var groups: [GroupStore.PhotoGroup] {
-        groupStore.groups
-    }
 
     var passes: [PassStore.Pass] {
         passStore.passes
@@ -124,7 +118,9 @@ class FolderLibrary {
     /// view reflects the new mark.
     func setMark(_ mark: PassStore.Mark?, for item: PhotoItem) {
         passStore.setMark(mark, for: item.id)
-        if filterMode != .all { updateFilteredItems() }
+        if filterMode != .all {
+            updateFilteredItems()
+        }
     }
 
     /// Marks the selected item(s) and advances. When a multi-item range is selected,
@@ -181,79 +177,6 @@ class FolderLibrary {
         return Array(filteredItems[range])
     }
 
-    /// The color assigned to the group that contains this photo, or nil if ungrouped.
-    func groupColor(for id: UUID) -> Color? {
-        groupStore.color(forItem: id)
-    }
-
-    /// True when the currently selected photo belongs to any group.
-    var selectedItemIsGrouped: Bool {
-        guard let id = selectedItemID else { return false }
-        return groupStore.group(containing: id) != nil
-    }
-
-    /// True when the grid is filtered to a single group.
-    var isGroupFocused: Bool {
-        if case .group = filterMode { return true }
-        return false
-    }
-
-    /// The color of the currently focused group, or nil if not in group focus mode.
-    var focusedGroupColor: Color? {
-        guard case let .group(groupID) = filterMode else { return nil }
-        return groupStore.color(forGroup: groupID)
-    }
-
-    /// Focuses the grid on the group containing the selected photo, keeping the
-    /// current selection in place.
-    func focusSelectedItemGroup() {
-        guard let id = selectedItemID,
-              let group = groupStore.group(containing: id)
-        else { return }
-        filterMode = .group(group.id)
-        updateFilteredItems()
-        rangeAnchorID = selectedItemID
-    }
-
-    /// Removes the group that contains the currently selected photo. Resets group
-    /// focus if the focused group is the one being deleted.
-    func ungroupSelectedItem() {
-        guard let id = selectedItemID,
-              let group = groupStore.group(containing: id)
-        else { return }
-        if filterMode == .group(group.id) {
-            filterMode = .all
-        }
-        groupStore.removeGroup(containing: id)
-        updateFilteredItems()
-    }
-
-    /// Rejects all members of the selected photo's group that are visible in the
-    /// current pass and not already picked. Picks are left untouched.
-    func rejectRestOfGroup() {
-        guard let id = selectedItemID,
-              let group = groupStore.group(containing: id),
-              let currentPass = passStore.currentPass
-        else { return }
-        let passPhotoIDs = passStore.currentPassPhotoIDs(items: items)
-        let itemsToReject = items.filter {
-            group.itemIDs.contains($0.id)
-                && passPhotoIDs.contains($0.id)
-                && !currentPass.picks.contains($0.id)
-        }
-        for item in itemsToReject {
-            setMark(.reject, for: item)
-        }
-    }
-
-    /// Creates a group from the current selection range. Requires at least two items.
-    /// Items already in other groups are moved into the new group.
-    func createGroupFromSelection() {
-        let items = selectedRangeItems
-        guard items.count >= 2 else { return }
-        groupStore.addGroup(itemIDs: Set(items.map(\.id)))
-    }
-
     /// Resets the library to its initial empty state.
     func close() {
         folderURL = nil
@@ -262,7 +185,6 @@ class FolderLibrary {
         items = []
         filteredItems = []
         passStore.reset()
-        groupStore.reset()
         selectedItemID = nil
         rangeAnchorID = nil
         viewMode = .grid
@@ -298,11 +220,10 @@ class FolderLibrary {
         }
     }
 
-    /// Sets up a single empty pass and clears groups. Called by LibraryPersistence
-    /// when no saved state exists.
+    /// Sets up a single empty pass. Called by LibraryPersistence when no saved
+    /// state exists.
     func initializeFreshPasses() {
         passStore.initializeFresh()
-        groupStore.reset()
         updateFilteredItems()
         selectedItemID = filteredItems.first?.id
     }
@@ -314,16 +235,9 @@ class FolderLibrary {
         selectedItemID = filteredItems.first?.id
     }
 
-    /// Applies groups restored from saved state. Called by LibraryPersistence after openFolder.
-    func applyRestoredGroups(_ restoredGroups: [GroupStore.PhotoGroup]) {
-        groupStore.applyRestored(restoredGroups)
-    }
-
     /// Recomputes filteredItems from the current pass and filter mode. The pass
     /// visibility rule (a photo is visible only if unmarked in all earlier passes)
     /// is applied first; the filter mode then selects a subset of those photos.
-    /// Group filters intersect the group's members with the pass-visible set, so
-    /// pass visibility always takes precedence over group membership.
     private func updateFilteredItems() {
         guard let currentPass = passStore.currentPass else { filteredItems = []; return }
         let passIDs = passStore.currentPassPhotoIDs(items: items)
@@ -332,12 +246,6 @@ class FolderLibrary {
         case .picked: currentPass.picks
         case .rejected: currentPass.rejects
         case .unmarked: passIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
-        case let .group(groupID):
-            if let group = groupStore.group(withID: groupID) {
-                passIDs.intersection(group.itemIDs)
-            } else {
-                passIDs
-            }
         }
         filteredItems = items.filter { visibleIDs.contains($0.id) }
     }
