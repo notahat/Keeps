@@ -52,10 +52,13 @@ struct PhotoGridSurface<Cell: View>: View {
                             .id(item.id)
                     }
                 }
-                .padding(spacing)
+                // Measured inside the padding: the adaptive grid computes its
+                // column count from this same unpadded width, so measuring the
+                // padded view would over-count columns at some window widths.
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
                     columnCount = max(1, Int((width + spacing) / (Self.cellSize + spacing)))
                 }
+                .padding(spacing)
             }
             .background {
                 KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
