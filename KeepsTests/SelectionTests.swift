@@ -3,7 +3,7 @@ import Foundation
 import Testing
 
 struct SelectionTests {
-    @Test func selectItemSetsSelectionAndCollapsesPreviousRange() throws {
+    @Test func selectItemSetsSelectionAndCollapsesPreviousRange() {
         let workflow = makeWorkflow(photoCount: 5)
 
         workflow.selectItem(at: 2)
@@ -12,7 +12,7 @@ struct SelectionTests {
         #expect(workflow.selectionRange == 2 ... 2)
     }
 
-    @Test func extendSelectionForwardFromAnchor() throws {
+    @Test func extendSelectionForwardFromAnchor() {
         let workflow = makeWorkflow(photoCount: 5)
 
         workflow.selectItem(at: 1)
@@ -22,7 +22,7 @@ struct SelectionTests {
         #expect(workflow.selectionRange == 1 ... 3)
     }
 
-    @Test func extendSelectionBackwardFromAnchor() throws {
+    @Test func extendSelectionBackwardFromAnchor() {
         let workflow = makeWorkflow(photoCount: 5)
 
         workflow.selectItem(at: 3)
@@ -32,7 +32,7 @@ struct SelectionTests {
         #expect(workflow.selectionRange == 1 ... 3)
     }
 
-    @Test func extendSelectionUsesCurrentSelectionAsAnchorWhenNoneSet() throws {
+    @Test func extendSelectionUsesCurrentSelectionAsAnchorWhenNoneSet() {
         let workflow = makeWorkflow(photoCount: 5)
         workflow.selectedIndex = 2
 
@@ -41,7 +41,7 @@ struct SelectionTests {
         #expect(workflow.selectionRange == 2 ... 4)
     }
 
-    @Test func selectItemClearsExistingRange() throws {
+    @Test func selectItemClearsExistingRange() {
         let workflow = makeWorkflow(photoCount: 5)
 
         workflow.selectItem(at: 1)
@@ -51,21 +51,21 @@ struct SelectionTests {
         #expect(workflow.selectionRange == 2 ... 2)
     }
 
-    @Test func selectionRangeIsNilWithNoSelection() throws {
+    @Test func selectionRangeIsNilWithNoSelection() {
         let workflow = makeWorkflow(photoCount: 5)
         workflow.selectedIndex = nil
 
         #expect(workflow.selectionRange == nil)
     }
 
-    @Test func selectionRangeIsNilBeforeAnySelectItemCall() throws {
+    @Test func selectionRangeIsNilBeforeAnySelectItemCall() {
         let workflow = makeWorkflow(photoCount: 5)
         workflow.selectedIndex = 2
 
         #expect(workflow.selectionRange == nil)
     }
 
-    @Test func applyMarkAndAdvancePreservesRangeForBulkMark() throws {
+    @Test func applyMarkAndAdvancePreservesRangeForBulkMark() {
         let workflow = makeWorkflow(photoCount: 5)
 
         workflow.selectItem(at: 1)
@@ -73,15 +73,5 @@ struct SelectionTests {
         workflow.applyMarkAndAdvance(.pick)
 
         #expect(workflow.selectionRange == 1 ... 3)
-    }
-
-    @Test func applyFilterClearsRange() throws {
-        let workflow = makeWorkflow(photoCount: 5)
-
-        workflow.selectItem(at: 1)
-        workflow.extendSelection(to: 3)
-        workflow.applyFilter(.all)
-
-        #expect(workflow.selectionRange == nil)
     }
 }

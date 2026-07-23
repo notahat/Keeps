@@ -15,7 +15,7 @@ struct SimpleCullDetailScreen: View {
 
     var body: some View {
         PhotoDetailSurface(
-            items: workflow.filteredItems,
+            items: workflow.items,
             selectedIndex: workflow.selectedIndex,
             onNavigate: { proposal in workflow.selectItem(at: proposal.targetIndex) },
             onKeyDown: { event in handleKeyEvent(event) }
@@ -43,7 +43,7 @@ struct SimpleCullDetailScreen: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
             if let index = workflow.selectedIndex {
-                Text("\(index + 1) / \(workflow.filteredItems.count)")
+                Text("\(index + 1) / \(workflow.items.count)")
                     .font(.caption)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)

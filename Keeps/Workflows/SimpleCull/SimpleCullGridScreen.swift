@@ -8,7 +8,7 @@ struct SimpleCullGridScreen: View {
 
     var body: some View {
         PhotoGridSurface(
-            items: workflow.filteredItems,
+            items: workflow.items,
             selectedIndex: workflow.selectedIndex,
             onNavigate: { proposal in
                 if proposal.extendsRange {

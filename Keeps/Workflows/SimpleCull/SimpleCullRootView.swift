@@ -69,25 +69,11 @@ struct SimpleCullRootView: View {
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         if let workflow {
-            ToolbarItem(placement: .principal) {
-                Picker("Filter", selection: Binding(
-                    get: { workflow.filterMode },
-                    set: { workflow.applyFilter($0) }
-                )) {
-                    Text("All").tag(SimpleCullWorkflow.FilterMode.all)
-                    Text("Picked").tag(SimpleCullWorkflow.FilterMode.picked)
-                    Text("Rejected").tag(SimpleCullWorkflow.FilterMode.rejected)
-                    Text("Unmarked").tag(SimpleCullWorkflow.FilterMode.unmarked)
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-            }
-
             ToolbarItem(placement: .status) {
                 HStack(spacing: 8) {
                     LoadGraphView()
                     HStack(spacing: 3) {
-                        Text("\(workflow.filteredItems.count)")
+                        Text("\(workflow.items.count)")
                             .monospacedDigit()
                             .frame(minWidth: 28, alignment: .trailing)
                         Text("photos")
