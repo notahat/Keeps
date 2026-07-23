@@ -7,7 +7,6 @@ struct KeepsApp: App {
             ContentView()
         }
         .commands {
-            PhotoCommands()
             FolderCommands()
         }
     }

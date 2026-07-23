@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -7,7 +8,7 @@ import Observation
 /// load image data (ImagePipeline's job), or persist state
 /// (WorkflowPersistence's job).
 @Observable
-class FolderLibrary {
+class SimpleCullWorkflow {
     enum ViewMode { case grid, single }
     enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked }
 
@@ -122,6 +123,22 @@ class FolderLibrary {
             selectedIndex = items.isEmpty ? nil : min(items.count - 1, index + 1)
             rangeAnchorID = selectedItemID
         }
+    }
+
+    /// The workflow's action keymap: f picks, s rejects, d unmarks. Returns
+    /// true when the key was handled. Spatial navigation keys never reach
+    /// this — the surfaces interpret those into NavigationProposals first.
+    func handleKey(_ event: NSEvent) -> Bool {
+        guard selectedIndex != nil,
+              event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+        else { return false }
+        switch event.charactersIgnoringModifiers?.lowercased() {
+        case "f": applyMarkAndAdvance(.pick)
+        case "s": applyMarkAndAdvance(.reject)
+        case "d": applyMarkAndAdvance(nil)
+        default: return false
+        }
+        return true
     }
 
     func applyFilter(_ mode: FilterMode) {

@@ -4,84 +4,84 @@ import Testing
 
 struct SelectionTests {
     @Test func selectItemSetsSelectionAndCollapsesPreviousRange() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 2)
+        workflow.selectItem(at: 2)
 
-        #expect(library.selectedIndex == 2)
-        #expect(library.selectionRange == 2 ... 2)
+        #expect(workflow.selectedIndex == 2)
+        #expect(workflow.selectionRange == 2 ... 2)
     }
 
     @Test func extendSelectionForwardFromAnchor() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
 
-        #expect(library.selectedIndex == 3)
-        #expect(library.selectionRange == 1 ... 3)
+        #expect(workflow.selectedIndex == 3)
+        #expect(workflow.selectionRange == 1 ... 3)
     }
 
     @Test func extendSelectionBackwardFromAnchor() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 3)
-        library.extendSelection(to: 1)
+        workflow.selectItem(at: 3)
+        workflow.extendSelection(to: 1)
 
-        #expect(library.selectedIndex == 1)
-        #expect(library.selectionRange == 1 ... 3)
+        #expect(workflow.selectedIndex == 1)
+        #expect(workflow.selectionRange == 1 ... 3)
     }
 
     @Test func extendSelectionUsesCurrentSelectionAsAnchorWhenNoneSet() throws {
-        let library = makeLibrary(photoCount: 5)
-        library.selectedIndex = 2
+        let workflow = makeWorkflow(photoCount: 5)
+        workflow.selectedIndex = 2
 
-        library.extendSelection(to: 4)
+        workflow.extendSelection(to: 4)
 
-        #expect(library.selectionRange == 2 ... 4)
+        #expect(workflow.selectionRange == 2 ... 4)
     }
 
     @Test func selectItemClearsExistingRange() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 4)
-        library.selectItem(at: 2)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 4)
+        workflow.selectItem(at: 2)
 
-        #expect(library.selectionRange == 2 ... 2)
+        #expect(workflow.selectionRange == 2 ... 2)
     }
 
     @Test func selectionRangeIsNilWithNoSelection() throws {
-        let library = makeLibrary(photoCount: 5)
-        library.selectedIndex = nil
+        let workflow = makeWorkflow(photoCount: 5)
+        workflow.selectedIndex = nil
 
-        #expect(library.selectionRange == nil)
+        #expect(workflow.selectionRange == nil)
     }
 
     @Test func selectionRangeIsNilBeforeAnySelectItemCall() throws {
-        let library = makeLibrary(photoCount: 5)
-        library.selectedIndex = 2
+        let workflow = makeWorkflow(photoCount: 5)
+        workflow.selectedIndex = 2
 
-        #expect(library.selectionRange == nil)
+        #expect(workflow.selectionRange == nil)
     }
 
     @Test func applyMarkAndAdvancePreservesRangeForBulkMark() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyMarkAndAdvance(.pick)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.selectionRange == 1 ... 3)
+        #expect(workflow.selectionRange == 1 ... 3)
     }
 
     @Test func applyFilterClearsRange() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyFilter(.all)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyFilter(.all)
 
-        #expect(library.selectionRange == nil)
+        #expect(workflow.selectionRange == nil)
     }
 }

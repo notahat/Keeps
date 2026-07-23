@@ -4,65 +4,65 @@ import Testing
 
 struct BulkMarkingTests {
     @Test func bulkMarkMarksAllItemsInRange() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyMarkAndAdvance(.pick)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.mark(for: library.items[1].id) == .pick)
-        #expect(library.mark(for: library.items[2].id) == .pick)
-        #expect(library.mark(for: library.items[3].id) == .pick)
+        #expect(workflow.mark(for: workflow.items[1].id) == .pick)
+        #expect(workflow.mark(for: workflow.items[2].id) == .pick)
+        #expect(workflow.mark(for: workflow.items[3].id) == .pick)
     }
 
     @Test func bulkMarkDoesNotMarkItemsOutsideRange() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyMarkAndAdvance(.pick)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.mark(for: library.items[0].id) == nil)
-        #expect(library.mark(for: library.items[4].id) == nil)
+        #expect(workflow.mark(for: workflow.items[0].id) == nil)
+        #expect(workflow.mark(for: workflow.items[4].id) == nil)
     }
 
     @Test func bulkMarkDoesNotAdvanceSelection() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyMarkAndAdvance(.pick)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.selectedIndex == 3)
+        #expect(workflow.selectedIndex == 3)
     }
 
     @Test func bulkMarkPreservesRange() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyMarkAndAdvance(.pick)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.selectionRange == 1 ... 3)
+        #expect(workflow.selectionRange == 1 ... 3)
     }
 
     @Test func bulkMarkSetsLastMarkEvent() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.extendSelection(to: 3)
-        library.applyMarkAndAdvance(.reject)
+        workflow.selectItem(at: 1)
+        workflow.extendSelection(to: 3)
+        workflow.applyMarkAndAdvance(.reject)
 
-        #expect(library.lastMarkEvent?.mark == .reject)
+        #expect(workflow.lastMarkEvent?.mark == .reject)
     }
 
     @Test func singleSelectionStillMarksAndAdvances() throws {
-        let library = makeLibrary(photoCount: 5)
+        let workflow = makeWorkflow(photoCount: 5)
 
-        library.selectItem(at: 1)
-        library.applyMarkAndAdvance(.pick)
+        workflow.selectItem(at: 1)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.mark(for: library.items[1].id) == .pick)
-        #expect(library.selectedIndex == 2)
+        #expect(workflow.mark(for: workflow.items[1].id) == .pick)
+        #expect(workflow.selectedIndex == 2)
     }
 }

@@ -4,104 +4,104 @@ import Testing
 
 struct MarkingTests {
     @Test func unmarkedPhotoReturnsNilMark() throws {
-        let library = makeLibrary(photoCount: 3)
+        let workflow = makeWorkflow(photoCount: 3)
 
-        #expect(library.mark(for: library.items[0].id) == nil)
+        #expect(workflow.mark(for: workflow.items[0].id) == nil)
     }
 
     @Test func setMarkPickMarksPhotoAsPick() throws {
-        let library = makeLibrary(photoCount: 3)
+        let workflow = makeWorkflow(photoCount: 3)
 
-        library.setMark(.pick, for: library.items[0])
+        workflow.setMark(.pick, for: workflow.items[0])
 
-        #expect(library.mark(for: library.items[0].id) == .pick)
+        #expect(workflow.mark(for: workflow.items[0].id) == .pick)
     }
 
     @Test func setMarkRejectMarksPhotoAsReject() throws {
-        let library = makeLibrary(photoCount: 3)
+        let workflow = makeWorkflow(photoCount: 3)
 
-        library.setMark(.reject, for: library.items[0])
+        workflow.setMark(.reject, for: workflow.items[0])
 
-        #expect(library.mark(for: library.items[0].id) == .reject)
+        #expect(workflow.mark(for: workflow.items[0].id) == .reject)
     }
 
     @Test func setMarkNilUnmarksPhoto() throws {
-        let library = makeLibrary(photoCount: 3)
+        let workflow = makeWorkflow(photoCount: 3)
 
-        library.setMark(.pick, for: library.items[0])
-        library.setMark(nil, for: library.items[0])
+        workflow.setMark(.pick, for: workflow.items[0])
+        workflow.setMark(nil, for: workflow.items[0])
 
-        #expect(library.mark(for: library.items[0].id) == nil)
+        #expect(workflow.mark(for: workflow.items[0].id) == nil)
     }
 
     @Test func setMarkPickClearsExistingReject() throws {
-        let library = makeLibrary(photoCount: 3)
+        let workflow = makeWorkflow(photoCount: 3)
 
-        library.setMark(.reject, for: library.items[0])
-        library.setMark(.pick, for: library.items[0])
+        workflow.setMark(.reject, for: workflow.items[0])
+        workflow.setMark(.pick, for: workflow.items[0])
 
-        #expect(library.mark(for: library.items[0].id) == .pick)
+        #expect(workflow.mark(for: workflow.items[0].id) == .pick)
     }
 
     @Test func setMarkRejectClearsExistingPick() throws {
-        let library = makeLibrary(photoCount: 3)
+        let workflow = makeWorkflow(photoCount: 3)
 
-        library.setMark(.pick, for: library.items[0])
-        library.setMark(.reject, for: library.items[0])
+        workflow.setMark(.pick, for: workflow.items[0])
+        workflow.setMark(.reject, for: workflow.items[0])
 
-        #expect(library.mark(for: library.items[0].id) == .reject)
+        #expect(workflow.mark(for: workflow.items[0].id) == .reject)
     }
 
     @Test func applyMarkAndAdvanceMovesToNextItem() throws {
-        let library = makeLibrary(photoCount: 3)
-        library.selectedIndex = 0
+        let workflow = makeWorkflow(photoCount: 3)
+        workflow.selectedIndex = 0
 
-        library.applyMarkAndAdvance(.pick)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.mark(for: library.items[0].id) == .pick)
-        #expect(library.selectedIndex == 1)
+        #expect(workflow.mark(for: workflow.items[0].id) == .pick)
+        #expect(workflow.selectedIndex == 1)
     }
 
     @Test func applyMarkAndAdvanceStaysAtEndOfList() throws {
-        let library = makeLibrary(photoCount: 3)
-        library.selectedIndex = 2
+        let workflow = makeWorkflow(photoCount: 3)
+        workflow.selectedIndex = 2
 
-        library.applyMarkAndAdvance(.reject)
+        workflow.applyMarkAndAdvance(.reject)
 
-        #expect(library.mark(for: library.items[2].id) == .reject)
-        #expect(library.selectedIndex == 2)
+        #expect(workflow.mark(for: workflow.items[2].id) == .reject)
+        #expect(workflow.selectedIndex == 2)
     }
 
     @Test func applyMarkAndAdvanceDoesNothingWithNoSelection() throws {
-        let library = makeLibrary(photoCount: 3)
-        library.selectedIndex = nil
+        let workflow = makeWorkflow(photoCount: 3)
+        workflow.selectedIndex = nil
 
-        library.applyMarkAndAdvance(.pick)
+        workflow.applyMarkAndAdvance(.pick)
 
-        for item in library.items {
-            #expect(library.mark(for: item.id) == nil)
+        for item in workflow.items {
+            #expect(workflow.mark(for: item.id) == nil)
         }
     }
 
     @Test func applyMarkAndAdvanceSetsLastMarkEvent() throws {
-        let library = makeLibrary(photoCount: 3)
-        library.selectedIndex = 0
+        let workflow = makeWorkflow(photoCount: 3)
+        workflow.selectedIndex = 0
 
-        library.applyMarkAndAdvance(.pick)
+        workflow.applyMarkAndAdvance(.pick)
 
-        #expect(library.lastMarkEvent != nil)
-        #expect(library.lastMarkEvent?.mark == .pick)
+        #expect(workflow.lastMarkEvent != nil)
+        #expect(workflow.lastMarkEvent?.mark == .pick)
     }
 
     @Test func eachApplyMarkAndAdvanceProducesDistinctEvent() throws {
-        let library = makeLibrary(photoCount: 3)
-        library.selectedIndex = 0
+        let workflow = makeWorkflow(photoCount: 3)
+        workflow.selectedIndex = 0
 
-        library.applyMarkAndAdvance(.pick)
-        let firstEvent = library.lastMarkEvent
+        workflow.applyMarkAndAdvance(.pick)
+        let firstEvent = workflow.lastMarkEvent
 
-        library.applyMarkAndAdvance(.pick)
-        let secondEvent = library.lastMarkEvent
+        workflow.applyMarkAndAdvance(.pick)
+        let secondEvent = workflow.lastMarkEvent
 
         #expect(firstEvent != secondEvent)
     }

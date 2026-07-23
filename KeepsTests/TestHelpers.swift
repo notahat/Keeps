@@ -27,8 +27,8 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
     }
 }
 
-/// Creates a FolderLibrary with the given number of photos, ready for
+/// Creates a SimpleCullWorkflow with the given number of photos, ready for
 /// marking tests.
-func makeLibrary(photoCount: Int) -> FolderLibrary {
-    FolderLibrary(items: makePhotoItems(count: photoCount))
+func makeWorkflow(photoCount: Int) -> SimpleCullWorkflow {
+    SimpleCullWorkflow(items: makePhotoItems(count: photoCount))
 }

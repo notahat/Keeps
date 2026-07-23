@@ -2,11 +2,11 @@ import AppKit
 import SwiftUI
 
 /// The single-image screen of the simple culling workflow: a photo detail
-/// surface wired to the library, with the workflow's chrome — mark badge,
+/// surface wired to the workflow, with the workflow's chrome — mark badge,
 /// position counter, and mark-flash feedback — layered on top. Esc returns
 /// to the grid.
 struct SimpleCullDetailScreen: View {
-    var library: FolderLibrary
+    var workflow: SimpleCullWorkflow
 
     private enum MarkFeedback { case hidden, showing(MarkStore.Mark?) }
 
@@ -15,14 +15,14 @@ struct SimpleCullDetailScreen: View {
 
     var body: some View {
         PhotoDetailSurface(
-            items: library.filteredItems,
-            selectedIndex: library.selectedIndex,
-            onNavigate: { proposal in library.selectItem(at: proposal.targetIndex) },
+            items: workflow.filteredItems,
+            selectedIndex: workflow.selectedIndex,
+            onNavigate: { proposal in workflow.selectItem(at: proposal.targetIndex) },
             onKeyDown: { event in handleKeyEvent(event) }
         ) { item in
             chrome(for: item)
         }
-        .onChange(of: library.lastMarkEvent) { _, event in
+        .onChange(of: workflow.lastMarkEvent) { _, event in
             flashMark(event?.mark)
         }
     }
@@ -31,7 +31,7 @@ struct SimpleCullDetailScreen: View {
     /// corner of the surface.
     private func chrome(for item: PhotoItem) -> some View {
         ZStack {
-            if let mark = library.mark(for: item.id) {
+            if let mark = workflow.mark(for: item.id) {
                 MarkBadge(mark: mark, fontSize: 40)
                     .padding(12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -42,8 +42,8 @@ struct SimpleCullDetailScreen: View {
                     .padding(.bottom, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
-            if let index = library.selectedIndex {
-                Text("\(index + 1) / \(library.filteredItems.count)")
+            if let index = workflow.selectedIndex {
+                Text("\(index + 1) / \(workflow.filteredItems.count)")
                     .font(.caption)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -56,13 +56,14 @@ struct SimpleCullDetailScreen: View {
         .allowsHitTesting(false)
     }
 
-    /// Handles non-navigation keys: Esc returns to the grid.
+    /// Handles non-navigation keys: Esc returns to the grid; everything
+    /// else goes to the workflow's keymap.
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         if event.keyCode == .escape {
-            library.viewMode = .grid
+            workflow.viewMode = .grid
             return true
         }
-        return false
+        return workflow.handleKey(event)
     }
 
     /// Shows the mark feedback label, then fades it out.
