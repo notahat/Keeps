@@ -32,7 +32,7 @@ struct ContentView: View {
             case .empty: emptyState
             case let .error(error): errorState(error)
             case let .grid(library): SimpleCullGridScreen(library: library)
-            case let .single(library): SingleImageView(library: library)
+            case let .single(library): SimpleCullDetailScreen(library: library)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
