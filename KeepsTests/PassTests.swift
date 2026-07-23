@@ -4,13 +4,13 @@ import Testing
 
 struct PassTests {
     @Test func canStartNextPassIsFalseWithNoMarks() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         #expect(!library.canStartNextPass)
     }
 
     @Test func canStartNextPassIsTrueAfterPick() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         library.setMark(.pick, for: library.items[0])
 
@@ -18,7 +18,7 @@ struct PassTests {
     }
 
     @Test func canStartNextPassIsTrueAfterReject() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         library.setMark(.reject, for: library.items[0])
 
@@ -26,7 +26,7 @@ struct PassTests {
     }
 
     @Test func startNextPassCreatesNewPass() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
 
         library.startNextPass()
@@ -36,7 +36,7 @@ struct PassTests {
     }
 
     @Test func photosMarkedInEarlierPassAreHiddenFromLaterPass() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
 
@@ -47,7 +47,7 @@ struct PassTests {
     }
 
     @Test @MainActor func selectPassSwitchesPassAndResetsFilter() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.startNextPass()
 
@@ -59,7 +59,7 @@ struct PassTests {
     }
 
     @Test func statsReturnsCorrectCounts() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.pick, for: library.items[1])
         library.setMark(.reject, for: library.items[2])
@@ -72,7 +72,7 @@ struct PassTests {
     }
 
     @Test func statsExcludesPhotosMarkedInEarlierPasses() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
         library.startNextPass()

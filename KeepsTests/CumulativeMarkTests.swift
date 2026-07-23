@@ -4,13 +4,13 @@ import Testing
 
 struct CumulativeMarkTests {
     @Test func returnsNilForUnmarkedPhoto() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         #expect(library.cumulativeMark(for: library.items[0].id) == nil)
     }
 
     @Test func returnsPickFromSinglePass() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         library.setMark(.pick, for: library.items[0])
 
@@ -18,7 +18,7 @@ struct CumulativeMarkTests {
     }
 
     @Test func returnsRejectFromSinglePass() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         library.setMark(.reject, for: library.items[0])
 
@@ -26,7 +26,7 @@ struct CumulativeMarkTests {
     }
 
     @Test func lastPassWinsWhenMarkedInMultiplePasses() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         library.setMark(.reject, for: library.items[0])
         library.startNextPass()
@@ -36,7 +36,7 @@ struct CumulativeMarkTests {
     }
 
     @Test func sortPlanGroupsByMark() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
 
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])

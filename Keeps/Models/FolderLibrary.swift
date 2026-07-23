@@ -1,18 +1,16 @@
 import Foundation
 import Observation
 
-/// Owns the photo items for a single open folder and orchestrates the
+/// Holds the culling state for one set of photos and orchestrates the
 /// sub-store that holds pass/mark state. Handles selection, view mode,
 /// filtering, and the cross-cutting actions that span concerns. Does not
-/// load image data (that's ImagePipeline's job) or persist state (that's
-/// LibraryPersistence's job).
+/// scan or own the folder (that's FolderSession's job), load image data
+/// (ImagePipeline's job), or persist state (LibraryPersistence's job).
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
     enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked }
 
-    private(set) var folderURL: URL?
-    private(set) var folderError: Error?
     /// Set when LibraryPersistence fails to write keeps.json. The UI observes
     /// this to alert the user that their marks may not have been saved.
     private(set) var saveError: Error?
@@ -20,9 +18,13 @@ class FolderLibrary {
     private(set) var rangeAnchorID: UUID?
     var viewMode: ViewMode = .grid
     var filterMode: FilterMode = .all
-    private(set) var items: [PhotoItem] = []
+    let items: [PhotoItem]
     private(set) var filteredItems: [PhotoItem] = []
     private var passStore = PassStore()
+
+    init(items: [PhotoItem]) {
+        self.items = items
+    }
 
     var passes: [PassStore.Pass] {
         passStore.passes
@@ -177,21 +179,6 @@ class FolderLibrary {
         return Array(filteredItems[range])
     }
 
-    /// Resets the library to its initial empty state.
-    func close() {
-        folderURL = nil
-        folderError = nil
-        saveError = nil
-        items = []
-        filteredItems = []
-        passStore.reset()
-        selectedItemID = nil
-        rangeAnchorID = nil
-        viewMode = .grid
-        filterMode = .all
-        lastMarkEvent = nil
-    }
-
     /// Reports a failure to persist library state to disk. Called by
     /// LibraryPersistence when keeps.json could not be written.
     func recordSaveError(_ error: Error) {
@@ -202,22 +189,6 @@ class FolderLibrary {
     /// acknowledged the failure.
     func clearSaveError() {
         saveError = nil
-    }
-
-    /// Scans the folder and resets library state. Call LibraryPersistence.restore(into:)
-    /// immediately after to set up passes.
-    func openFolder(url: URL) {
-        folderURL = url
-        folderError = nil
-        viewMode = .grid
-        passStore.reset()
-        do {
-            items = try FolderScanner.scan(url: url)
-        } catch {
-            items = []
-            folderError = error
-            updateFilteredItems()
-        }
     }
 
     /// Sets up a single empty pass. Called by LibraryPersistence when no saved

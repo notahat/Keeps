@@ -5,7 +5,7 @@ import Testing
 @MainActor
 struct FilterTests {
     @Test func filterAllShowsAllCurrentPassPhotos() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
 
         library.applyFilter(.all)
@@ -14,7 +14,7 @@ struct FilterTests {
     }
 
     @Test func filterPickedShowsOnlyPicks() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
 
@@ -25,7 +25,7 @@ struct FilterTests {
     }
 
     @Test func filterRejectedShowsOnlyRejects() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
 
@@ -36,7 +36,7 @@ struct FilterTests {
     }
 
     @Test func filterUnmarkedShowsOnlyUnmarkedPhotos() throws {
-        let library = try makeLibrary(photoCount: 3)
+        let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
 
@@ -47,7 +47,7 @@ struct FilterTests {
     }
 
     @Test func filterAllInLaterPassExcludesEarlierPassMarks() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
         library.startNextPass()
@@ -61,7 +61,7 @@ struct FilterTests {
     }
 
     @Test func filterUnmarkedInLaterPassExcludesBothPassMarks() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
         library.startNextPass()

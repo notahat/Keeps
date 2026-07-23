@@ -3,33 +3,17 @@ import Foundation
 /// Reads and writes FolderLibrary state to keeps.json alongside the photos.
 /// Owns the translation between the UUID-based in-memory representation and
 /// the stem-based on-disk representation so state survives folder moves.
+/// Does not manage folder access — FolderSession owns the security scope.
 ///
-/// Also owns the security-scoped resource access for the folder — access begins
-/// on init and ends on deinit, so the folder remains accessible as long as this
-/// object is alive.
-///
-/// Call restore(into:) after openFolder, then startObserving(_:) to begin
-/// auto-saving on changes. Call stop() to halt auto-saving before opening a
-/// new folder.
-///
-/// To add new persistent state: add a field to LibraryState (and its JSON
-/// coding), read it in restore(into:), and write it in save(_:). The
-/// withObservationTracking in startObserving(_:) already watches the relevant
-/// FolderLibrary properties — just make sure the new state is part of passes
-/// or groups, or add it to the tracking block.
+/// Call restore(into:) after creating the library, then startObserving(_:)
+/// to begin auto-saving on changes. Call stop() to halt auto-saving before
+/// opening a new folder.
 final class LibraryPersistence {
-    private let folderURL: URL
     private let fileURL: URL
     private var isActive = true
 
     init(folderURL: URL) {
-        self.folderURL = folderURL
         fileURL = folderURL.appendingPathComponent("keeps.json")
-        _ = folderURL.startAccessingSecurityScopedResource()
-    }
-
-    deinit {
-        folderURL.stopAccessingSecurityScopedResource()
     }
 
     /// Stops auto-saving. Call before creating a new instance for a new folder.

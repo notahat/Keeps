@@ -1,47 +1,52 @@
 import AppKit
 import SwiftUI
 
-/// Top-level view. Routes between the grid and single-image views as the library
-/// state changes.
+/// Top-level view. Opens folders, owns the folder session and library, and
+/// routes between the grid and single-image views as the library state
+/// changes.
 struct ContentView: View {
-    @State private var library = FolderLibrary()
+    @State private var session: FolderSession?
+    @State private var library: FolderLibrary?
+    @State private var folderError: Error?
     @State private var persistence: LibraryPersistence?
 
     @State private var showingSortConfirmation = false
     @State private var showingSortComplete = false
     @State private var sortError: String?
 
-    private enum DisplayState { case empty, error(Error), grid, single }
+    private enum DisplayState { case empty, error(Error), grid(FolderLibrary), single(FolderLibrary) }
 
     private var displayState: DisplayState {
-        if let error = library.folderError {
-            return .error(error)
+        if let folderError {
+            return .error(folderError)
         }
-        if library.items.isEmpty {
+        guard let library, !library.items.isEmpty else {
             return .empty
         }
-        return library.viewMode == .single ? .single : .grid
+        return library.viewMode == .single ? .single(library) : .grid(library)
     }
 
     var body: some View {
         NavigationSplitView {
-            PassSidebarView(library: library)
+            if let library {
+                PassSidebarView(library: library)
+            }
         } detail: {
             Group {
                 switch displayState {
                 case .empty: emptyState
                 case let .error(error): errorState(error)
-                case .grid: GridView(library: library)
-                case .single: SingleImageView(library: library)
+                case let .grid(library): GridView(library: library)
+                case let .single(library): SingleImageView(library: library)
                 }
             }
             .focusedSceneValue(\.library, library)
             .focusedSceneValue(\.openFolderAction) { openFolder() }
-            .focusedSceneValue(\.sortPhotosAction, library.items.isEmpty ? nil : {
+            .focusedSceneValue(\.sortPhotosAction, library?.items.isEmpty != false ? nil : {
                 showingSortConfirmation = true
             })
-            .navigationTitle(library.folderURL?.lastPathComponent ?? "Keeps")
-            .navigationSubtitle(library.folderURL?.path ?? "")
+            .navigationTitle(session?.folderURL.lastPathComponent ?? "Keeps")
+            .navigationSubtitle(session?.folderURL.path ?? "")
             .toolbar { toolbar }
         }
         .frame(minWidth: 500, minHeight: 300)
@@ -57,16 +62,16 @@ struct ContentView: View {
             onDismissComplete: closeFolder
         ))
         .alert("Couldn't Save Changes", isPresented: Binding(
-            get: { library.saveError != nil },
+            get: { library?.saveError != nil },
             set: {
                 if !$0 {
-                    library.clearSaveError()
+                    library?.clearSaveError()
                 }
             }
         )) {
             Button("OK") {}
         } message: {
-            if let error = library.saveError {
+            if let error = library?.saveError {
                 Text(error.localizedDescription)
             }
         }
@@ -83,46 +88,48 @@ struct ContentView: View {
             .help("Open Folder")
         }
 
-        ToolbarItem(placement: .principal) {
-            Picker("Filter", selection: Binding(
-                get: { library.filterMode },
-                set: { library.applyFilter($0) }
-            )) {
-                Text("All").tag(FolderLibrary.FilterMode.all)
-                Text("Picked").tag(FolderLibrary.FilterMode.picked)
-                Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
-                Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+        if let library {
+            ToolbarItem(placement: .principal) {
+                Picker("Filter", selection: Binding(
+                    get: { library.filterMode },
+                    set: { library.applyFilter($0) }
+                )) {
+                    Text("All").tag(FolderLibrary.FilterMode.all)
+                    Text("Picked").tag(FolderLibrary.FilterMode.picked)
+                    Text("Rejected").tag(FolderLibrary.FilterMode.rejected)
+                    Text("Unmarked").tag(FolderLibrary.FilterMode.unmarked)
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .fixedSize()
-        }
 
-        ToolbarItem(placement: .status) {
-            HStack(spacing: 8) {
-                LoadGraphView()
-                HStack(spacing: 3) {
-                    Text("\(library.filteredItems.count)")
-                        .monospacedDigit()
-                        .frame(minWidth: 28, alignment: .trailing)
-                    Text("photos")
+            ToolbarItem(placement: .status) {
+                HStack(spacing: 8) {
+                    LoadGraphView()
+                    HStack(spacing: 3) {
+                        Text("\(library.filteredItems.count)")
+                            .monospacedDigit()
+                            .frame(minWidth: 28, alignment: .trailing)
+                        Text("photos")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+                .padding(.trailing, 12)
             }
-            .padding(.leading, 4)
-            .padding(.trailing, 12)
-        }
 
-        ToolbarItemGroup(placement: .primaryAction) {
-            ControlGroup {
-                MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
-                    applyMark(.reject)
-                }
-                MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
-                    applyMark(nil)
-                }
-                MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
-                    applyMark(.pick)
+            ToolbarItemGroup(placement: .primaryAction) {
+                ControlGroup {
+                    MarkButton(markAction: .reject, isEnabled: library.selectedIndex != nil) {
+                        library.applyMarkAndAdvance(.reject)
+                    }
+                    MarkButton(markAction: .unmark, isEnabled: library.selectedIndex != nil) {
+                        library.applyMarkAndAdvance(nil)
+                    }
+                    MarkButton(markAction: .pick, isEnabled: library.selectedIndex != nil) {
+                        library.applyMarkAndAdvance(.pick)
+                    }
                 }
             }
         }
@@ -177,12 +184,23 @@ struct ContentView: View {
 
     private func startSession(for url: URL) {
         persistence?.stop()
-        library.openFolder(url: url)
-        let newPersistence = LibraryPersistence(folderURL: url)
-        newPersistence.restore(into: library)
-        newPersistence.startObserving(library)
-        persistence = newPersistence
-        ImagePipeline.shared.prefetchImages(for: library.items, size: ThumbnailView.imageSize)
+        persistence = nil
+        folderError = nil
+        do {
+            let newSession = try FolderSession(folderURL: url)
+            let newLibrary = FolderLibrary(items: newSession.items)
+            let newPersistence = LibraryPersistence(folderURL: url)
+            newPersistence.restore(into: newLibrary)
+            newPersistence.startObserving(newLibrary)
+            session = newSession
+            library = newLibrary
+            persistence = newPersistence
+            ImagePipeline.shared.prefetchImages(for: newSession.items, size: ThumbnailView.imageSize)
+        } catch {
+            session = nil
+            library = nil
+            folderError = error
+        }
     }
 
     private func saveBookmark(for url: URL) {
@@ -195,7 +213,8 @@ struct ContentView: View {
     }
 
     private func performSort() {
-        guard let folderURL = library.folderURL else { return }
+        guard let session, let library else { return }
+        let folderURL = session.folderURL
         let plan = library.sortPlan()
         let moves = PhotoSorter.plannedMoves(folderURL: folderURL, sortPlan: plan)
         do {
@@ -211,12 +230,10 @@ struct ContentView: View {
     private func closeFolder() {
         persistence?.stop()
         persistence = nil
-        library.close()
+        library = nil
+        session = nil
+        folderError = nil
         UserDefaults.standard.removeObject(forKey: Self.bookmarkKey)
-    }
-
-    private func applyMark(_ mark: PassStore.Mark?) {
-        library.applyMarkAndAdvance(mark)
     }
 
     private static let bookmarkKey = "lastFolderBookmark"

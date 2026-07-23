@@ -29,13 +29,8 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
 
 /// Creates a FolderLibrary with the given number of photos and an
 /// initialized first pass, ready for marking tests.
-func makeLibrary(photoCount: Int) throws -> FolderLibrary {
-    let folder = try makeTemporaryFolder()
-    for index in 1 ... photoCount {
-        try makeFile(named: String(format: "IMG_%04d.CR3", index), in: folder)
-    }
-    let library = FolderLibrary()
-    library.openFolder(url: folder)
+func makeLibrary(photoCount: Int) -> FolderLibrary {
+    let library = FolderLibrary(items: makePhotoItems(count: photoCount))
     library.initializeFreshPasses()
     return library
 }

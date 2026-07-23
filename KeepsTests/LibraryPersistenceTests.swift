@@ -9,8 +9,7 @@ struct LibraryPersistenceTests {
         defer { try? FileManager.default.removeItem(at: folder) }
 
         try makeFile(named: "IMG_0001.CR3", in: folder)
-        let library = FolderLibrary()
-        library.openFolder(url: folder)
+        let library = FolderLibrary(items: try FolderScanner.scan(url: folder))
 
         let persistence = LibraryPersistence(folderURL: folder)
         persistence.restore(into: library)
@@ -32,8 +31,7 @@ struct LibraryPersistenceTests {
             passes: [["picks": ["IMG_0001"], "rejects": ["IMG_0002"]]]
         )
 
-        let library = FolderLibrary()
-        library.openFolder(url: folder)
+        let library = FolderLibrary(items: try FolderScanner.scan(url: folder))
         let persistence = LibraryPersistence(folderURL: folder)
         persistence.restore(into: library)
 
@@ -54,8 +52,7 @@ struct LibraryPersistenceTests {
             passes: [["picks": ["IMG_0001", "IMG_0002"], "rejects": []]]
         )
 
-        let library = FolderLibrary()
-        library.openFolder(url: folder)
+        let library = FolderLibrary(items: try FolderScanner.scan(url: folder))
         let persistence = LibraryPersistence(folderURL: folder)
         persistence.restore(into: library)
 
@@ -77,8 +74,7 @@ struct LibraryPersistenceTests {
             ]
         )
 
-        let library = FolderLibrary()
-        library.openFolder(url: folder)
+        let library = FolderLibrary(items: try FolderScanner.scan(url: folder))
         let persistence = LibraryPersistence(folderURL: folder)
         persistence.restore(into: library)
 
@@ -116,8 +112,7 @@ struct LibraryPersistenceTests {
             withIntermediateDirectories: false
         )
 
-        let library = FolderLibrary()
-        library.openFolder(url: folder)
+        let library = FolderLibrary(items: try FolderScanner.scan(url: folder))
         let persistence = LibraryPersistence(folderURL: folder)
         persistence.restore(into: library)
 
@@ -136,8 +131,7 @@ struct LibraryPersistenceTests {
             withIntermediateDirectories: false
         )
 
-        let library = FolderLibrary()
-        library.openFolder(url: folder)
+        let library = FolderLibrary(items: try FolderScanner.scan(url: folder))
         let persistence = LibraryPersistence(folderURL: folder)
         persistence.restore(into: library)
         persistence.startObserving(library)

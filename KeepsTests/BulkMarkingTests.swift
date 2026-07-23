@@ -4,7 +4,7 @@ import Testing
 
 struct BulkMarkingTests {
     @Test func bulkMarkMarksAllItemsInRange() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -16,7 +16,7 @@ struct BulkMarkingTests {
     }
 
     @Test func bulkMarkDoesNotMarkItemsOutsideRange() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -27,7 +27,7 @@ struct BulkMarkingTests {
     }
 
     @Test func bulkMarkDoesNotAdvanceSelection() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -37,7 +37,7 @@ struct BulkMarkingTests {
     }
 
     @Test func bulkMarkPreservesRange() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -47,7 +47,7 @@ struct BulkMarkingTests {
     }
 
     @Test func bulkMarkSetsLastMarkEvent() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -57,7 +57,7 @@ struct BulkMarkingTests {
     }
 
     @Test func singleSelectionStillMarksAndAdvances() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.applyMarkAndAdvance(.pick)

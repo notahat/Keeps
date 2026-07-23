@@ -4,7 +4,7 @@ import Testing
 
 struct SelectionTests {
     @Test func selectItemSetsSelectionAndCollapsesPreviousRange() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 2)
 
@@ -13,7 +13,7 @@ struct SelectionTests {
     }
 
     @Test func extendSelectionForwardFromAnchor() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -23,7 +23,7 @@ struct SelectionTests {
     }
 
     @Test func extendSelectionBackwardFromAnchor() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 3)
         library.extendSelection(to: 1)
@@ -33,7 +33,7 @@ struct SelectionTests {
     }
 
     @Test func extendSelectionUsesCurrentSelectionAsAnchorWhenNoneSet() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.selectedIndex = 2
 
         library.extendSelection(to: 4)
@@ -42,7 +42,7 @@ struct SelectionTests {
     }
 
     @Test func selectItemClearsExistingRange() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 4)
@@ -52,21 +52,21 @@ struct SelectionTests {
     }
 
     @Test func selectionRangeIsNilWithNoSelection() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.selectedIndex = nil
 
         #expect(library.selectionRange == nil)
     }
 
     @Test func selectionRangeIsNilBeforeAnySelectItemCall() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
         library.selectedIndex = 2
 
         #expect(library.selectionRange == nil)
     }
 
     @Test func applyMarkAndAdvancePreservesRangeForBulkMark() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
@@ -76,7 +76,7 @@ struct SelectionTests {
     }
 
     @Test func applyFilterClearsRange() throws {
-        let library = try makeLibrary(photoCount: 5)
+        let library = makeLibrary(photoCount: 5)
 
         library.selectItem(at: 1)
         library.extendSelection(to: 3)
