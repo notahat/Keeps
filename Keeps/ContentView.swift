@@ -12,7 +12,7 @@ struct ContentView: View {
         Group {
             if let folderError {
                 errorState(folderError)
-            } else if let session {
+            } else if let session, !session.items.isEmpty {
                 // The one wiring line a workflow experiment replaces.
                 SimpleCullRootView(session: session, onSortComplete: closeFolder)
                     .id(session.folderURL)

@@ -26,6 +26,11 @@ struct SimpleCullRootView: View {
                 case .grid: SimpleCullGridScreen(workflow: workflow)
                 case .single: SimpleCullDetailScreen(workflow: workflow)
                 }
+            } else {
+                // A real (if invisible) view must render before the workflow
+                // exists: onAppear never fires for empty content, and start()
+                // — which creates the workflow — hangs off onAppear.
+                Color.clear
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
