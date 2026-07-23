@@ -20,7 +20,7 @@ struct GridView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: spacing) {
                     ForEach(Array(library.filteredItems.enumerated()), id: \.element.id) { index, item in
-                        ThumbnailView(
+                        SimpleCullCell(
                             item: item,
                             isSelected: item.id == library.selectedItemID,
                             isInSelectionRange: library.selectionRange?.contains(index) ?? false,

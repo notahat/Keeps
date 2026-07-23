@@ -199,7 +199,7 @@ struct ContentView: View {
             session = newSession
             library = newLibrary
             persistence = newPersistence
-            ImagePipeline.shared.prefetchImages(for: newSession.items, size: ThumbnailView.imageSize)
+            ImagePipeline.shared.prefetchImages(for: newSession.items, size: ThumbnailImage.imageSize)
         } catch {
             session = nil
             library = nil
