@@ -9,7 +9,7 @@ struct ThumbnailView: View {
     let item: PhotoItem
     var isSelected: Bool = false
     var isInSelectionRange: Bool = false
-    var mark: PassStore.Mark?
+    var mark: MarkStore.Mark?
 
     @Environment(\.controlActiveState) private var controlActiveState
 
@@ -66,7 +66,7 @@ struct ThumbnailView: View {
 
 /// A small badge showing whether a photo has been picked or rejected.
 struct MarkBadge: View {
-    let mark: PassStore.Mark
+    let mark: MarkStore.Mark
     var fontSize: CGFloat = 22
 
     var body: some View {

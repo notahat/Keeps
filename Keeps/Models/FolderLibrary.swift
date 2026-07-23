@@ -1,18 +1,18 @@
 import Foundation
 import Observation
 
-/// Holds the culling state for one set of photos and orchestrates the
-/// sub-store that holds pass/mark state. Handles selection, view mode,
-/// filtering, and the cross-cutting actions that span concerns. Does not
-/// scan or own the folder (that's FolderSession's job), load image data
-/// (ImagePipeline's job), or persist state (LibraryPersistence's job).
+/// Holds the culling state for one set of photos: flat pick/reject marks,
+/// selection, view mode, and filtering, plus the cross-cutting actions that
+/// span them. Does not scan or own the folder (that's FolderSession's job),
+/// load image data (ImagePipeline's job), or persist state
+/// (WorkflowPersistence's job).
 @Observable
 class FolderLibrary {
     enum ViewMode { case grid, single }
     enum FilterMode: Equatable, Hashable { case all, picked, rejected, unmarked }
 
-    /// Set when LibraryPersistence fails to write keeps.json. The UI observes
-    /// this to alert the user that their marks may not have been saved.
+    /// Set when persistence fails to write keeps.json. The UI observes this
+    /// to alert the user that their marks may not have been saved.
     private(set) var saveError: Error?
     private(set) var selectedItemID: UUID?
     private(set) var rangeAnchorID: UUID?
@@ -20,43 +20,22 @@ class FolderLibrary {
     var filterMode: FilterMode = .all
     let items: [PhotoItem]
     private(set) var filteredItems: [PhotoItem] = []
-    private var passStore = PassStore()
+    private var markStore = MarkStore()
 
     init(items: [PhotoItem]) {
         self.items = items
+        updateFilteredItems()
+        selectedItemID = filteredItems.first?.id
     }
 
-    var passes: [PassStore.Pass] {
-        passStore.passes
+    /// Returns the mark for a photo, or nil if unmarked.
+    func mark(for id: UUID) -> MarkStore.Mark? {
+        markStore.mark(for: id)
     }
 
-    var currentPassIndex: Int {
-        passStore.currentPassIndex
-    }
-
-    var canStartNextPass: Bool {
-        passStore.canStartNextPass
-    }
-
-    /// Returns the mark for a photo in the currently viewed pass, or nil if unmarked.
-    func mark(for id: UUID) -> PassStore.Mark? {
-        passStore.mark(for: id)
-    }
-
-    /// Returns the cumulative mark for a photo across all passes. The last
-    /// pass to mark the photo wins. Returns nil if never marked.
-    func cumulativeMark(for id: UUID) -> PassStore.Mark? {
-        passStore.cumulativeMark(for: id)
-    }
-
-    /// Groups all photos by their cumulative mark for sorting into folders.
-    func sortPlan() -> [PassStore.Mark?: [PhotoItem]] {
-        passStore.sortPlan(items: items)
-    }
-
-    /// Pick/reject/total counts for the pass at the given index.
-    func stats(for index: Int) -> PassStore.PassStats {
-        passStore.stats(for: index, items: items)
+    /// Groups all photos by their mark for sorting into folders.
+    func sortPlan() -> [MarkStore.Mark?: [PhotoItem]] {
+        markStore.sortPlan(items: items)
     }
 
     /// Set each time applyMarkAndAdvance is called, so observers can react to
@@ -66,7 +45,7 @@ class FolderLibrary {
     /// Uniquely identifies a single mark application, so observers can detect
     /// repeated applications of the same mark value.
     struct MarkEvent: Equatable {
-        let mark: PassStore.Mark?
+        let mark: MarkStore.Mark?
         private let token = UUID()
 
         static func == (lhs: MarkEvent, rhs: MarkEvent) -> Bool {
@@ -76,7 +55,7 @@ class FolderLibrary {
 
     /// The index of the selected item within the current filtered list, or nil if the
     /// selected item isn't present in the current filter. Setting this updates the
-    /// selected item identity, so the selection follows the item across pass switches.
+    /// selected item identity, so the selection follows the item across filter changes.
     var selectedIndex: Int? {
         get {
             guard let id = selectedItemID else { return nil }
@@ -115,11 +94,10 @@ class FolderLibrary {
         selectedIndex = index
     }
 
-    /// Sets, changes, or clears the mark for a photo in the current pass.
-    /// Recomputes the filtered list when a non-`.all` filter is active so the
-    /// view reflects the new mark.
-    func setMark(_ mark: PassStore.Mark?, for item: PhotoItem) {
-        passStore.setMark(mark, for: item.id)
+    /// Sets, changes, or clears the mark for a photo. Recomputes the filtered
+    /// list when a non-`.all` filter is active so the view reflects the new mark.
+    func setMark(_ mark: MarkStore.Mark?, for item: PhotoItem) {
+        markStore.setMark(mark, for: item.id)
         if filterMode != .all {
             updateFilteredItems()
         }
@@ -129,7 +107,7 @@ class FolderLibrary {
     /// marks all items in the range without advancing or collapsing the range, so
     /// the user can easily undo an accidental bulk mark. When a single item is
     /// selected, marks it and moves to the next item.
-    func applyMarkAndAdvance(_ mark: PassStore.Mark?) {
+    func applyMarkAndAdvance(_ mark: MarkStore.Mark?) {
         guard let index = selectedIndex else { return }
         if let range = selectionRange, range.count > 1 {
             let itemsToMark = Array(filteredItems[range])
@@ -146,27 +124,8 @@ class FolderLibrary {
         }
     }
 
-    /// Creates a new pass and resets filter and selection. Photos not marked in the
-    /// previous pass appear in the new one.
-    func startNextPass() {
-        passStore.startNextPass()
-        filterMode = .all
-        updateFilteredItems()
-        selectedIndex = filteredItems.isEmpty ? nil : 0
-        rangeAnchorID = nil
-    }
-
     func applyFilter(_ mode: FilterMode) {
         filterMode = mode
-        updateFilteredItems()
-        selectedIndex = filteredItems.isEmpty ? nil : 0
-        rangeAnchorID = nil
-    }
-
-    /// Switches to the pass at the given index and resets filter and selection.
-    func selectPass(_ index: Int) {
-        passStore.selectPass(index)
-        filterMode = .all
         updateFilteredItems()
         selectedIndex = filteredItems.isEmpty ? nil : 0
         rangeAnchorID = nil
@@ -179,8 +138,8 @@ class FolderLibrary {
         return Array(filteredItems[range])
     }
 
-    /// Reports a failure to persist library state to disk. Called by
-    /// LibraryPersistence when keeps.json could not be written.
+    /// Reports a failure to persist library state to disk. Called by the
+    /// persistence observation when keeps.json could not be written.
     func recordSaveError(_ error: Error) {
         saveError = error
     }
@@ -191,33 +150,43 @@ class FolderLibrary {
         saveError = nil
     }
 
-    /// Sets up a single empty pass. Called by LibraryPersistence when no saved
-    /// state exists.
-    func initializeFreshPasses() {
-        passStore.initializeFresh()
-        updateFilteredItems()
-        selectedItemID = filteredItems.first?.id
+    /// A stem-keyed snapshot of the current marks, for persistence. Reading
+    /// this inside an observation block also subscribes it to mark changes.
+    func snapshotState() -> SimpleCullState {
+        let stemByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.stem) })
+        return SimpleCullState(
+            picks: markStore.marks.compactMap { id, mark in mark == .pick ? stemByID[id] : nil }.sorted(),
+            rejects: markStore.marks.compactMap { id, mark in mark == .reject ? stemByID[id] : nil }.sorted()
+        )
     }
 
-    /// Applies passes restored from saved state. Called by LibraryPersistence after openFolder.
-    func applyRestoredPasses(_ restoredPasses: [PassStore.Pass], currentPassIndex: Int) {
-        passStore.applyRestored(passes: restoredPasses, currentPassIndex: currentPassIndex)
-        updateFilteredItems()
-        selectedItemID = filteredItems.first?.id
-    }
-
-    /// Recomputes filteredItems from the current pass and filter mode. The pass
-    /// visibility rule (a photo is visible only if unmarked in all earlier passes)
-    /// is applied first; the filter mode then selects a subset of those photos.
-    private func updateFilteredItems() {
-        guard let currentPass = passStore.currentPass else { filteredItems = []; return }
-        let passIDs = passStore.currentPassPhotoIDs(items: items)
-        let visibleIDs = switch filterMode {
-        case .all: passIDs
-        case .picked: currentPass.picks
-        case .rejected: currentPass.rejects
-        case .unmarked: passIDs.subtracting(currentPass.picks).subtracting(currentPass.rejects)
+    /// Replaces the marks with restored state, dropping stems that no longer
+    /// exist in the folder, and resets the selection.
+    func applyRestored(state: SimpleCullState) {
+        let idByStem = Dictionary(uniqueKeysWithValues: items.map { ($0.stem, $0.id) })
+        var marks: [UUID: MarkStore.Mark] = [:]
+        for stem in state.picks {
+            if let id = idByStem[stem] {
+                marks[id] = .pick
+            }
         }
-        filteredItems = items.filter { visibleIDs.contains($0.id) }
+        for stem in state.rejects {
+            if let id = idByStem[stem] {
+                marks[id] = .reject
+            }
+        }
+        markStore.applyRestored(marks: marks)
+        updateFilteredItems()
+        selectedItemID = filteredItems.first?.id
+    }
+
+    /// Recomputes filteredItems from the current filter mode.
+    private func updateFilteredItems() {
+        filteredItems = switch filterMode {
+        case .all: items
+        case .picked: items.filter { markStore.mark(for: $0.id) == .pick }
+        case .rejected: items.filter { markStore.mark(for: $0.id) == .reject }
+        case .unmarked: items.filter { markStore.mark(for: $0.id) == nil }
+        }
     }
 }

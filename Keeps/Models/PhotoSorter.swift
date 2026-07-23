@@ -12,7 +12,7 @@ enum PhotoSorter {
     /// Computes the file moves needed to sort photos into subdirectories.
     static func plannedMoves(
         folderURL: URL,
-        sortPlan: [PassStore.Mark?: [PhotoItem]]
+        sortPlan: [MarkStore.Mark?: [PhotoItem]]
     ) -> [Move] {
         sortPlan.flatMap { mark, items in
             let subdirectory = folderURL.appendingPathComponent(directoryName(for: mark))
@@ -48,7 +48,7 @@ enum PhotoSorter {
         }
     }
 
-    private static func directoryName(for mark: PassStore.Mark?) -> String {
+    private static func directoryName(for mark: MarkStore.Mark?) -> String {
         switch mark {
         case .pick: "Picked"
         case .reject: "Rejected"

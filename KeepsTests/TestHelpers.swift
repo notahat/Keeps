@@ -27,10 +27,8 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
     }
 }
 
-/// Creates a FolderLibrary with the given number of photos and an
-/// initialized first pass, ready for marking tests.
+/// Creates a FolderLibrary with the given number of photos, ready for
+/// marking tests.
 func makeLibrary(photoCount: Int) -> FolderLibrary {
-    let library = FolderLibrary(items: makePhotoItems(count: photoCount))
-    library.initializeFreshPasses()
-    return library
+    FolderLibrary(items: makePhotoItems(count: photoCount))
 }

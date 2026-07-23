@@ -4,7 +4,7 @@ import Testing
 
 @MainActor
 struct FilterTests {
-    @Test func filterAllShowsAllCurrentPassPhotos() throws {
+    @Test func filterAllShowsAllCurrentPassPhotos() {
         let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
 
@@ -13,7 +13,7 @@ struct FilterTests {
         #expect(library.filteredItems.count == 3)
     }
 
-    @Test func filterPickedShowsOnlyPicks() throws {
+    @Test func filterPickedShowsOnlyPicks() {
         let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
@@ -24,7 +24,7 @@ struct FilterTests {
         #expect(library.filteredItems[0].id == library.items[0].id)
     }
 
-    @Test func filterRejectedShowsOnlyRejects() throws {
+    @Test func filterRejectedShowsOnlyRejects() {
         let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
@@ -35,7 +35,7 @@ struct FilterTests {
         #expect(library.filteredItems[0].id == library.items[1].id)
     }
 
-    @Test func filterUnmarkedShowsOnlyUnmarkedPhotos() throws {
+    @Test func filterUnmarkedShowsOnlyUnmarkedPhotos() {
         let library = makeLibrary(photoCount: 3)
         library.setMark(.pick, for: library.items[0])
         library.setMark(.reject, for: library.items[1])
@@ -44,34 +44,5 @@ struct FilterTests {
 
         #expect(library.filteredItems.count == 1)
         #expect(library.filteredItems[0].id == library.items[2].id)
-    }
-
-    @Test func filterAllInLaterPassExcludesEarlierPassMarks() throws {
-        let library = makeLibrary(photoCount: 5)
-        library.setMark(.pick, for: library.items[0])
-        library.setMark(.reject, for: library.items[1])
-        library.startNextPass()
-
-        library.applyFilter(.all)
-
-        #expect(library.filteredItems.count == 3)
-        let filteredIDs = Set(library.filteredItems.map(\.id))
-        #expect(!filteredIDs.contains(library.items[0].id))
-        #expect(!filteredIDs.contains(library.items[1].id))
-    }
-
-    @Test func filterUnmarkedInLaterPassExcludesBothPassMarks() throws {
-        let library = makeLibrary(photoCount: 5)
-        library.setMark(.pick, for: library.items[0])
-        library.setMark(.reject, for: library.items[1])
-        library.startNextPass()
-        library.setMark(.pick, for: library.items[2])
-
-        library.applyFilter(.unmarked)
-
-        #expect(library.filteredItems.count == 2)
-        let filteredIDs = Set(library.filteredItems.map(\.id))
-        #expect(filteredIDs.contains(library.items[3].id))
-        #expect(filteredIDs.contains(library.items[4].id))
     }
 }

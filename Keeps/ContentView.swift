@@ -8,7 +8,7 @@ struct ContentView: View {
     @State private var session: FolderSession?
     @State private var library: FolderLibrary?
     @State private var folderError: Error?
-    @State private var persistence: LibraryPersistence?
+    @State private var persistence: WorkflowPersistence<SimpleCullState>?
 
     @State private var showingSortConfirmation = false
     @State private var showingSortComplete = false
@@ -27,28 +27,23 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            if let library {
-                PassSidebarView(library: library)
+        Group {
+            switch displayState {
+            case .empty: emptyState
+            case let .error(error): errorState(error)
+            case let .grid(library): GridView(library: library)
+            case let .single(library): SingleImageView(library: library)
             }
-        } detail: {
-            Group {
-                switch displayState {
-                case .empty: emptyState
-                case let .error(error): errorState(error)
-                case let .grid(library): GridView(library: library)
-                case let .single(library): SingleImageView(library: library)
-                }
-            }
-            .focusedSceneValue(\.library, library)
-            .focusedSceneValue(\.openFolderAction) { openFolder() }
-            .focusedSceneValue(\.sortPhotosAction, library?.items.isEmpty != false ? nil : {
-                showingSortConfirmation = true
-            })
-            .navigationTitle(session?.folderURL.lastPathComponent ?? "Keeps")
-            .navigationSubtitle(session?.folderURL.path ?? "")
-            .toolbar { toolbar }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .focusedSceneValue(\.library, library)
+        .focusedSceneValue(\.openFolderAction) { openFolder() }
+        .focusedSceneValue(\.sortPhotosAction, library?.items.isEmpty != false ? nil : {
+            showingSortConfirmation = true
+        })
+        .navigationTitle(session?.folderURL.lastPathComponent ?? "Keeps")
+        .navigationSubtitle(session?.folderURL.path ?? "")
+        .toolbar { toolbar }
         .frame(minWidth: 500, minHeight: 300)
         .preferredColorScheme(.dark)
         .modifier(SortDialogs(
@@ -189,9 +184,18 @@ struct ContentView: View {
         do {
             let newSession = try FolderSession(folderURL: url)
             let newLibrary = FolderLibrary(items: newSession.items)
-            let newPersistence = LibraryPersistence(folderURL: url)
-            newPersistence.restore(into: newLibrary)
-            newPersistence.startObserving(newLibrary)
+            let newPersistence = WorkflowPersistence<SimpleCullState>(
+                folderURL: url,
+                workflowName: SimpleCullState.workflowName
+            )
+            if let state = newPersistence.restore() {
+                newLibrary.applyRestored(state: state)
+            }
+            newPersistence.startObserving(
+                read: { _ = newLibrary.snapshotState() },
+                snapshot: { newLibrary.snapshotState() },
+                onSaveError: { newLibrary.recordSaveError($0) }
+            )
             session = newSession
             library = newLibrary
             persistence = newPersistence

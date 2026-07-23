@@ -8,8 +8,9 @@ import Foundation
 /// Photos have two identifiers that serve different purposes: `id` (UUID) is used
 /// everywhere in memory; `stem` (filename without extension, e.g. "IMG_001") is
 /// used in keeps.json on disk. Stems are used for persistence so that saved state
-/// survives folder moves. Code that crosses the memory/disk boundary must translate
-/// between them — LibraryPersistence owns this translation.
+/// survives folder moves. Code that crosses the memory/disk boundary must
+/// translate between them — the workflow's persistence schema owns this
+/// translation.
 struct PhotoItem: Identifiable {
     let id: UUID
     let stem: String
