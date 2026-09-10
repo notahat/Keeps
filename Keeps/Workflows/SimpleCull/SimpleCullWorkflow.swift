@@ -124,13 +124,6 @@ class SimpleCullWorkflow {
         return true
     }
 
-    /// The items spanned by the current selection range, or an empty array if no
-    /// multi-item range is active.
-    var selectedRangeItems: [PhotoItem] {
-        guard let range = selectionRange else { return [] }
-        return Array(items[range])
-    }
-
     /// Reports a failure to persist workflow state to disk. Called by the
     /// persistence observation when keeps.json could not be written.
     func recordSaveError(_ error: Error) {

@@ -4,7 +4,9 @@ A macOS app for fast culling of RAW/JPEG photo collections.
 
 ## Things to look at
 
-- Doing something with the marked files
+- Doing something with the marked files. Sorting into Picked/Rejected
+  folders was removed deliberately so the next workflow experiment can
+  decide what marks mean.
 - Handling multiple windows gracefully
 - Zooming/panning
 - Add a way to view the RAW image

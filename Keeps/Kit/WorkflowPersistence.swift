@@ -8,8 +8,8 @@ import Observation
 /// owns the security scope.
 ///
 /// Call restore() after creating the workflow's state, then startObserving
-/// to begin auto-saving on changes. Call stop() to halt auto-saving before
-/// opening a new folder or destructively sorting photos.
+/// to begin auto-saving on changes. Call stop() to halt auto-saving when the
+/// workflow's view goes away, such as when a different folder is opened.
 final class WorkflowPersistence<State: Codable> {
     private let fileURL: URL
     private let workflowName: String
