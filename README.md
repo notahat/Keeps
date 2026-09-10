@@ -4,28 +4,11 @@ A macOS app for fast culling of RAW/JPEG photo collections.
 
 ## Things to look at
 
-Culling:
-
-- Inefficiencies in our new pass structure? Are we recalculating things too much?
-- Seems like we write a lot of data each time...performance? Background task? Periodic writes?
-- Can we let the grid have focus without so much hackery?
-- Edge case of marking something that has already been marked in a later pass
-- Actual error handling on saving
-- Have a way to delete the last pass
-  - Probably not earlier passes. Would that even make sense/
-
-General:
-
-- Handling multiple windows gracefully
 - Doing something with the marked files
+- Handling multiple windows gracefully
 - Zooming/panning
-- IOSurface creation failure messages in console — investigate source (CMPhoto, may be system-level not our code)
 - Add a way to view the RAW image
+- Can we let the grid have focus without so much hackery?
+- IOSurface creation failure messages in console — investigate source (CMPhoto, may be system-level not our code)
 - Opening a folder with no photos in it leaves you at the "Open a folder of photos to get started" message...confusing
   - Maybe we should not open a window unless its attached to a folder of photos
-
-Snippet for backing out of sorting:
-
-```sh
-for dir in Picked Rejected Undecided; do [ -d "$dir" ] && mv "$dir"/* . && rmdir "$dir"; done
-```
