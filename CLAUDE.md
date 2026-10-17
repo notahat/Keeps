@@ -15,8 +15,9 @@ module:
 - `Keeps/Workflows/<name>/` — everything one culling workflow owns: its
   state, screens, cell chrome, keymap, toolbar, dialogs, and persistence
   schema. Currently `SimpleCull` (flat pick/reject marks).
-- `Keeps/ContentView.swift` — the shell: open/restore folder, security
-  bookmarks, and one wiring line that hosts the workflow's root view.
+- `Keeps/ContentView.swift` and `Keeps/FolderOpener.swift` — the shell:
+  open/restore folder, security bookmarks, and one wiring line that hosts
+  the workflow's root view.
 
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
 free of workflow vocabulary (marks, filters, sort destinations).
