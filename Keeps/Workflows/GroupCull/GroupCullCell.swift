@@ -65,16 +65,32 @@ private struct CollapsedStack: View {
     private static let maximumLayerCount = 8
     private static let scale: CGFloat = 0.8
 
+    /// The top photo's shape, once loaded. Photos in a group are nearly
+    /// always the same shape, so the prints beneath borrow it for their
+    /// blank paper until their own images arrive.
+    @State private var topAspectRatio: CGFloat?
+
     var body: some View {
         ZStack {
             ForEach(photos.prefix(Self.maximumLayerCount).reversed()) { photo in
                 let jitter = PileJitter(stem: photo.stem)
+                let isTopLayer = photo.id == photos.first?.id
                 // A white border so each photo reads as a print on paper.
-                ThumbnailImage(item: photo, borderWidth: 7)
-                    .scaleEffect(Self.scale)
-                    .shadow(color: .black.opacity(0.5), radius: 3)
-                    .rotationEffect(.degrees(jitter.rotationDegrees))
-                    .offset(x: jitter.horizontalOffset, y: jitter.verticalOffset)
+                // Only the top print is loaded urgently; the ones beneath
+                // are mostly hidden, so they load in the background, shown
+                // meanwhile as blank paper in the top photo's shape.
+                ThumbnailImage(
+                    item: photo,
+                    borderWidth: 7,
+                    loadsInBackground: !isTopLayer,
+                    showsPlaceholder: isTopLayer || topAspectRatio != nil,
+                    placeholderAspectRatio: isTopLayer ? nil : topAspectRatio,
+                    onAspectRatioKnown: isTopLayer ? { topAspectRatio = $0 } : nil
+                )
+                .scaleEffect(Self.scale)
+                .shadow(color: .black.opacity(0.5), radius: 3)
+                .rotationEffect(.degrees(jitter.rotationDegrees))
+                .offset(x: jitter.horizontalOffset, y: jitter.verticalOffset)
             }
         }
         .overlay(alignment: .bottomTrailing) {
