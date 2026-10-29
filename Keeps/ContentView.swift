@@ -59,7 +59,7 @@ struct ContentView: View {
                 Text(frameSaveError.localizedDescription)
             }
         }
-        .task(id: folder) {
+        .task {
             openSession()
         }
         .onAppear {
@@ -74,8 +74,6 @@ struct ContentView: View {
     /// a fresh bookmark if its old one has gone stale, or records the error
     /// if it can't be reached or read.
     private func openSession() {
-        session = nil
-        folderError = nil
         guard let folder else { return }
         OpenFolderList.shared.add(folder)
         do {

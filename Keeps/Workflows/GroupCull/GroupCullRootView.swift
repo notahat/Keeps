@@ -53,8 +53,8 @@ struct GroupCullRootView: View {
     }
 
     /// Creates the workflow, restores saved grouping, starts auto-save, and
-    /// prefetches thumbnails. Runs once per session; the shell re-creates
-    /// this view (via .id) when the folder changes.
+    /// prefetches thumbnails. Runs once, since a window keeps the same
+    /// folder for its whole life.
     private func start() {
         guard workflow == nil else { return }
         let newWorkflow = GroupCullWorkflow(items: session.items)

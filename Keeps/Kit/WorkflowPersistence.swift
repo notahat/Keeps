@@ -10,7 +10,7 @@ import Observation
 ///
 /// Call restore() after creating the workflow's state, then startObserving
 /// to begin auto-saving on changes. Call stop() to halt auto-saving when the
-/// workflow's view goes away, such as when a different folder is opened.
+/// workflow's view goes away, such as when its window closes.
 final class WorkflowPersistence<State: Codable> {
     private let file: KeepsFile
     private let workflowName: String
