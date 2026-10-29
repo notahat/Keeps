@@ -32,3 +32,13 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
 func makeWorkflow(photoCount: Int) -> SimpleCullWorkflow {
     SimpleCullWorkflow(items: makePhotoItems(count: photoCount))
 }
+
+/// Creates a GroupCullWorkflow with the given number of photos and initial
+/// boundaries, ready for grouping tests.
+func makeGroupCullWorkflow(photoCount: Int, boundaries: Set<Int> = []) -> GroupCullWorkflow {
+    let workflow = GroupCullWorkflow(items: makePhotoItems(count: photoCount))
+    for boundary in boundaries.sorted() {
+        workflow.toggleBoundary(atPhoto: boundary)
+    }
+    return workflow
+}

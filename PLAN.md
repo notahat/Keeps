@@ -29,8 +29,9 @@ Selection gets its own design session once grouping has been tried.
 - **Collapsed group.** Shown as one cell: the group's first photo with a
   count badge and a stacked-cards look.
 - **Temporary expansion.** Clicking a collapsed group expands it in place so
-  its boundaries can be edited. Only one group is expanded at a time, and it
-  re-collapses on clicking elsewhere or placing a new boundary.
+  its boundaries can be edited. Only one group is expanded at a time.
+  Splitting or merging it keeps the result expanded; clicking a photo
+  outside it, or placing a boundary outside it, collapses it again.
 - **Full-size view.** Double-click opens the existing detail surface,
   read-only; Esc returns. No boundary editing from the full-size view.
 - **Persistence.** `keeps.json` state under the workflow name `group-cull`,
