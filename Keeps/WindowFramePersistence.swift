@@ -85,21 +85,22 @@ struct WindowFramePersistence: NSViewRepresentable {
         /// The frame saved in keeps.json, or nil when there isn't one or the
         /// folder can't be reached.
         private func readSavedFrame() -> CGRect? {
-            do {
-                return try withFolderFile { file in
-                    file.read(CGRect.self, forKey: Self.frameKey)
-                }
-            } catch {
-                return nil
+            guard let folderURL = try? folder.resolve() else { return nil }
+            return withFolderFile(at: folderURL) { file in
+                file.read(CGRect.self, forKey: Self.frameKey)
             }
         }
 
         /// Saves the window's frame, once the saved one has been restored and
-        /// unless the window is full screen.
+        /// unless the window is full screen. A folder that can't be reached
+        /// is skipped rather than reported: the window already shows that
+        /// error, and reporting it here would repeat it on every move.
         private func saveFrame(of window: NSWindow) {
-            guard hasRestored, !window.styleMask.contains(.fullScreen) else { return }
+            guard hasRestored, !window.styleMask.contains(.fullScreen),
+                  let folderURL = try? folder.resolve()
+            else { return }
             do {
-                try withFolderFile { file in
+                try withFolderFile(at: folderURL) { file in
                     try file.write([Self.frameKey: window.frame])
                 }
             } catch {
@@ -108,9 +109,11 @@ struct WindowFramePersistence: NSViewRepresentable {
         }
 
         /// Runs `body` with the folder's keeps.json while holding sandbox
-        /// access to the folder. Throws if the folder can't be reached.
-        private func withFolderFile<Result>(_ body: (KeepsFile) throws -> Result) throws -> Result {
-            let folderURL = try folder.resolve()
+        /// access to the folder.
+        private func withFolderFile<Result>(
+            at folderURL: URL,
+            _ body: (KeepsFile) throws -> Result
+        ) rethrows -> Result {
             let isAccessing = folderURL.startAccessingSecurityScopedResource()
             defer {
                 if isAccessing {
