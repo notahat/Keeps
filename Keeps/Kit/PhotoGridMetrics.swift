@@ -65,15 +65,8 @@ enum PhotoGridMetrics {
         )
     }
 
-    /// Describes a scroll offset as the first slot of the row at the top of
-    /// the view and how far into that row the view is. Pure.
-    static func anchorSlot(forOffset offset: CGFloat, columnCount: Int) -> (slot: Int, offsetFromRowTop: CGFloat) {
-        let slot = firstSlot(inRowAt: offset, columnCount: columnCount)
-        return (slot, offset - rowTop(forIndex: slot, columnCount: columnCount))
-    }
-
-    /// The scroll offset an anchor describes: the inverse of anchorSlot.
-    /// Pure.
+    /// The scroll offset that puts the view a given distance into the row
+    /// holding a slot, as when restoring a saved scroll anchor. Pure.
     static func offset(forSlot slot: Int, offsetFromRowTop: CGFloat, columnCount: Int) -> CGFloat {
         rowTop(forIndex: slot, columnCount: columnCount) + offsetFromRowTop
     }

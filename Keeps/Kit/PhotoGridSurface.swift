@@ -204,12 +204,21 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Tells the caller where the view is now, as the first item of the row
     /// at the top and how far into that row the view has scrolled.
     private func reportScrollAnchor() {
-        guard hasAppeared, pendingInitialAnchor == nil, let onScrollAnchorChange, !items.isEmpty else { return }
-        let anchor = PhotoGridMetrics.anchorSlot(forOffset: visibleRegion.offset, columnCount: columnCount)
-        let index = min(max(0, anchor.slot - blankSlotCount), items.count - 1)
-        let rowSlot = index + blankSlotCount
-        let offsetFromRowTop = visibleRegion.offset - PhotoGridMetrics.rowTop(forIndex: rowSlot, columnCount: columnCount)
+        guard hasAppeared, pendingInitialAnchor == nil, let onScrollAnchorChange,
+              let index = firstItemIndex(inRowAt: visibleRegion.offset)
+        else { return }
+        let rowTop = PhotoGridMetrics.rowTop(forIndex: index + blankSlotCount, columnCount: columnCount)
+        let offsetFromRowTop = visibleRegion.offset - rowTop
         onScrollAnchorChange(GridScrollAnchor(itemID: items[index].id, offsetFromRowTop: offsetFromRowTop))
+    }
+
+    /// The index of the first item in the row at a height within the
+    /// content, clamped to the items so that blank slots and space past the
+    /// end land on the nearest item. Nil when there are no items.
+    private func firstItemIndex(inRowAt height: CGFloat) -> Int? {
+        guard !items.isEmpty else { return nil }
+        let slot = PhotoGridMetrics.firstSlot(inRowAt: height, columnCount: columnCount)
+        return min(max(0, slot - blankSlotCount), items.count - 1)
     }
 
     /// The lazy grid of cells, measuring its own width for the column count.
@@ -274,11 +283,8 @@ struct PhotoGridSurface<Cell: View>: View {
     /// A pin on the first item of the row in the middle of the view, for
     /// changes that come from the keyboard rather than a click.
     private func pinForMiddleOfView() -> PinnedItem? {
-        guard !items.isEmpty else { return nil }
         let middle = visibleRegion.offset + visibleRegion.height / 2
-        let slot = PhotoGridMetrics.firstSlot(inRowAt: middle, columnCount: columnCount)
-        let index = min(max(0, slot - blankSlotCount), items.count - 1)
-        return PinnedItem(index: index, isFromClick: false)
+        return firstItemIndex(inRowAt: middle).map { PinnedItem(index: $0, isFromClick: false) }
     }
 
     /// The caller's cell, widened to fill its slot, with click,
