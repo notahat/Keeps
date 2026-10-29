@@ -23,9 +23,12 @@ struct GroupCullRootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
-            ToolbarItem(placement: .status) {
-                LoadGraphView().padding(.horizontal, 12)
+            // At the trailing edge with no glass bubble: background loading
+            // is secondary information, not a control.
+            ToolbarItem(placement: .primaryAction) {
+                LoadProgressView()
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         .alert("Couldn't Save Changes", isPresented: Binding(
             get: { workflow?.saveError != nil },

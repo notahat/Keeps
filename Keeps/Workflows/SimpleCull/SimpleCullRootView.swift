@@ -52,7 +52,7 @@ struct SimpleCullRootView: View {
         if let workflow {
             ToolbarItem(placement: .status) {
                 HStack(spacing: 8) {
-                    LoadGraphView()
+                    LoadProgressView()
                     HStack(spacing: 3) {
                         Text("\(workflow.items.count)")
                             .monospacedDigit()
