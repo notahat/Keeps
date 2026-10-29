@@ -57,6 +57,14 @@ class GroupCullWorkflow {
         }
     }
 
+    /// Selects a cell without expanding or collapsing anything, for keyboard
+    /// navigation.
+    func selectCell(at cellIndex: Int) {
+        let cells = layout.cells
+        guard cells.indices.contains(cellIndex) else { return }
+        selectedPhotoIndex = cells[cellIndex].photoRange.lowerBound
+    }
+
     /// Handles a click on a cell. Clicking a collapsed group expands it;
     /// clicking a photo selects it and collapses any expanded group it is
     /// not part of.

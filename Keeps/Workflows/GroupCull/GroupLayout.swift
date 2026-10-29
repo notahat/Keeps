@@ -28,11 +28,13 @@ nonisolated struct GroupLayout {
     static let openGroupCount = 2
 
     let photoCount: Int
+    let boundaries: Set<Int>
     let groups: [Range<Int>]
     let cells: [Cell]
 
     init(photoCount: Int, boundaries: Set<Int>, expandedRange: Range<Int>? = nil) {
         self.photoCount = photoCount
+        self.boundaries = boundaries
         groups = Self.groups(photoCount: photoCount, boundaries: boundaries)
         cells = Self.cells(photoCount: photoCount, groups: groups, expandedRange: expandedRange)
     }
@@ -42,6 +44,11 @@ nonisolated struct GroupLayout {
     /// the last cell.
     func photoIndex(forGap gapIndex: Int) -> Int {
         cells.indices.contains(gapIndex) ? cells[gapIndex].photoRange.lowerBound : photoCount
+    }
+
+    /// Whether there is a boundary at the gap before the given cell.
+    func hasBoundary(atGap gapIndex: Int) -> Bool {
+        gapIndex > 0 && boundaries.contains(photoIndex(forGap: gapIndex))
     }
 
     /// The index of the cell that shows the given photo.

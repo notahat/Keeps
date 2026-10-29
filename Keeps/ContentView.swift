@@ -12,7 +12,7 @@ struct ContentView: View {
                 errorState(folderError)
             } else if let session = folderOpener.session, !session.items.isEmpty {
                 // The one wiring line a workflow experiment replaces.
-                SimpleCullRootView(session: session)
+                GroupCullRootView(session: session)
                     .id(session.folderURL)
             } else {
                 emptyState

@@ -77,6 +77,17 @@ struct GroupLayoutTests {
         #expect(layout.photoIndex(forGap: layout.cells.count) == 10)
     }
 
+    @Test("A gap has a boundary when the photo after it starts a group")
+    func gapBoundaryLookup() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8, 10])
+
+        #expect(layout.hasBoundary(atGap: 1))
+        // Cells: [collapsed 0..<3], [collapsed 3..<5], 5, 6, ... so gap 3
+        // sits before photo 6.
+        #expect(!layout.hasBoundary(atGap: 3))
+        #expect(layout.hasBoundary(atGap: layout.cells.count))
+    }
+
     @Test("The cell showing a photo is found whether or not its group is collapsed")
     func findsCellContainingPhoto() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])

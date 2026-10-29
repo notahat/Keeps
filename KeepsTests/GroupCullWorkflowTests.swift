@@ -99,6 +99,17 @@ struct GroupCullWorkflowTests {
         #expect(workflow.expandedRange == nil)
     }
 
+    @Test("Selecting a collapsed group by navigation selects it without expanding it")
+    func navigatingOntoCollapsedGroupDoesNotExpand() {
+        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
+        workflow.tapCell(at: 3)
+
+        workflow.selectCell(at: 0)
+
+        #expect(workflow.expandedRange == nil)
+        #expect(workflow.selectedCellIndex == 0)
+    }
+
     @Test("The selected cell is the collapsed group holding the selected photo")
     func selectedCellFollowsPhotoIntoCollapsedGroup() {
         let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5])
