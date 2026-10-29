@@ -19,7 +19,7 @@ struct GroupCullStateTests {
     @Test("The scroll position survives a save and restore")
     func scrollAnchorRoundTrip() {
         let workflow = makeGroupCullWorkflow(photoCount: 10)
-        workflow.updateScrollAnchor(GridScrollAnchor(itemID: workflow.items[6].id, offsetFromRowTop: 42))
+        workflow.scrollAnchor = GridScrollAnchor(itemID: workflow.items[6].id, offsetFromRowTop: 42)
 
         let restored = GroupCullWorkflow(items: workflow.items)
         restored.applyRestored(state: workflow.snapshotState())

@@ -41,14 +41,12 @@ struct PhotoGridSurface<Cell: View>: View {
     /// press, is held instead.
     var stableItemID: UUID?
 
-    /// A scroll position to restore when the grid first lays out, such as
-    /// one saved from a previous session. When nil, the grid instead centres
-    /// the selection.
-    var initialScrollAnchor: GridScrollAnchor?
-
-    /// Receives the scroll position whenever it settles: when the user stops
-    /// scrolling, and after the grid moves itself.
-    var onScrollAnchorChange: ((GridScrollAnchor) -> Void)?
+    /// The scroll position. Read once when the grid first lays out, to
+    /// restore a position such as one saved from a previous session; when
+    /// nil then, the grid instead centres the selection. Written whenever
+    /// scrolling settles (when the user stops scrolling, and after the grid
+    /// moves itself), but only when the position has actually changed.
+    var scrollAnchor: Binding<GridScrollAnchor?> = .constant(nil)
 
     @ViewBuilder var cell: (_ item: PhotoItem, _ index: Int) -> Cell
 
@@ -178,8 +176,10 @@ struct PhotoGridSurface<Cell: View>: View {
     /// otherwise the selection, centred.
     private func handleAppear(scrollProxy: ScrollViewProxy) {
         hasAppeared = true
-        if let initialScrollAnchor, items.contains(where: { $0.id == initialScrollAnchor.itemID }) {
-            pendingInitialAnchor = initialScrollAnchor
+        if let initialAnchor = scrollAnchor.wrappedValue,
+           items.contains(where: { $0.id == initialAnchor.itemID })
+        {
+            pendingInitialAnchor = initialAnchor
             applyPendingInitialAnchor()
         } else if let selectedIndex {
             scrollProxy.scrollTo(items[selectedIndex].id, anchor: .center)
@@ -201,15 +201,19 @@ struct PhotoGridSurface<Cell: View>: View {
         scrollPosition.scrollTo(y: offset)
     }
 
-    /// Tells the caller where the view is now, as the first item of the row
-    /// at the top and how far into that row the view has scrolled.
+    /// Writes where the view is now to the scroll anchor binding, as the
+    /// first item of the row at the top and how far into that row the view
+    /// has scrolled.
     private func reportScrollAnchor() {
-        guard hasAppeared, pendingInitialAnchor == nil, let onScrollAnchorChange,
+        guard hasAppeared, pendingInitialAnchor == nil,
               let index = firstItemIndex(inRowAt: visibleRegion.offset)
         else { return }
         let rowTop = PhotoGridMetrics.rowTop(forIndex: index + blankSlotCount, columnCount: columnCount)
-        let offsetFromRowTop = visibleRegion.offset - rowTop
-        onScrollAnchorChange(GridScrollAnchor(itemID: items[index].id, offsetFromRowTop: offsetFromRowTop))
+        let anchor = GridScrollAnchor(itemID: items[index].id, offsetFromRowTop: visibleRegion.offset - rowTop)
+        // Repeats are skipped so that whatever the binding writes to (such
+        // as observed state that gets saved) only changes when the view has.
+        guard anchor != scrollAnchor.wrappedValue else { return }
+        scrollAnchor.wrappedValue = anchor
     }
 
     /// The index of the first item in the row at a height within the

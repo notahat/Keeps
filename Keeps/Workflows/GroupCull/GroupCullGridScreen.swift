@@ -4,7 +4,7 @@ import SwiftUI
 /// workflow's cells, with edge clicks toggling group boundaries and cell
 /// clicks selecting photos or collapsed groups.
 struct GroupCullGridScreen: View {
-    var workflow: GroupCullWorkflow
+    @Bindable var workflow: GroupCullWorkflow
 
     @State private var hoveredGap: Int?
 
@@ -27,9 +27,7 @@ struct GroupCullGridScreen: View {
             leadingBlankSlots: layout.hiddenPhotoCount,
             // Where grouping has reached stays put when groups collapse.
             stableItemID: workflow.workingPointPhotoIndex.map { workflow.items[$0].id },
-            // Only read on first layout, to restore a saved session.
-            initialScrollAnchor: workflow.scrollAnchor,
-            onScrollAnchorChange: { anchor in workflow.updateScrollAnchor(anchor) }
+            scrollAnchor: $workflow.scrollAnchor
         ) { item, index in
             GroupCullCell(
                 item: item,

@@ -17,8 +17,9 @@ class GroupCullWorkflow {
 
     private(set) var selectedPhotoIndex: Int?
 
-    /// The grid's scroll position, as last reported by the grid.
-    private(set) var scrollAnchor: GridScrollAnchor?
+    /// The grid's scroll position, bound to the grid, which writes it only
+    /// when it changes.
+    var scrollAnchor: GridScrollAnchor?
 
     /// Set when keeps.json could not be written, so the UI can warn the
     /// user that their grouping may not be saved.
@@ -100,13 +101,6 @@ class GroupCullWorkflow {
     /// Deselects everything.
     func clearSelection() {
         selectedPhotoIndex = nil
-    }
-
-    /// Records the grid's scroll position. Repeats of the same position are
-    /// ignored so they don't trigger a needless save.
-    func updateScrollAnchor(_ anchor: GridScrollAnchor) {
-        guard anchor != scrollAnchor else { return }
-        scrollAnchor = anchor
     }
 
     /// Records a failure to write keeps.json.
