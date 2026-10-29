@@ -70,14 +70,18 @@ struct ContentView: View {
         }
     }
 
-    /// Opens the window's folder and remembers it for the next launch, or
-    /// records the error if it can't be reached or read.
+    /// Opens the window's folder and remembers it for the next launch, with
+    /// a fresh bookmark if its old one has gone stale, or records the error
+    /// if it can't be reached or read.
     private func openSession() {
         session = nil
         folderError = nil
         guard let folder else { return }
         OpenFolderList.shared.add(folder)
         do {
+            if let refreshed = try folder.refreshedIfStale() {
+                OpenFolderList.shared.replace(folder, with: refreshed)
+            }
             session = try FolderSession(folderURL: folder.resolve())
         } catch {
             folderError = error

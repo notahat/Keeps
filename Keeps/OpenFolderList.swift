@@ -30,6 +30,16 @@ final class OpenFolderList {
         save(updated)
     }
 
+    /// Swaps a remembered folder for an updated reference to it, such as one
+    /// with a refreshed bookmark, keeping its place in the list. Does nothing
+    /// if the folder isn't remembered.
+    func replace(_ folder: FolderReference, with updated: FolderReference) {
+        var folders = folders
+        guard let index = folders.firstIndex(of: folder) else { return }
+        folders[index] = updated
+        save(folders)
+    }
+
     /// Forgets a folder.
     func remove(_ folder: FolderReference) {
         save(folders.filter { $0 != folder })

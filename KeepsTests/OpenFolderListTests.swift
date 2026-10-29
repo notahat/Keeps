@@ -51,6 +51,28 @@ struct OpenFolderListTests {
         #expect(list.folders == [makeReference("b")])
     }
 
+    @Test("A refreshed folder takes the old one's place in the list")
+    func replacesFolderInPlace() {
+        let list = makeList()
+        list.add(makeReference("a"))
+        list.add(makeReference("b"))
+        list.add(makeReference("c"))
+
+        list.replace(makeReference("b"), with: makeReference("moved"))
+
+        #expect(list.folders == [makeReference("a"), makeReference("moved"), makeReference("c")])
+    }
+
+    @Test("Replacing a folder that isn't remembered leaves the list alone")
+    func replaceIgnoresUnknownFolder() {
+        let list = makeList()
+        list.add(makeReference("a"))
+
+        list.replace(makeReference("b"), with: makeReference("moved"))
+
+        #expect(list.folders == [makeReference("a")])
+    }
+
     @Test("The list survives the app restarting")
     func persistsAcrossInstances() throws {
         let suiteName = "OpenFolderListTests-\(UUID().uuidString)"

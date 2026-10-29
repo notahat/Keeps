@@ -39,4 +39,13 @@ struct FolderReferenceTests {
 
         #expect(resolved.resolvingSymlinksInPath().path == folder.resolvingSymlinksInPath().path)
     }
+
+    @Test("A reference with an up-to-date bookmark needs no refreshing")
+    func freshBookmarkIsNotRefreshed() throws {
+        let folder = try makeTemporaryFolder()
+
+        let refreshed = try FolderReference.make(for: folder).refreshedIfStale()
+
+        #expect(refreshed == nil)
+    }
 }

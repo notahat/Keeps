@@ -25,13 +25,37 @@ nonisolated struct FolderReference: Codable, Hashable {
     /// bookmark can no longer be resolved, such as when the folder has been
     /// deleted.
     func resolve() throws -> URL {
+        try resolveBookmark().url
+    }
+
+    /// A new reference with a freshly made bookmark, when the system reports
+    /// this one as stale (as it can after the folder is moved or renamed),
+    /// or nil when this one is still good. Stale bookmarks still resolve for
+    /// now but may stop working, so a stale one should be replaced wherever
+    /// it's kept. Throws if the bookmark can't be resolved or remade.
+    func refreshedIfStale() throws -> FolderReference? {
+        let (currentURL, isStale) = try resolveBookmark()
+        guard isStale else { return nil }
+        let isAccessing = currentURL.startAccessingSecurityScopedResource()
+        defer {
+            if isAccessing {
+                currentURL.stopAccessingSecurityScopedResource()
+            }
+        }
+        return try .make(for: currentURL)
+    }
+
+    /// Resolves the bookmark to the folder's current URL, noting whether the
+    /// system considers the bookmark stale.
+    private func resolveBookmark() throws -> (url: URL, isStale: Bool) {
         var isStale = false
-        return try URL(
+        let url = try URL(
             resolvingBookmarkData: bookmark,
             options: .withSecurityScope,
             relativeTo: nil,
             bookmarkDataIsStale: &isStale
         )
+        return (url, isStale)
     }
 
     /// The folder's path in a canonical form, so differently spelled URLs
