@@ -25,9 +25,10 @@ struct PhotoGridSurface<Cell: View>: View {
     /// it. When nil, cell edges behave like the rest of the cell.
     var onGapTap: ((_ gapIndex: Int) -> Void)?
 
-    /// Receives the gap under the pointer as it moves, or nil when the
-    /// pointer is not over a gap.
-    var onGapHover: ((_ gapIndex: Int?) -> Void)?
+    /// The gap under the pointer, or nil when the pointer is not over a gap.
+    /// Written as the pointer moves, only when it changes, and only when
+    /// onGapTap is set, since otherwise there are no gaps to hover.
+    var hoveredGap: Binding<Int?> = .constant(nil)
 
     /// Empty slots to leave before the first item. Only the remainder by the
     /// column count is used, so a caller that removes items from the front
@@ -308,19 +309,21 @@ struct PhotoGridSurface<Cell: View>: View {
                 handleTap(at: value.location, index: index)
             })
             .onContinuousHover { phase in
-                guard let onGapHover else { return }
-                switch phase {
-                case let .active(location):
-                    if case let .gap(gapIndex) = hitTarget(at: location, index: index) {
-                        onGapHover(gapIndex)
-                    } else {
-                        onGapHover(nil)
-                    }
-                case .ended:
-                    onGapHover(nil)
-                }
+                updateHoveredGap(for: phase, index: index)
             }
             .id(item.id)
+    }
+
+    /// Writes the gap under the pointer in the slot at `index` to the
+    /// hovered gap binding, if gaps are enabled and it has changed.
+    private func updateHoveredGap(for phase: HoverPhase, index: Int) {
+        guard onGapTap != nil else { return }
+        let gapIndex: Int? = switch phase {
+        case let .active(location): hitTarget(at: location, index: index).gapIndex
+        case .ended: nil
+        }
+        guard gapIndex != hoveredGap.wrappedValue else { return }
+        hoveredGap.wrappedValue = gapIndex
     }
 
     /// Routes a single click to onGapTap or onTap, then takes keyboard focus.

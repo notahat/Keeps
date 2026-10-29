@@ -11,6 +11,15 @@ enum GridHitTarget: Equatable {
     case item(Int)
     case gap(beforeIndex: Int)
 
+    /// The gap this targets, or nil when it targets an item.
+    var gapIndex: Int? {
+        if case let .gap(beforeIndex) = self {
+            beforeIndex
+        } else {
+            nil
+        }
+    }
+
     /// The fraction of the cell's width, on each side, that targets a gap.
     static let edgeFraction: CGFloat = 0.2
 

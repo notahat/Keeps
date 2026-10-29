@@ -45,4 +45,14 @@ struct GridHitTargetTests {
 
         #expect(target == .item(3))
     }
+
+    @Test("A gap target gives its gap index")
+    func gapTargetGivesGapIndex() {
+        #expect(GridHitTarget.gap(beforeIndex: 4).gapIndex == 4)
+    }
+
+    @Test("An item target gives no gap index")
+    func itemTargetGivesNoGapIndex() {
+        #expect(GridHitTarget.item(4).gapIndex == nil)
+    }
 }
