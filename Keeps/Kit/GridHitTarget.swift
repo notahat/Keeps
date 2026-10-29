@@ -7,7 +7,7 @@ import Foundation
 /// the left edge of the next — even across a row wrap — resolve to the same
 /// gap. The gap after the last item is a valid target; there is none before
 /// the first. Says nothing about what a gap means to a workflow.
-enum GridHitTarget: Equatable {
+nonisolated enum GridHitTarget: Equatable {
     case item(Int)
     case gap(beforeIndex: Int)
 
