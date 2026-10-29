@@ -20,18 +20,25 @@ struct ThumbnailImage: View {
     /// such as the lower layers of a pile.
     var loadsInBackground = false
 
-    /// Whether to show a placeholder while loading. Off for images that
-    /// should simply appear once ready.
-    var showsPlaceholder = true
-
-    /// The width-to-height ratio to draw the placeholder at, when the
-    /// caller can guess the image's shape. With a border it's drawn as a
-    /// border-coloured card with a grey patch where the image will go, like
-    /// paper awaiting its print. When nil, the placeholder fills the square.
-    var placeholderAspectRatio: CGFloat?
+    /// What to show while the image loads.
+    var placeholder: Placeholder = .square
 
     /// Receives the image's width-to-height ratio once it has loaded.
     var onAspectRatioKnown: ((CGFloat) -> Void)?
+
+    /// A stand-in for the image while it loads.
+    enum Placeholder {
+        /// A neutral square filling the cell.
+        case square
+
+        /// A card of a guessed width-to-height ratio, drawn in the border
+        /// colour with a grey patch where the image will go, like paper
+        /// awaiting its print.
+        case paper(aspectRatio: CGFloat)
+
+        /// Nothing, for images that should simply appear once ready.
+        case none
+    }
 
     // Request at 2x the display size for Retina screens.
     static let displaySize: Int = 260
@@ -49,10 +56,10 @@ struct ThumbnailImage: View {
                     .resizable()
                     .scaledToFit()
                     .padding(borderWidth)
-                    .background(borderColor.opacity(borderWidth > 0 ? 1 : 0))
+                    .background(borderFill)
                     .padding(3)
-            } else if showsPlaceholder {
-                placeholder
+            } else {
+                placeholderView
             }
         }
         .frame(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
@@ -76,19 +83,26 @@ struct ThumbnailImage: View {
         }
     }
 
-    /// The stand-in while loading: a card of the guessed shape if there is
-    /// one (bordered, with a grey patch for the image), otherwise a neutral
-    /// square.
-    @ViewBuilder private var placeholder: some View {
-        if let placeholderAspectRatio {
+    /// The stand-in drawn while loading (see Placeholder).
+    @ViewBuilder private var placeholderView: some View {
+        switch placeholder {
+        case .square:
+            Color(nsColor: .quaternaryLabelColor)
+        case let .paper(aspectRatio):
             Color(white: 0.5)
                 .padding(borderWidth)
-                .background(borderColor.opacity(borderWidth > 0 ? 1 : 0))
-                .aspectRatio(placeholderAspectRatio, contentMode: .fit)
+                .background(borderFill)
+                .aspectRatio(aspectRatio, contentMode: .fit)
                 .padding(3)
-        } else {
-            Color(nsColor: .quaternaryLabelColor)
+        case .none:
+            EmptyView()
         }
+    }
+
+    /// What fills the border around the image: the border colour, or
+    /// nothing when there's no border.
+    private var borderFill: Color {
+        borderWidth > 0 ? borderColor : .clear
     }
 
     /// Displays a loaded image and reports its shape.

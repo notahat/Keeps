@@ -83,8 +83,7 @@ private struct CollapsedStack: View {
                     item: photo,
                     borderWidth: 7,
                     loadsInBackground: !isTopLayer,
-                    showsPlaceholder: isTopLayer || topAspectRatio != nil,
-                    placeholderAspectRatio: isTopLayer ? nil : topAspectRatio,
+                    placeholder: placeholder(isTopLayer: isTopLayer),
                     onAspectRatioKnown: isTopLayer ? { topAspectRatio = $0 } : nil
                 )
                 .scaleEffect(Self.scale)
@@ -106,6 +105,16 @@ private struct CollapsedStack: View {
                 .shadow(color: .black.opacity(0.6), radius: 2)
                 .padding(10)
         }
+    }
+
+    /// What a print shows while loading: the usual square for the top one,
+    /// and blank paper in the top photo's shape for the ones beneath, or
+    /// nothing until that shape is known.
+    private func placeholder(isTopLayer: Bool) -> ThumbnailImage.Placeholder {
+        if isTopLayer {
+            return .square
+        }
+        return topAspectRatio.map { .paper(aspectRatio: $0) } ?? .none
     }
 }
 
