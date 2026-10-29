@@ -55,13 +55,6 @@ struct GroupLayoutTests {
         #expect(layout.cells.first == .collapsedGroup(0 ..< 3))
     }
 
-    @Test("A collapsed group overlapping the expanded range shows its photos")
-    func expandedRangeShowsCollapsedGroup() {
-        let layout = GroupLayout(photoCount: 12, boundaries: [2, 4, 6, 8], expandedRange: 2 ..< 4)
-
-        #expect(layout.cells == [.collapsedGroup(0 ..< 2)] + (2 ..< 12).map { .photo($0) })
-    }
-
     @Test("A gap between cells maps to the photo after it, even past a collapsed group")
     func gapMapsToPhotoAfterIt() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])

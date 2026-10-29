@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The grid screen of the grouping workflow: a photo grid surface showing the
 /// workflow's cells, with edge clicks toggling group boundaries and cell
-/// clicks selecting photos or expanding collapsed groups.
+/// clicks selecting photos or collapsed groups.
 struct GroupCullGridScreen: View {
     var workflow: GroupCullWorkflow
 
@@ -17,8 +17,8 @@ struct GroupCullGridScreen: View {
             items: workflow.displayedItems,
             selectedIndex: selectedCellIndex,
             onNavigate: { proposal in workflow.selectCell(at: proposal.targetIndex) },
-            onKeyDown: { _ in false },
-            onTap: { index, _ in workflow.tapCell(at: index) },
+            onKeyDown: { event in handleKeyEvent(event) },
+            onTap: { index, _ in workflow.selectCell(at: index) },
             onDoubleTap: { _ in },
             onGapTap: { gapIndex in workflow.toggleBoundary(atGap: gapIndex) },
             onGapHover: { gapIndex in hoveredGap = gapIndex },
@@ -33,6 +33,13 @@ struct GroupCullGridScreen: View {
                 trailingBoundary: boundaryStyle(atGap: index + 1, in: layout)
             )
         }
+    }
+
+    /// Handles non-navigation keys: Escape clears the selection.
+    private func handleKeyEvent(_ event: NSEvent) -> Bool {
+        guard event.keyCode == .escape else { return false }
+        workflow.clearSelection()
+        return true
     }
 
     /// How to draw the bar at a gap: placed if there is a boundary there,

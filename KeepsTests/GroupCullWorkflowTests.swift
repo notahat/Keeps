@@ -3,6 +3,24 @@ import Foundation
 import Testing
 
 struct GroupCullWorkflowTests {
+    @Test("Nothing is selected to begin with")
+    func startsWithNothingSelected() {
+        let workflow = makeGroupCullWorkflow(photoCount: 10)
+
+        #expect(workflow.selectedPhotoIndex == nil)
+        #expect(workflow.selectedCellIndex == nil)
+    }
+
+    @Test("Clearing the selection leaves nothing selected")
+    func clearSelection() {
+        let workflow = makeGroupCullWorkflow(photoCount: 10)
+        workflow.selectCell(at: 4)
+
+        workflow.clearSelection()
+
+        #expect(workflow.selectedPhotoIndex == nil)
+    }
+
     @Test("Toggling a gap places a boundary, and toggling it again removes it")
     func toggleGapAddsThenRemovesBoundary() {
         let workflow = makeGroupCullWorkflow(photoCount: 10)
@@ -45,75 +63,21 @@ struct GroupCullWorkflowTests {
         #expect(workflow.layout.cells.first == .photo(0))
     }
 
-    @Test("Tapping a collapsed group expands it and selects its first photo")
-    func tappingCollapsedGroupExpandsIt() {
+    @Test("Selecting a collapsed group selects its first photo and leaves it collapsed")
+    func selectingCollapsedGroupKeepsItCollapsed() {
         let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
-
-        workflow.tapCell(at: 0)
-
-        #expect(workflow.expandedRange == 0 ..< 3)
-        #expect(workflow.selectedPhotoIndex == 0)
-        #expect(workflow.layout.cells.first == .photo(0))
-    }
-
-    @Test("Tapping a photo inside the expanded group keeps it expanded")
-    func tappingInsideKeepsExpansion() {
-        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
-        workflow.tapCell(at: 0)
-
-        workflow.tapCell(at: 2)
-
-        #expect(workflow.expandedRange == 0 ..< 3)
-        #expect(workflow.selectedPhotoIndex == 2)
-    }
-
-    @Test("Tapping a photo outside the expanded group collapses it again")
-    func tappingOutsideCollapses() {
-        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
-        workflow.tapCell(at: 0)
-
-        workflow.tapCell(at: 6)
-
-        #expect(workflow.expandedRange == nil)
-        #expect(workflow.selectedPhotoIndex == 6)
-    }
-
-    @Test("Placing a boundary inside the expanded group keeps it expanded")
-    func boundaryInsideKeepsExpansion() {
-        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
-        workflow.tapCell(at: 0)
-
-        workflow.toggleBoundary(atGap: 1)
-
-        #expect(workflow.boundaries == [1, 3, 5, 8])
-        #expect(workflow.expandedRange == 0 ..< 3)
-    }
-
-    @Test("Placing a boundary outside the expanded group collapses it again")
-    func boundaryOutsideCollapses() {
-        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
-        workflow.tapCell(at: 0)
-
-        workflow.toggleBoundary(atGap: 9)
-
-        #expect(workflow.expandedRange == nil)
-    }
-
-    @Test("Selecting a collapsed group by navigation selects it without expanding it")
-    func navigatingOntoCollapsedGroupDoesNotExpand() {
-        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
-        workflow.tapCell(at: 3)
+        workflow.selectCell(at: 3)
 
         workflow.selectCell(at: 0)
 
-        #expect(workflow.expandedRange == nil)
-        #expect(workflow.selectedCellIndex == 0)
+        #expect(workflow.selectedPhotoIndex == 0)
+        #expect(workflow.layout.cells.first == .collapsedGroup(0 ..< 3))
     }
 
     @Test("The selected cell is the collapsed group holding the selected photo")
     func selectedCellFollowsPhotoIntoCollapsedGroup() {
         let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5])
-        workflow.tapCell(at: 1)
+        workflow.selectCell(at: 1)
 
         workflow.toggleBoundary(atGap: 8)
 

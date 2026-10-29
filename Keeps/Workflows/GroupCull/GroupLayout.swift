@@ -32,11 +32,11 @@ nonisolated struct GroupLayout {
     let groups: [Range<Int>]
     let cells: [Cell]
 
-    init(photoCount: Int, boundaries: Set<Int>, expandedRange: Range<Int>? = nil) {
+    init(photoCount: Int, boundaries: Set<Int>) {
         self.photoCount = photoCount
         self.boundaries = boundaries
         groups = Self.groups(photoCount: photoCount, boundaries: boundaries)
-        cells = Self.cells(photoCount: photoCount, groups: groups, expandedRange: expandedRange)
+        cells = Self.cells(photoCount: photoCount, groups: groups)
     }
 
     /// The photo index that a gap between cells corresponds to: the first
@@ -70,14 +70,13 @@ nonisolated struct GroupLayout {
         return zip(starts, ends).map { start, end in start ..< end }
     }
 
-    /// The grid cells: older groups collapsed unless they overlap the
-    /// expanded range, everything else as individual photos.
-    private static func cells(photoCount: Int, groups: [Range<Int>], expandedRange: Range<Int>?) -> [Cell] {
+    /// The grid cells: older groups collapsed, everything else as individual
+    /// photos.
+    private static func cells(photoCount: Int, groups: [Range<Int>]) -> [Cell] {
         let collapsibleCount = max(0, groups.count - openGroupCount)
         var cells: [Cell] = []
         for (groupIndex, group) in groups.enumerated() {
-            let isExpanded = expandedRange?.overlaps(group) ?? false
-            if groupIndex < collapsibleCount, !isExpanded {
+            if groupIndex < collapsibleCount {
                 cells.append(.collapsedGroup(group))
             } else {
                 cells += group.map { .photo($0) }

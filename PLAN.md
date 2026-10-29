@@ -34,10 +34,9 @@ Selection gets its own design session once grouping has been tried.
   into view. Changes are not animated.
 - **Collapsed group.** Shown as one cell: the group's first photo with a
   count badge and a stacked-cards look.
-- **Temporary expansion.** Clicking a collapsed group expands it in place so
-  its boundaries can be edited. Only one group is expanded at a time.
-  Splitting or merging it keeps the result expanded; clicking a photo
-  outside it, or placing a boundary outside it, collapses it again.
+- **Selection.** The folder opens with nothing selected, and Escape clears
+  the selection. Clicking a collapsed group selects it; it does not expand.
+  (Temporary expansion for editing was tried and set aside for now.)
 - **Full-size view.** Double-click opens the existing detail surface,
   read-only; Esc returns. No boundary editing from the full-size view.
 - **Persistence.** `keeps.json` state under the workflow name `group-cull`,
@@ -82,8 +81,7 @@ commit.
 3. **Grouping UI.** The root view wired into `ContentView`, cell chrome
    drawing the boundary bars and hover preview, and gap clicks toggling
    boundaries. First point where the app can be tried.
-4. **Collapsing.** Collapsed-group cells with the badge and stack look, and
-   click-to-expand-temporarily.
+4. **Collapsing.** Collapsed-group cells with the badge and stack look.
 5. **Persistence.** The `group-cull` state schema with snapshot and restore,
    tested like `SimpleCullStateTests`.
 6. **Read-only detail view.** Double-click to open the photo at full size,
