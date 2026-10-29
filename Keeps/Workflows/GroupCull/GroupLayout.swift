@@ -46,6 +46,12 @@ nonisolated struct GroupLayout {
         cells.indices.contains(gapIndex) ? cells[gapIndex].photoRange.lowerBound : photoCount
     }
 
+    /// How many photos are folded away inside collapsed groups, not counting
+    /// each group's first photo, which its cell shows.
+    var hiddenPhotoCount: Int {
+        photoCount - cells.count
+    }
+
     /// Whether there is a boundary at the gap before the given cell.
     func hasBoundary(atGap gapIndex: Int) -> Bool {
         gapIndex > 0 && boundaries.contains(photoIndex(forGap: gapIndex))

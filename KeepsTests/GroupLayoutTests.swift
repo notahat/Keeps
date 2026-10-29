@@ -88,6 +88,27 @@ struct GroupLayoutTests {
         #expect(layout.hasBoundary(atGap: layout.cells.count))
     }
 
+    @Test("Hidden photos are those folded into collapsed groups beyond their first")
+    func hiddenPhotoCount() {
+        let layout = GroupLayout(photoCount: 20, boundaries: [3, 7, 10, 12])
+
+        // Groups 0..<3 and 3..<7 are collapsed, hiding 2 + 3 photos.
+        #expect(layout.hiddenPhotoCount == 5)
+    }
+
+    @Test("With blank slots for the hidden photos, open photos keep their original columns")
+    func openPhotosKeepColumns() {
+        let layout = GroupLayout(photoCount: 30, boundaries: [3, 7, 10, 12])
+
+        for columnCount in 2 ... 7 {
+            let blanks = PhotoGridMetrics.blankSlotCount(for: layout.hiddenPhotoCount, columnCount: columnCount)
+            for photoIndex in 7 ..< 30 {
+                let slot = blanks + (layout.cellIndex(containing: photoIndex) ?? -1)
+                #expect(slot % columnCount == photoIndex % columnCount)
+            }
+        }
+    }
+
     @Test("The cell showing a photo is found whether or not its group is collapsed")
     func findsCellContainingPhoto() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])

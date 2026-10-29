@@ -26,6 +26,12 @@ Selection gets its own design session once grouping has been tried.
 - **Collapsing is derived from the boundaries.** All groups except the two
   most recently closed ones are collapsed. Removing the last boundary
   therefore re-expands a group. No collapse state is stored.
+- **Layout stability.** Nothing you're looking at moves when a group
+  collapses or expands. The grid leaves blank slots before the first cell
+  for the photos hidden inside collapsed groups (modulo the column count),
+  so open photos keep their original columns. The clicked photo is pinned
+  at the same height on screen, and a click never scrolls the selection
+  into view. Changes are not animated.
 - **Collapsed group.** Shown as one cell: the group's first photo with a
   count badge and a stacked-cards look.
 - **Temporary expansion.** Clicking a collapsed group expands it in place so

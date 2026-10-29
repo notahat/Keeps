@@ -21,7 +21,10 @@ struct GroupCullGridScreen: View {
             onTap: { index, _ in workflow.tapCell(at: index) },
             onDoubleTap: { _ in },
             onGapTap: { gapIndex in workflow.toggleBoundary(atGap: gapIndex) },
-            onGapHover: { gapIndex in hoveredGap = gapIndex }
+            onGapHover: { gapIndex in hoveredGap = gapIndex },
+            // Collapsing removes cells ahead of the open photos; matching
+            // blanks keep those photos in their original columns.
+            leadingBlankSlots: layout.hiddenPhotoCount
         ) { item, index in
             GroupCullCell(
                 item: item,
