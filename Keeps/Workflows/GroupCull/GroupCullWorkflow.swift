@@ -11,7 +11,10 @@ import Observation
 @Observable
 class GroupCullWorkflow {
     let items: [PhotoItem]
-    private(set) var boundaries: Set<Int> = []
+    private(set) var boundaries: Set<Int> = [] {
+        didSet { updateLayout() }
+    }
+
     private(set) var selectedPhotoIndex: Int?
 
     /// The grid's scroll position, as last reported by the grid.
@@ -24,16 +27,24 @@ class GroupCullWorkflow {
     /// The photo index up to which groups are collapsed; 0 for none. Set
     /// only by collapsing, and never undone, so the gaps beside collapsed
     /// groups are locked (see GroupLayout.isGapEditable).
-    private(set) var collapsedUpTo = 0
-
-    init(items: [PhotoItem]) {
-        self.items = items
+    private(set) var collapsedUpTo = 0 {
+        didSet { updateLayout() }
     }
 
     /// The current groups and grid cells, derived from the boundaries and
-    /// the collapse point.
-    var layout: GroupLayout {
-        GroupLayout(photoCount: items.count, boundaries: boundaries, collapsedUpTo: collapsedUpTo)
+    /// the collapse point. Kept rather than computed on demand because the
+    /// grid reads it several times per render, and each derivation walks the
+    /// whole folder.
+    private(set) var layout: GroupLayout
+
+    init(items: [PhotoItem]) {
+        self.items = items
+        layout = GroupLayout(photoCount: items.count, boundaries: [])
+    }
+
+    /// Rederives the layout after the boundaries or collapse point change.
+    private func updateLayout() {
+        layout = GroupLayout(photoCount: items.count, boundaries: boundaries, collapsedUpTo: collapsedUpTo)
     }
 
     /// The photo each cell displays: its own photo, or a collapsed group's

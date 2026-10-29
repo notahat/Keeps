@@ -9,8 +9,8 @@ struct GroupCullGridScreen: View {
     @State private var hoveredGap: Int?
 
     var body: some View {
-        // Derived once per render rather than once per cell, since each
-        // derivation walks the whole folder.
+        // Found once per render rather than once per cell, since finding
+        // the selected cell searches the whole layout.
         let layout = workflow.layout
         let selectedCellIndex = workflow.selectedCellIndex
         PhotoGridSurface(
