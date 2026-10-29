@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 @testable import Keeps
 import Testing
@@ -24,6 +25,19 @@ struct WorkflowPersistenceTests {
         let restored = persistence.restore()
 
         #expect(restored == StubState(names: ["IMG_0001", "IMG_0002"]))
+    }
+
+    @Test("Saving workflow state keeps the window frame already in the file")
+    func saveKeepsOtherEntries() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = KeepsFile(folderURL: folder)
+        try file.write(["windowFrame": CGRect(x: 1, y: 2, width: 3, height: 4)])
+        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+
+        try persistence.save(StubState(names: ["IMG_0001"]))
+
+        #expect(file.read(CGRect.self, forKey: "windowFrame") == CGRect(x: 1, y: 2, width: 3, height: 4))
     }
 
     @Test func restoreReturnsNilWhenNoFileExists() throws {

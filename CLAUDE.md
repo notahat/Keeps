@@ -7,17 +7,26 @@ module:
 
 - `Keeps/Kit/` — stable ground: the image engine (ImagePipeline,
   ImageCache, ImageReader), folder scanning and session (FolderScanner,
-  FolderSession), the generic persistence harness (WorkflowPersistence),
-  and dumb viewing surfaces (PhotoGridSurface, PhotoDetailSurface,
-  ThumbnailImage). Surfaces interpret spatial keys into
-  NavigationProposals and take cells/overlays via ViewBuilder closures;
-  they know nothing about marks, filters, or any workflow concept.
+  FolderSession), keeps.json and the generic persistence harness
+  (KeepsFile, WorkflowPersistence), and dumb viewing surfaces
+  (PhotoGridSurface, PhotoDetailSurface, ThumbnailImage). Surfaces
+  interpret spatial keys into NavigationProposals and take cells/overlays
+  via ViewBuilder closures; they know nothing about marks, filters, or any
+  workflow concept.
 - `Keeps/Workflows/<name>/` — everything one culling workflow owns: its
   state, screens, cell chrome, keymap, toolbar, dialogs, and persistence
-  schema. Currently `SimpleCull` (flat pick/reject marks).
-- `Keeps/ContentView.swift` and `Keeps/FolderOpener.swift` — the shell:
-  open/restore folder, security bookmarks, and one wiring line that hosts
-  the workflow's root view.
+  schema. Currently `GroupCull` (group by clicking between photos, collapse
+  finished groups) is wired in; `SimpleCull` (flat pick/reject marks) is
+  kept for comparison.
+- `Keeps/KeepsApp.swift`, `ContentView.swift`, `FolderReference.swift`,
+  `FolderPicker.swift`, `FolderCommands.swift`, `OpenFolderList.swift`,
+  `AppLifecycle.swift`, and `WindowFramePersistence.swift` — the shell:
+  one window per folder (the window's value is a FolderReference carrying
+  a security-scoped bookmark), File > Open Folder…, reopening the folders
+  that were open at quit (the app does this itself; system window
+  restoration is disabled), keeping each window's size and position in its
+  folder's keeps.json, and one wiring line in ContentView that hosts the
+  workflow's root view.
 
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
 free of workflow vocabulary (marks, filters, sort destinations).

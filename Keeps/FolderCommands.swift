@@ -1,20 +1,18 @@
 import SwiftUI
 
-extension FocusedValues {
-    @Entry var folderOpener: FolderOpener?
-}
-
-/// Menu commands for the shell's folder-level actions: opening a folder.
+/// Menu commands for the shell: Open Folder…, which takes the place of New
+/// Window, since every window shows exactly one folder.
 struct FolderCommands: Commands {
-    @FocusedValue(\.folderOpener) private var folderOpener
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
-        CommandGroup(after: .newItem) {
-            Button("Open Folder...") {
-                folderOpener?.openFolder()
+        CommandGroup(replacing: .newItem) {
+            Button("Open Folder…") {
+                if let chosen = FolderPicker.chooseFolder() {
+                    openWindow(value: chosen)
+                }
             }
             .keyboardShortcut("o")
-            .disabled(folderOpener == nil)
         }
     }
 }

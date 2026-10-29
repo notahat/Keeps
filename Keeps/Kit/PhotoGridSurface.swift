@@ -62,10 +62,14 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Whether the grid's width has been measured, so columnCount is real.
     @State private var isMeasured = false
 
-    /// Whether the initial scroll position has been applied. Until then the
-    /// scroll position isn't reported, so the default top-of-grid position
-    /// can't overwrite a saved one before it is restored.
-    @State private var hasRestoredScroll = false
+    @State private var hasAppeared = false
+
+    /// The initial scroll anchor, held from appearing until the user first
+    /// scrolls, clicks, or presses a key. Until then it's re-applied whenever
+    /// the column count changes (the window may settle on its restored size
+    /// after the grid first lays out), and the scroll position isn't
+    /// reported, so the default position can't overwrite a saved one.
+    @State private var pendingInitialAnchor: GridScrollAnchor?
 
     /// The part of the content on screen: its top, in the same terms
     /// scrollTo(y:) takes, and its height.
@@ -145,6 +149,9 @@ struct PhotoGridSurface<Cell: View>: View {
             // Reported only once scrolling settles, not on every frame.
             .onScrollPhaseChange { _, phase in
                 isScrolling = phase != .idle
+                if phase.isUserDriven {
+                    pendingInitialAnchor = nil
+                }
                 if !isScrolling {
                     reportScrollAnchor()
                 }
@@ -167,29 +174,28 @@ struct PhotoGridSurface<Cell: View>: View {
     }
 
     /// Sets the opening scroll position: the initial anchor if there is one
-    /// (applied once the column count is known), otherwise the selection,
-    /// centred.
+    /// (held until the user takes over; see pendingInitialAnchor),
+    /// otherwise the selection, centred.
     private func handleAppear(scrollProxy: ScrollViewProxy) {
-        guard initialScrollAnchor == nil else {
-            restoreInitialScrollIfNeeded()
-            return
-        }
-        hasRestoredScroll = true
-        if let selectedIndex {
+        hasAppeared = true
+        if let initialScrollAnchor, items.contains(where: { $0.id == initialScrollAnchor.itemID }) {
+            pendingInitialAnchor = initialScrollAnchor
+            applyPendingInitialAnchor()
+        } else if let selectedIndex {
             scrollProxy.scrollTo(items[selectedIndex].id, anchor: .center)
         }
     }
 
-    /// Scrolls to the initial anchor, once. Does nothing until the grid has
-    /// been measured, since the anchor's position depends on the column
-    /// count. An anchor whose item has gone is dropped.
-    private func restoreInitialScrollIfNeeded() {
-        guard !hasRestoredScroll, let initialScrollAnchor, isMeasured else { return }
-        hasRestoredScroll = true
-        guard let index = items.firstIndex(where: { $0.id == initialScrollAnchor.itemID }) else { return }
+    /// Scrolls to the pending initial anchor at the current column count.
+    /// Does nothing until the grid has been measured, since the anchor's
+    /// position depends on the column count.
+    private func applyPendingInitialAnchor() {
+        guard let pendingInitialAnchor, isMeasured,
+              let index = items.firstIndex(where: { $0.id == pendingInitialAnchor.itemID })
+        else { return }
         let offset = PhotoGridMetrics.offset(
             forSlot: index + blankSlotCount,
-            offsetFromRowTop: initialScrollAnchor.offsetFromRowTop,
+            offsetFromRowTop: pendingInitialAnchor.offsetFromRowTop,
             columnCount: columnCount
         )
         scrollPosition.scrollTo(y: offset)
@@ -198,7 +204,7 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Tells the caller where the view is now, as the first item of the row
     /// at the top and how far into that row the view has scrolled.
     private func reportScrollAnchor() {
-        guard hasRestoredScroll, let onScrollAnchorChange, !items.isEmpty else { return }
+        guard hasAppeared, pendingInitialAnchor == nil, let onScrollAnchorChange, !items.isEmpty else { return }
         let anchor = PhotoGridMetrics.anchorSlot(forOffset: visibleRegion.offset, columnCount: columnCount)
         let index = min(max(0, anchor.slot - blankSlotCount), items.count - 1)
         let rowSlot = index + blankSlotCount
@@ -222,7 +228,7 @@ struct PhotoGridSurface<Cell: View>: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
             columnCount = max(1, Int(width / Self.slotWidth))
             isMeasured = true
-            restoreInitialScrollIfNeeded()
+            applyPendingInitialAnchor()
         }
         // Horizontally, each slot already carries half a gap.
         .padding(.vertical, Self.spacing)
@@ -311,6 +317,7 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Pins the clicked item first, in case the caller reshapes the items.
     private func handleTap(at location: CGPoint, index: Int) {
         pinnedItem = PinnedItem(index: index, isFromClick: true)
+        pendingInitialAnchor = nil
         switch hitTarget(at: location, index: index) {
         case let .gap(gapIndex):
             onGapTap?(gapIndex)
@@ -337,6 +344,7 @@ struct PhotoGridSurface<Cell: View>: View {
         // followed, and if the items change, the middle of the view holds
         // still.
         pinnedItem = pinForMiddleOfView()
+        pendingInitialAnchor = nil
         guard let direction = direction(for: event),
               !items.isEmpty,
               let current = selectedIndex
@@ -469,5 +477,17 @@ enum PhotoGridMetrics {
         let shift = rowTop(forIndex: newIndex, columnCount: columnCount)
             - rowTop(forIndex: oldIndex, columnCount: columnCount)
         return currentOffset + shift
+    }
+}
+
+extension ScrollPhase {
+    /// Whether the user is moving the view themselves (dragging, flicking,
+    /// or the scroll that follows), as opposed to it moving on its own.
+    var isUserDriven: Bool {
+        switch self {
+        case .tracking, .interacting, .decelerating: true
+        case .idle, .animating: false
+        @unknown default: false
+        }
     }
 }
