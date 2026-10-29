@@ -24,7 +24,9 @@ struct GroupCullGridScreen: View {
             onGapHover: { gapIndex in hoveredGap = gapIndex },
             // Collapsing removes cells ahead of the open photos; matching
             // blanks keep those photos in their original columns.
-            leadingBlankSlots: layout.hiddenPhotoCount
+            leadingBlankSlots: layout.hiddenPhotoCount,
+            // Where grouping has reached stays put when groups collapse.
+            stableItemID: workflow.workingPointPhotoIndex.map { workflow.items[$0].id }
         ) { item, index in
             GroupCullCell(
                 item: item,
@@ -36,11 +38,19 @@ struct GroupCullGridScreen: View {
         }
     }
 
-    /// Handles non-navigation keys: Escape clears the selection.
+    /// Handles non-navigation keys: Escape clears the selection, and C
+    /// collapses every group closed so far.
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        guard event.keyCode == .escape else { return false }
-        workflow.clearSelection()
-        return true
+        if event.keyCode == .escape {
+            workflow.clearSelection()
+            return true
+        }
+        let hasModifiers = !event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+        if !hasModifiers, event.charactersIgnoringModifiers?.lowercased() == "c" {
+            workflow.collapseClosedGroups()
+            return true
+        }
+        return false
     }
 
     /// The photos in a cell's group if it is collapsed, or nil for a single

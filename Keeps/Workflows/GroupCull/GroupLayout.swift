@@ -32,20 +32,18 @@ nonisolated struct GroupLayout {
         }
     }
 
-    /// How many of the most recently closed groups stay open, so the latest
-    /// boundaries can still be adjusted in context.
-    static let openGroupCount = 2
-
     let photoCount: Int
     let boundaries: Set<Int>
     let groups: [Range<Int>]
     let cells: [Cell]
 
-    init(photoCount: Int, boundaries: Set<Int>) {
+    /// `collapsedUpTo` is the photo index at which collapsing stops: groups
+    /// ending at or before it are collapsed, later ones are open.
+    init(photoCount: Int, boundaries: Set<Int>, collapsedUpTo: Int = 0) {
         self.photoCount = photoCount
         self.boundaries = boundaries
         groups = Self.groups(photoCount: photoCount, boundaries: boundaries)
-        cells = Self.cells(photoCount: photoCount, groups: groups)
+        cells = Self.cells(photoCount: photoCount, groups: groups, collapsedUpTo: collapsedUpTo)
     }
 
     /// The photo index that a gap between cells corresponds to: the first
@@ -88,13 +86,12 @@ nonisolated struct GroupLayout {
         return zip(starts, ends).map { start, end in start ..< end }
     }
 
-    /// The grid cells: older groups collapsed, everything else as individual
-    /// photos.
-    private static func cells(photoCount: Int, groups: [Range<Int>]) -> [Cell] {
-        let collapsibleCount = max(0, groups.count - openGroupCount)
+    /// The grid cells: groups up to the collapse point collapsed, everything
+    /// else as individual photos.
+    private static func cells(photoCount: Int, groups: [Range<Int>], collapsedUpTo: Int) -> [Cell] {
         var cells: [Cell] = []
-        for (groupIndex, group) in groups.enumerated() {
-            if groupIndex < collapsibleCount {
+        for group in groups {
+            if group.upperBound <= collapsedUpTo {
                 cells.append(.collapsedGroup(group))
             } else {
                 cells += group.map { .photo($0) }

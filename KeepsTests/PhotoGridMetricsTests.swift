@@ -24,6 +24,92 @@ struct PhotoGridMetricsTests {
         #expect(PhotoGridMetrics.blankSlotCount(for: 8, columnCount: 4) == 0)
     }
 
+    @Test("The slot at a height is the first slot of the row there")
+    func slotAtHeight() {
+        let height = PhotoGridMetrics.spacing + 2 * rowHeight + 50
+
+        #expect(PhotoGridMetrics.firstSlot(inRowAt: height, columnCount: 4) == 8)
+    }
+
+    @Test("Heights above the first row give the first slot")
+    func slotAboveFirstRow() {
+        #expect(PhotoGridMetrics.firstSlot(inRowAt: -100, columnCount: 4) == 0)
+    }
+
+    @Test("A pinned item that survives a change is pinned itself")
+    func survivingPinnedItem() {
+        let ids = (0 ..< 6).map { _ in UUID() }
+        let newIDs = [ids[0], ids[3], ids[4], ids[5]]
+
+        let survivor = PhotoGridMetrics.survivingItem(from: 3, oldIDs: ids, newIDs: newIDs)
+
+        #expect(survivor?.oldIndex == 3)
+        #expect(survivor?.newIndex == 1)
+    }
+
+    @Test("When the pinned item goes, the nearest earlier survivor takes its place")
+    func earlierSurvivorPreferred() {
+        let ids = (0 ..< 6).map { _ in UUID() }
+        // Items 1 to 3 have folded into item 0, as when a group collapses.
+        let newIDs = [ids[0], ids[4], ids[5]]
+
+        let survivor = PhotoGridMetrics.survivingItem(from: 2, oldIDs: ids, newIDs: newIDs)
+
+        #expect(survivor?.oldIndex == 0)
+        #expect(survivor?.newIndex == 0)
+    }
+
+    @Test("When nothing earlier survives, the nearest later survivor is used")
+    func laterSurvivorAsFallback() {
+        let ids = (0 ..< 6).map { _ in UUID() }
+        let newIDs = [ids[4], ids[5]]
+
+        let survivor = PhotoGridMetrics.survivingItem(from: 2, oldIDs: ids, newIDs: newIDs)
+
+        #expect(survivor?.oldIndex == 4)
+        #expect(survivor?.newIndex == 0)
+    }
+
+    @Test("The photo after the last boundary stays put when the groups before it collapse")
+    func workingPointHeldThroughCollapse() {
+        // Twenty photos in four columns; groups 0..<6 and 6..<12 collapse
+        // into piles shown by photos 0 and 6, hiding ten photos.
+        let ids = (0 ..< 20).map { _ in UUID() }
+        let newIDs = [ids[0], ids[6]] + ids[12...]
+
+        let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+            at: 12,
+            oldIDs: ids,
+            newIDs: Array(newIDs),
+            oldBlankSlots: 0,
+            newBlankSlots: PhotoGridMetrics.blankSlotCount(for: 10, columnCount: 4),
+            columnCount: 4,
+            currentOffset: 1000
+        )
+
+        // Photo 12 moves from slot 12 (row 3) to slot 4 (row 1).
+        #expect(offset == 1000 - 2 * rowHeight)
+    }
+
+    @Test("Holding an item that has gone falls back to its nearest survivor")
+    func holdingFallsBackToSurvivor() {
+        let ids = (0 ..< 8).map { _ in UUID() }
+        let newIDs = [ids[0]] + ids[4...]
+
+        let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+            at: 2,
+            oldIDs: ids,
+            newIDs: Array(newIDs),
+            oldBlankSlots: 0,
+            newBlankSlots: 3,
+            columnCount: 4,
+            currentOffset: 1000
+        )
+
+        // Photo 0 survives and stays in slot 0, so nothing moves.
+        #expect(offset == 1000)
+    }
+
     @Test("An item that moves up two rows keeps its place on screen when the scroll moves up two rows")
     func offsetFollowsItemUp() {
         let offset = PhotoGridMetrics.scrollOffset(

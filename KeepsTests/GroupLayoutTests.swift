@@ -33,31 +33,30 @@ struct GroupLayoutTests {
         #expect(layout.groups == [0 ..< 3, 3 ..< 5])
     }
 
-    @Test("The two most recently closed groups stay open")
-    func twoMostRecentGroupsStayOpen() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5])
-
-        #expect(layout.cells == (0 ..< 10).map { .photo($0) })
-    }
-
-    @Test("Older groups collapse into a single cell")
-    func olderGroupsCollapse() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
-
-        #expect(layout.cells == [.collapsedGroup(0 ..< 3)] + (3 ..< 10).map { .photo($0) })
-    }
-
     @Test("A boundary after the last photo closes the final group")
     func boundaryAfterLastPhotoClosesFinalGroup() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 10])
 
         #expect(layout.groups == [0 ..< 3, 3 ..< 5, 5 ..< 10])
-        #expect(layout.cells.first == .collapsedGroup(0 ..< 3))
+    }
+
+    @Test("Closed groups stay open until collapsed")
+    func groupsStayOpenUntilCollapsed() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+
+        #expect(layout.cells == (0 ..< 10).map { .photo($0) })
+    }
+
+    @Test("Groups ending at or before the collapse point collapse into single cells")
+    func groupsUpToCollapsePointCollapse() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5)
+
+        #expect(layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
     }
 
     @Test("A gap between cells maps to the photo after it, even past a collapsed group")
     func gapMapsToPhotoAfterIt() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
 
         #expect(layout.photoIndex(forGap: 1) == 3)
         #expect(layout.photoIndex(forGap: 2) == 4)
@@ -65,14 +64,14 @@ struct GroupLayoutTests {
 
     @Test("The gap after the last cell maps to the end of the folder")
     func trailingGapMapsToEnd() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
 
         #expect(layout.photoIndex(forGap: layout.cells.count) == 10)
     }
 
     @Test("A gap has a boundary when the photo after it starts a group")
     func gapBoundaryLookup() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8, 10])
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8, 10], collapsedUpTo: 5)
 
         #expect(layout.hasBoundary(atGap: 1))
         // Cells: [collapsed 0..<3], [collapsed 3..<5], 5, 6, ... so gap 3
@@ -83,7 +82,7 @@ struct GroupLayoutTests {
 
     @Test("Hidden photos are those folded into collapsed groups beyond their first")
     func hiddenPhotoCount() {
-        let layout = GroupLayout(photoCount: 20, boundaries: [3, 7, 10, 12])
+        let layout = GroupLayout(photoCount: 20, boundaries: [3, 7, 10, 12], collapsedUpTo: 7)
 
         // Groups 0..<3 and 3..<7 are collapsed, hiding 2 + 3 photos.
         #expect(layout.hiddenPhotoCount == 5)
@@ -91,7 +90,7 @@ struct GroupLayoutTests {
 
     @Test("With blank slots for the hidden photos, open photos keep their original columns")
     func openPhotosKeepColumns() {
-        let layout = GroupLayout(photoCount: 30, boundaries: [3, 7, 10, 12])
+        let layout = GroupLayout(photoCount: 30, boundaries: [3, 7, 10, 12], collapsedUpTo: 7)
 
         for columnCount in 2 ... 7 {
             let blanks = PhotoGridMetrics.blankSlotCount(for: layout.hiddenPhotoCount, columnCount: columnCount)
@@ -104,7 +103,7 @@ struct GroupLayoutTests {
 
     @Test("Gaps beside a collapsed group can't be edited")
     func gapsBesideCollapsedGroupsAreLocked() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
 
         // Cells: [collapsed 0..<3], 3, 4, ... so gap 1 sits right after the
         // collapsed group.
@@ -121,14 +120,14 @@ struct GroupLayoutTests {
 
     @Test("The gap after the last cell can be edited")
     func trailingGapIsEditable() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
 
         #expect(layout.isGapEditable(layout.cells.count))
     }
 
     @Test("The cell showing a photo is found whether or not its group is collapsed")
     func findsCellContainingPhoto() {
-        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
 
         #expect(layout.cellIndex(containing: 1) == 0)
         #expect(layout.cellIndex(containing: 4) == 2)

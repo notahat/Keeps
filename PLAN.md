@@ -23,18 +23,22 @@ Selection gets its own design session once grouping has been tried.
   are the same gap. The gap before the first photo is ignored. Placing a
   boundary never reflows the layout.
 - **Finishing.** A boundary after the last photo closes the final group.
-- **Collapsing is derived from the boundaries.** All groups except the two
-  most recently closed ones are collapsed. Removing the last boundary
-  therefore re-expands a group. No collapse state is stored.
-- **Layout stability.** Nothing you're looking at moves when a group
-  collapses or expands. The grid leaves blank slots before the first cell
-  for the photos hidden inside collapsed groups (modulo the column count),
-  so open photos keep their original columns. The clicked photo is pinned
-  at the same height on screen, and a click never scrolls the selection
-  into view. Changes are not animated.
-- **Collapsed group.** Shown as one cell: the group's first photo with a
-  count badge and a stacked-cards look. Collapsed groups are finished: the
-  gaps on either side show no boundary bar and can't be toggled.
+- **Collapsing is manual.** Pressing C collapses every group closed so far;
+  groups closed afterwards stay open until the next press. The workflow
+  stores only the photo index collapsing reaches. There is no un-collapse.
+  (Automatic collapsing of all but the two most recent groups was tried
+  first and dropped.)
+- **Layout stability.** Nothing you're looking at moves when groups
+  collapse. The grid leaves blank slots before the first cell for the
+  photos hidden inside collapsed groups (modulo the column count), so open
+  photos keep their original columns. A click pins the clicked photo at the
+  same height on screen; a key press pins the photo in the middle of the
+  view. A click never scrolls the selection into view. Changes are not
+  animated.
+- **Collapsed group.** Shown as one cell: a messy pile of up to eight of
+  the group's photos as white-bordered prints, with a count badge.
+  Collapsed groups are finished: the gaps on either side show no boundary
+  bar and can't be toggled.
 - **Selection.** The folder opens with nothing selected, and Escape clears
   the selection. Clicking a collapsed group selects it; it does not expand.
   (Temporary expansion for editing was tried and set aside for now.)

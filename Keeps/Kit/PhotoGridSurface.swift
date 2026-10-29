@@ -35,25 +35,42 @@ struct PhotoGridSurface<Cell: View>: View {
     /// items in their original columns.
     var leadingBlankSlots: Int = 0
 
+    /// An item to keep at the same height on screen whenever the items
+    /// change, such as the point the user is working from. When nil, the
+    /// item the user last clicked, or the middle of the view after a key
+    /// press, is held instead.
+    var stableItemID: UUID?
+
     @ViewBuilder var cell: (_ item: PhotoItem, _ index: Int) -> Cell
 
     @State private var columnCount: Int = 1
     @State private var keyView: KeyAwareView.ResponderView?
     @State private var scrollPosition = ScrollPosition()
-    @State private var scrollOffset: CGFloat = 0
+    @State private var visibleRegion = VisibleRegion(offset: 0, height: 0)
     @State private var pinnedItem: PinnedItem?
 
-    /// An item to hold in place on screen through the next change to the
-    /// items, with the slot (blanks included) it had before that change.
+    /// The part of the content on screen: its top, in the same terms
+    /// scrollTo(y:) takes, and its height.
+    private struct VisibleRegion: Equatable {
+        let offset: CGFloat
+        let height: CGFloat
+    }
+
+    /// The input behind the next change: a click pins the clicked item, a
+    /// key press the item in the middle of the view. Used to hold the view
+    /// still when there's no stable item, and to tell click-driven selection
+    /// changes (which don't scroll) from keyboard ones (which do).
     private struct PinnedItem {
-        let id: UUID
-        let slot: Int
+        let index: Int
+        let isFromClick: Bool
     }
 
     /// The state whose changes may call for a scroll.
     private struct ScrollTrigger: Equatable {
         let itemIDs: [UUID]
         let selectedItemID: UUID?
+        let stableItemID: UUID?
+        let blankSlotCount: Int
     }
 
     /// The blank slots actually shown before the first item.
@@ -96,24 +113,21 @@ struct PhotoGridSurface<Cell: View>: View {
             // The reported offset counts from under the toolbar (it starts
             // at minus the top inset), while scrollTo(y:) counts from the
             // top of the content; adding the inset converts one to the other.
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y + geometry.contentInsets.top
-            } action: { _, offset in
-                scrollOffset = offset
+            .onScrollGeometryChange(for: VisibleRegion.self) { geometry in
+                VisibleRegion(
+                    offset: geometry.contentOffset.y + geometry.contentInsets.top,
+                    height: geometry.containerSize.height - geometry.contentInsets.top
+                )
+            } action: { _, region in
+                visibleRegion = region
             }
-            // One handler for both kinds of change, because they conflict:
-            // after a click the clicked item must stay exactly where it
-            // was, so the selection isn't scrolled into view. Otherwise the
-            // selection is followed, keyed on identity rather than index so
-            // that reshaping items around an unchanged selection doesn't
-            // scroll, and with a nil anchor so it scrolls only as far as
-            // needed.
-            .onChange(of: ScrollTrigger(itemIDs: items.map(\.id), selectedItemID: selectedItemID)) { _, trigger in
-                if pinnedItem != nil {
-                    restorePinnedItem()
-                } else if let id = trigger.selectedItemID {
-                    withAnimation { scrollProxy.scrollTo(id, anchor: nil) }
-                }
+            .onChange(of: ScrollTrigger(
+                itemIDs: items.map(\.id),
+                selectedItemID: selectedItemID,
+                stableItemID: stableItemID,
+                blankSlotCount: blankSlotCount
+            )) { old, new in
+                respondToChange(from: old, to: new, scrollProxy: scrollProxy)
             }
             .background {
                 KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
@@ -147,20 +161,50 @@ struct PhotoGridSurface<Cell: View>: View {
         .padding(.horizontal, Self.spacing / 2)
     }
 
-    /// After the items change in response to a click, scrolls so the
-    /// clicked item is back at the same height on screen. Without this,
-    /// removing cells above the viewport would carry the view forward.
-    private func restorePinnedItem() {
-        guard let pinnedItem else { return }
-        self.pinnedItem = nil
-        guard let newIndex = items.firstIndex(where: { $0.id == pinnedItem.id }) else { return }
-        let offset = PhotoGridMetrics.scrollOffset(
-            keepingItemFrom: pinnedItem.slot,
-            to: newIndex + blankSlotCount,
-            columnCount: columnCount,
-            currentOffset: scrollOffset
-        )
+    /// Scrolls in response to a change, if it calls for it. When the items
+    /// change, the view is held still — around the stable item if there is
+    /// one, otherwise the pinned one — and the selection isn't chased. When
+    /// the selection changes, it's followed unless a click caused it (the
+    /// clicked item is already on screen), with a nil anchor so it scrolls
+    /// only as far as needed.
+    private func respondToChange(from old: ScrollTrigger, to new: ScrollTrigger, scrollProxy: ScrollViewProxy) {
+        let pin = pinnedItem
+        pinnedItem = nil
+        if old.itemIDs != new.itemIDs {
+            holdPosition(across: old, to: new, pin: pin)
+        } else if old.selectedItemID != new.selectedItemID, pin?.isFromClick != true, let id = new.selectedItemID {
+            withAnimation { scrollProxy.scrollTo(id, anchor: nil) }
+        }
+    }
+
+    /// Scrolls so that the held item — the stable item from before the
+    /// change, else the pinned one, else (if it has gone) its nearest
+    /// survivor — is at the same height on screen as before. Without this,
+    /// removing cells above the view would carry it forward.
+    private func holdPosition(across old: ScrollTrigger, to new: ScrollTrigger, pin: PinnedItem?) {
+        let stableIndex = old.stableItemID.flatMap { old.itemIDs.firstIndex(of: $0) }
+        guard let heldIndex = stableIndex ?? pin?.index,
+              let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+                  at: heldIndex,
+                  oldIDs: old.itemIDs,
+                  newIDs: new.itemIDs,
+                  oldBlankSlots: old.blankSlotCount,
+                  newBlankSlots: new.blankSlotCount,
+                  columnCount: columnCount,
+                  currentOffset: visibleRegion.offset
+              )
+        else { return }
         scrollPosition.scrollTo(y: offset)
+    }
+
+    /// A pin on the first item of the row in the middle of the view, for
+    /// changes that come from the keyboard rather than a click.
+    private func pinForMiddleOfView() -> PinnedItem? {
+        guard !items.isEmpty else { return nil }
+        let middle = visibleRegion.offset + visibleRegion.height / 2
+        let slot = PhotoGridMetrics.firstSlot(inRowAt: middle, columnCount: columnCount)
+        let index = min(max(0, slot - blankSlotCount), items.count - 1)
+        return PinnedItem(index: index, isFromClick: false)
     }
 
     /// The caller's cell, widened to fill its slot, with click,
@@ -198,7 +242,7 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Routes a single click to onGapTap or onTap, then takes keyboard focus.
     /// Pins the clicked item first, in case the caller reshapes the items.
     private func handleTap(at location: CGPoint, index: Int) {
-        pinnedItem = PinnedItem(id: items[index].id, slot: index + blankSlotCount)
+        pinnedItem = PinnedItem(index: index, isFromClick: true)
         switch hitTarget(at: location, index: index) {
         case let .gap(gapIndex):
             onGapTap?(gapIndex)
@@ -221,9 +265,10 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Turns spatial keys into NavigationProposals using the current column
     /// count; forwards everything else to onKeyDown.
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        // Changes from here on are keyboard-driven, so the selection
-        // should be followed, not a click pinned.
-        pinnedItem = nil
+        // Changes from here on are keyboard-driven: the selection is
+        // followed, and if the items change, the middle of the view holds
+        // still.
+        pinnedItem = pinForMiddleOfView()
         guard let direction = direction(for: event),
               !items.isEmpty,
               let current = selectedIndex
@@ -284,6 +329,53 @@ enum PhotoGridMetrics {
     static func rowTop(forIndex index: Int, columnCount: Int) -> CGFloat {
         let row = index / max(1, columnCount)
         return spacing + CGFloat(row) * (cellSize + spacing)
+    }
+
+    /// The item to hold in place after the items change, given the index of
+    /// the item that was pinned: that item if it's still there, otherwise
+    /// the nearest earlier one that is (when items fold into an earlier
+    /// one, that's where they went), otherwise the nearest later one.
+    /// Returns its old and new indices, or nil if nothing survives. Pure.
+    static func survivingItem(
+        from pinnedIndex: Int, oldIDs: [UUID], newIDs: [UUID]
+    ) -> (oldIndex: Int, newIndex: Int)? {
+        guard oldIDs.indices.contains(pinnedIndex) else { return nil }
+        let newIndexByID = Dictionary(uniqueKeysWithValues: newIDs.enumerated().map { ($1, $0) })
+        let searchOrder = Array((0 ... pinnedIndex).reversed()) + Array(pinnedIndex + 1 ..< oldIDs.count)
+        for oldIndex in searchOrder {
+            if let newIndex = newIndexByID[oldIDs[oldIndex]] {
+                return (oldIndex, newIndex)
+            }
+        }
+        return nil
+    }
+
+    /// The scroll offset that keeps the item at `pinnedIndex` (or, if it
+    /// has gone, its nearest survivor) at the same height on screen across a
+    /// change to the items and blank slots. Nil if nothing survives. Pure.
+    static func scrollOffsetHoldingItem(
+        at pinnedIndex: Int,
+        oldIDs: [UUID],
+        newIDs: [UUID],
+        oldBlankSlots: Int,
+        newBlankSlots: Int,
+        columnCount: Int,
+        currentOffset: CGFloat
+    ) -> CGFloat? {
+        guard let survivor = survivingItem(from: pinnedIndex, oldIDs: oldIDs, newIDs: newIDs) else { return nil }
+        return scrollOffset(
+            keepingItemFrom: survivor.oldIndex + oldBlankSlots,
+            to: survivor.newIndex + newBlankSlots,
+            columnCount: columnCount,
+            currentOffset: currentOffset
+        )
+    }
+
+    /// The first slot of the row at a height within the grid's content.
+    /// Pure.
+    static func firstSlot(inRowAt height: CGFloat, columnCount: Int) -> Int {
+        let row = max(0, Int(((height - spacing) / (cellSize + spacing)).rounded(.down)))
+        return row * max(1, columnCount)
     }
 
     /// The scroll offset that keeps an item at the same height on screen
