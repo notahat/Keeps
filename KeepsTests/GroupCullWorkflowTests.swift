@@ -53,6 +53,17 @@ struct GroupCullWorkflowTests {
         #expect(workflow.boundaries == [3, 8])
     }
 
+    @Test("Toggling a gap beside a collapsed group does nothing")
+    func lockedGapIgnored() {
+        let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])
+
+        // Cells: [collapsed 0..<3], 3, 4, ... so gap 1 is beside the collapsed
+        // group.
+        workflow.toggleBoundary(atGap: 1)
+
+        #expect(workflow.boundaries == [3, 5, 8])
+    }
+
     @Test("Removing the last boundary re-expands the group it collapsed")
     func removingLastBoundaryReExpands() {
         let workflow = makeGroupCullWorkflow(photoCount: 10, boundaries: [3, 5, 8])

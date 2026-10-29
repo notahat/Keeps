@@ -33,7 +33,8 @@ Selection gets its own design session once grouping has been tried.
   at the same height on screen, and a click never scrolls the selection
   into view. Changes are not animated.
 - **Collapsed group.** Shown as one cell: the group's first photo with a
-  count badge and a stacked-cards look.
+  count badge and a stacked-cards look. Collapsed groups are finished: the
+  gaps on either side show no boundary bar and can't be toggled.
 - **Selection.** The folder opens with nothing selected, and Escape clears
   the selection. Clicking a collapsed group selects it; it does not expand.
   (Temporary expansion for editing was tried and set aside for now.)

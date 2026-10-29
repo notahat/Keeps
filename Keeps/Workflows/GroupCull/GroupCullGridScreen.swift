@@ -30,7 +30,8 @@ struct GroupCullGridScreen: View {
                 item: item,
                 isSelected: index == selectedCellIndex,
                 leadingBoundary: boundaryStyle(atGap: index, in: layout),
-                trailingBoundary: boundaryStyle(atGap: index + 1, in: layout)
+                trailingBoundary: boundaryStyle(atGap: index + 1, in: layout),
+                collapsedPhotos: collapsedPhotos(ofCell: index, in: layout)
             )
         }
     }
@@ -42,9 +43,17 @@ struct GroupCullGridScreen: View {
         return true
     }
 
-    /// How to draw the bar at a gap: placed if there is a boundary there,
-    /// previewed if the pointer is over it, otherwise not at all.
+    /// The photos in a cell's group if it is collapsed, or nil for a single
+    /// photo.
+    private func collapsedPhotos(ofCell cellIndex: Int, in layout: GroupLayout) -> ArraySlice<PhotoItem>? {
+        let cell = layout.cells[cellIndex]
+        return cell.isCollapsed ? workflow.items[cell.photoRange] : nil
+    }
+
+    /// How to draw the bar at a gap: nothing at a locked gap, placed if
+    /// there is a boundary there, previewed if the pointer is over it.
     private func boundaryStyle(atGap gapIndex: Int, in layout: GroupLayout) -> GroupCullCell.BoundaryStyle? {
+        guard layout.isGapEditable(gapIndex) else { return nil }
         if layout.hasBoundary(atGap: gapIndex) {
             return .placed
         }

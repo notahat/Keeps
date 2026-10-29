@@ -34,8 +34,11 @@ class GroupCullWorkflow {
     }
 
     /// Toggles the boundary at a gap between cells, identified by the index
-    /// of the cell after it.
+    /// of the cell after it. Locked gaps (see GroupLayout.isGapEditable) are
+    /// left alone.
     func toggleBoundary(atGap gapIndex: Int) {
+        let layout = layout
+        guard layout.isGapEditable(gapIndex) else { return }
         toggleBoundary(atPhoto: layout.photoIndex(forGap: gapIndex))
     }
 

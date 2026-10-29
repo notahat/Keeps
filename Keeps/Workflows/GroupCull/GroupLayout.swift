@@ -14,6 +14,15 @@ nonisolated struct GroupLayout {
         case photo(Int)
         case collapsedGroup(Range<Int>)
 
+        /// Whether this cell is a collapsed group.
+        var isCollapsed: Bool {
+            if case .collapsedGroup = self {
+                true
+            } else {
+                false
+            }
+        }
+
         /// The photos this cell stands for.
         var photoRange: Range<Int> {
             switch self {
@@ -55,6 +64,15 @@ nonisolated struct GroupLayout {
     /// Whether there is a boundary at the gap before the given cell.
     func hasBoundary(atGap gapIndex: Int) -> Bool {
         gapIndex > 0 && boundaries.contains(photoIndex(forGap: gapIndex))
+    }
+
+    /// Whether the boundary at a gap can be toggled. Collapsed groups are
+    /// finished, so the gaps on either side of one are locked, as is the gap
+    /// before the first cell, where a group always starts.
+    func isGapEditable(_ gapIndex: Int) -> Bool {
+        guard gapIndex > 0 else { return false }
+        let neighbours = [gapIndex - 1, gapIndex].filter { cells.indices.contains($0) }
+        return !neighbours.contains { cells[$0].isCollapsed }
     }
 
     /// The index of the cell that shows the given photo.

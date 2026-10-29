@@ -102,6 +102,30 @@ struct GroupLayoutTests {
         }
     }
 
+    @Test("Gaps beside a collapsed group can't be edited")
+    func gapsBesideCollapsedGroupsAreLocked() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+
+        // Cells: [collapsed 0..<3], 3, 4, ... so gap 1 sits right after the
+        // collapsed group.
+        #expect(!layout.isGapEditable(1))
+        #expect(layout.isGapEditable(2))
+    }
+
+    @Test("The gap before the first cell can't be edited")
+    func leadingGapIsLocked() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [])
+
+        #expect(!layout.isGapEditable(0))
+    }
+
+    @Test("The gap after the last cell can be edited")
+    func trailingGapIsEditable() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
+
+        #expect(layout.isGapEditable(layout.cells.count))
+    }
+
     @Test("The cell showing a photo is found whether or not its group is collapsed")
     func findsCellContainingPhoto() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
