@@ -31,10 +31,11 @@ Selection gets its own design session once grouping has been tried.
 - **Layout stability.** Nothing you're looking at moves when groups
   collapse. The grid leaves blank slots before the first cell for the
   photos hidden inside collapsed groups (modulo the column count), so open
-  photos keep their original columns. A click pins the clicked photo at the
-  same height on screen; a key press pins the photo in the middle of the
-  view. A click never scrolls the selection into view. Changes are not
-  animated.
+  photos keep their original columns. The working point (the first photo
+  after the last boundary) is held at the same height on screen. Before
+  there is one, a click holds the clicked photo and a key press holds the
+  photo in the middle of the view. A click never scrolls the selection into
+  view. Changes are not animated.
 - **Collapsed group.** Shown as one cell: a messy pile of up to eight of
   the group's photos as white-bordered prints, with a count badge.
   Collapsed groups are finished: the gaps on either side show no boundary
@@ -45,9 +46,12 @@ Selection gets its own design session once grouping has been tried.
 - **Full-size view.** Double-click opens the existing detail surface,
   read-only; Esc returns. No boundary editing from the full-size view.
 - **Persistence.** `keeps.json` state under the workflow name `group-cull`,
-  storing the stem of the first photo of each group. Stems no longer in the
-  folder are dropped when the state is loaded.
-- **Input.** Mouse only for now. Arrow-key navigation keeps working as the
+  so a folder reopens exactly where it was left: each boundary (as "before
+  this photo's stem" or "end"), the collapse point, the selected photo, and
+  the scroll position. Stems no longer in the folder are dropped when the
+  state is loaded.
+- **Input.** Boundaries are placed with the mouse. The keyboard has C to
+  collapse, Escape to clear the selection, and arrow-key navigation as the
   surface provides it.
 
 ### Kit boundary
@@ -56,9 +60,9 @@ Kit learns a generic, spatial notion of a *gap*: "the gap before item i".
 `PhotoGridSurface` resolves a click to either an item or a gap, reports
 which gap the pointer is hovering, and maps both sides of a row wrap to the
 same gap. It knows nothing about groups or boundaries. The workflow turns
-gap clicks into boundary toggles and draws the bars itself, using the hover
-information Kit passes to each cell. These callbacks are optional, so
-SimpleCull's behaviour is unchanged.
+gap clicks into boundary toggles, keeps track of the hovered gap Kit
+reports, and draws the bars in its own cells. These callbacks are optional,
+so SimpleCull's behaviour is unchanged.
 
 ### Out of scope
 
@@ -73,21 +77,23 @@ need that first.
 Each step includes tests where there is testable behaviour, then review and
 commit.
 
-1. **Gap hit-testing in Kit.** A pure function mapping a click position
-   within a cell (plus cell index and column count) to an item or a gap
+1. ✅ **Gap hit-testing in Kit.** A pure function mapping a click position
+   within a cell (plus the cell's width and index) to an item or a gap
    index, covering the row-wrap equivalence and the ignored leading gap.
    Tested with Swift Testing. Add optional `onGapTap` and hover-gap
    reporting to `PhotoGridSurface`, and suppress item selection for edge
    clicks.
-2. **Grouping model.** `GroupCull` state holding the boundary set, and a
-   pure derivation from photos plus boundaries to groups, collapsed or open
-   status, the temporarily expanded group, and the list of cells to display.
-   Toggling, finishing, and re-expansion on removal are all covered by tests.
-3. **Grouping UI.** The root view wired into `ContentView`, cell chrome
+2. ✅ **Grouping model.** `GroupCull` state holding the boundary set and the
+   collapse point, and a pure derivation from photos plus boundaries to
+   groups, collapsed or open status, and the list of cells to display.
+   Toggling, finishing, and collapsing are covered by tests.
+3. ✅ **Grouping UI.** The root view wired into `ContentView`, cell chrome
    drawing the boundary bars and hover preview, and gap clicks toggling
    boundaries. First point where the app can be tried.
-4. **Collapsing.** Collapsed-group cells with the badge and stack look.
-5. **Persistence.** The `group-cull` state schema with snapshot and restore,
+4. ✅ **Collapsing.** Pressing C collapses closed groups into messy-pile
+   cells with a count badge, holding the working point still.
+5. ✅ **Persistence.** The `group-cull` state schema with snapshot and
+   restore of boundaries, collapse point, selection, and scroll position,
    tested like `SimpleCullStateTests`.
 6. **Read-only detail view.** Double-click to open the photo at full size,
    Esc to return.

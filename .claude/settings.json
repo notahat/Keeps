@@ -8,6 +8,9 @@
       "Bash(swiftlint *)"
     ]
   },
+  "sandbox": {
+    "excludedCommands": ["xcodebuild *"]
+  },
   "hooks": {
     "PostToolUse": [
       {
