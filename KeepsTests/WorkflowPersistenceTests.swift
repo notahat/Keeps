@@ -91,7 +91,6 @@ struct WorkflowPersistenceTests {
         let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
         let model = StubModel()
         persistence.startObserving(
-            read: { _ = model.names },
             snapshot: { StubState(names: model.names) },
             onSaveError: { _ in }
         )
@@ -116,7 +115,6 @@ struct WorkflowPersistenceTests {
         let model = StubModel()
         let errorBox = ErrorBox()
         persistence.startObserving(
-            read: { _ = model.names },
             snapshot: { StubState(names: model.names) },
             onSaveError: { errorBox.error = $0 }
         )
@@ -135,7 +133,6 @@ struct WorkflowPersistenceTests {
         let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
         let model = StubModel()
         persistence.startObserving(
-            read: { _ = model.names },
             snapshot: { StubState(names: model.names) },
             onSaveError: { _ in }
         )

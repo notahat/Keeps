@@ -55,7 +55,6 @@ struct GroupCullRootView: View {
             newWorkflow.applyRestored(state: state)
         }
         newPersistence.startObserving(
-            read: { _ = newWorkflow.snapshotState() },
             snapshot: { newWorkflow.snapshotState() },
             onSaveError: { newWorkflow.recordSaveError($0) }
         )

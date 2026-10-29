@@ -40,17 +40,16 @@ final class WorkflowPersistence<State: Codable> {
         isActive = false
     }
 
-    /// Begins observing whatever observable state `read` touches, writing a
-    /// fresh snapshot to disk whenever it changes. Save failures are passed
+    /// Begins observing whatever observable state `snapshot` reads, writing
+    /// a fresh snapshot to disk whenever it changes. Save failures are passed
     /// to onSaveError so the UI can alert the user.
     @MainActor
     func startObserving(
-        read: @escaping @MainActor () -> Void,
         snapshot: @escaping @MainActor () -> State,
         onSaveError: @escaping @MainActor (Error) -> Void
     ) {
         withObservationTracking {
-            read()
+            _ = snapshot()
         } onChange: {
             Task { @MainActor in
                 guard self.isActive else { return }
@@ -59,7 +58,7 @@ final class WorkflowPersistence<State: Codable> {
                 } catch {
                     onSaveError(error)
                 }
-                self.startObserving(read: read, snapshot: snapshot, onSaveError: onSaveError)
+                self.startObserving(snapshot: snapshot, onSaveError: onSaveError)
             }
         }
     }
