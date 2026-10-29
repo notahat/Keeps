@@ -41,6 +41,15 @@ struct PhotoGridSurface<Cell: View>: View {
     /// press, is held instead.
     var stableItemID: UUID?
 
+    /// A scroll position to restore when the grid first lays out, such as
+    /// one saved from a previous session. When nil, the grid instead centres
+    /// the selection.
+    var initialScrollAnchor: GridScrollAnchor?
+
+    /// Receives the scroll position whenever it settles: when the user stops
+    /// scrolling, and after the grid moves itself.
+    var onScrollAnchorChange: ((GridScrollAnchor) -> Void)?
+
     @ViewBuilder var cell: (_ item: PhotoItem, _ index: Int) -> Cell
 
     @State private var columnCount: Int = 1
@@ -48,6 +57,15 @@ struct PhotoGridSurface<Cell: View>: View {
     @State private var scrollPosition = ScrollPosition()
     @State private var visibleRegion = VisibleRegion(offset: 0, height: 0)
     @State private var pinnedItem: PinnedItem?
+    @State private var isScrolling = false
+
+    /// Whether the grid's width has been measured, so columnCount is real.
+    @State private var isMeasured = false
+
+    /// Whether the initial scroll position has been applied. Until then the
+    /// scroll position isn't reported, so the default top-of-grid position
+    /// can't overwrite a saved one before it is restored.
+    @State private var hasRestoredScroll = false
 
     /// The part of the content on screen: its top, in the same terms
     /// scrollTo(y:) takes, and its height.
@@ -120,6 +138,16 @@ struct PhotoGridSurface<Cell: View>: View {
                 )
             } action: { _, region in
                 visibleRegion = region
+                if !isScrolling {
+                    reportScrollAnchor()
+                }
+            }
+            // Reported only once scrolling settles, not on every frame.
+            .onScrollPhaseChange { _, phase in
+                isScrolling = phase != .idle
+                if !isScrolling {
+                    reportScrollAnchor()
+                }
             }
             .onChange(of: ScrollTrigger(
                 itemIDs: items.map(\.id),
@@ -133,11 +161,49 @@ struct PhotoGridSurface<Cell: View>: View {
                 KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
             }
             .onAppear {
-                if let selectedIndex {
-                    scrollProxy.scrollTo(items[selectedIndex].id, anchor: .center)
-                }
+                handleAppear(scrollProxy: scrollProxy)
             }
         }
+    }
+
+    /// Sets the opening scroll position: the initial anchor if there is one
+    /// (applied once the column count is known), otherwise the selection,
+    /// centred.
+    private func handleAppear(scrollProxy: ScrollViewProxy) {
+        guard initialScrollAnchor == nil else {
+            restoreInitialScrollIfNeeded()
+            return
+        }
+        hasRestoredScroll = true
+        if let selectedIndex {
+            scrollProxy.scrollTo(items[selectedIndex].id, anchor: .center)
+        }
+    }
+
+    /// Scrolls to the initial anchor, once. Does nothing until the grid has
+    /// been measured, since the anchor's position depends on the column
+    /// count. An anchor whose item has gone is dropped.
+    private func restoreInitialScrollIfNeeded() {
+        guard !hasRestoredScroll, let initialScrollAnchor, isMeasured else { return }
+        hasRestoredScroll = true
+        guard let index = items.firstIndex(where: { $0.id == initialScrollAnchor.itemID }) else { return }
+        let offset = PhotoGridMetrics.offset(
+            forSlot: index + blankSlotCount,
+            offsetFromRowTop: initialScrollAnchor.offsetFromRowTop,
+            columnCount: columnCount
+        )
+        scrollPosition.scrollTo(y: offset)
+    }
+
+    /// Tells the caller where the view is now, as the first item of the row
+    /// at the top and how far into that row the view has scrolled.
+    private func reportScrollAnchor() {
+        guard hasRestoredScroll, let onScrollAnchorChange, !items.isEmpty else { return }
+        let anchor = PhotoGridMetrics.anchorSlot(forOffset: visibleRegion.offset, columnCount: columnCount)
+        let index = min(max(0, anchor.slot - blankSlotCount), items.count - 1)
+        let rowSlot = index + blankSlotCount
+        let offsetFromRowTop = visibleRegion.offset - PhotoGridMetrics.rowTop(forIndex: rowSlot, columnCount: columnCount)
+        onScrollAnchorChange(GridScrollAnchor(itemID: items[index].id, offsetFromRowTop: offsetFromRowTop))
     }
 
     /// The lazy grid of cells, measuring its own width for the column count.
@@ -155,6 +221,8 @@ struct PhotoGridSurface<Cell: View>: View {
         // padded view would over-count columns at some window widths.
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
             columnCount = max(1, Int(width / Self.slotWidth))
+            isMeasured = true
+            restoreInitialScrollIfNeeded()
         }
         // Horizontally, each slot already carries half a gap.
         .padding(.vertical, Self.spacing)
@@ -369,6 +437,19 @@ enum PhotoGridMetrics {
             columnCount: columnCount,
             currentOffset: currentOffset
         )
+    }
+
+    /// Describes a scroll offset as the first slot of the row at the top of
+    /// the view and how far into that row the view is. Pure.
+    static func anchorSlot(forOffset offset: CGFloat, columnCount: Int) -> (slot: Int, offsetFromRowTop: CGFloat) {
+        let slot = firstSlot(inRowAt: offset, columnCount: columnCount)
+        return (slot, offset - rowTop(forIndex: slot, columnCount: columnCount))
+    }
+
+    /// The scroll offset an anchor describes: the inverse of anchorSlot.
+    /// Pure.
+    static func offset(forSlot slot: Int, offsetFromRowTop: CGFloat, columnCount: Int) -> CGFloat {
+        rowTop(forIndex: slot, columnCount: columnCount) + offsetFromRowTop
     }
 
     /// The first slot of the row at a height within the grid's content.

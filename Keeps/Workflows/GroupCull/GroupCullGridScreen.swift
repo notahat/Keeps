@@ -26,7 +26,10 @@ struct GroupCullGridScreen: View {
             // blanks keep those photos in their original columns.
             leadingBlankSlots: layout.hiddenPhotoCount,
             // Where grouping has reached stays put when groups collapse.
-            stableItemID: workflow.workingPointPhotoIndex.map { workflow.items[$0].id }
+            stableItemID: workflow.workingPointPhotoIndex.map { workflow.items[$0].id },
+            // Only read on first layout, to restore a saved session.
+            initialScrollAnchor: workflow.scrollAnchor,
+            onScrollAnchorChange: { anchor in workflow.updateScrollAnchor(anchor) }
         ) { item, index in
             GroupCullCell(
                 item: item,

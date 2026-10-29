@@ -2,16 +2,24 @@ import Foundation
 import Observation
 
 /// Holds the grouping state for one set of photos: the group boundaries, how
-/// far groups have been collapsed, and the selection. The grid shows cells,
-/// not photos, so this translates between cell indices (what the surface
-/// speaks) and photo indices (what boundaries are made of). GroupLayout
-/// derives the cells from this state. Does not scan the folder, load images,
-/// or persist state.
+/// far groups have been collapsed, the selection, and the last reported
+/// scroll position. The grid shows cells, not photos, so this translates
+/// between cell indices (what the surface speaks) and photo indices (what
+/// boundaries are made of). GroupLayout derives the cells from this state.
+/// Translates to and from GroupCullState for saving, but does not scan the
+/// folder, load images, or write files.
 @Observable
 class GroupCullWorkflow {
     let items: [PhotoItem]
     private(set) var boundaries: Set<Int> = []
     private(set) var selectedPhotoIndex: Int?
+
+    /// The grid's scroll position, as last reported by the grid.
+    private(set) var scrollAnchor: GridScrollAnchor?
+
+    /// Set when keeps.json could not be written, so the UI can warn the
+    /// user that their grouping may not be saved.
+    private(set) var saveError: Error?
 
     /// The photo index up to which groups are collapsed; 0 for none. Set
     /// only by collapsing, and never undone, so the gaps beside collapsed
@@ -81,5 +89,67 @@ class GroupCullWorkflow {
     /// Deselects everything.
     func clearSelection() {
         selectedPhotoIndex = nil
+    }
+
+    /// Records the grid's scroll position. Repeats of the same position are
+    /// ignored so they don't trigger a needless save.
+    func updateScrollAnchor(_ anchor: GridScrollAnchor) {
+        guard anchor != scrollAnchor else { return }
+        scrollAnchor = anchor
+    }
+
+    /// Records a failure to write keeps.json.
+    func recordSaveError(_ error: Error) {
+        saveError = error
+    }
+
+    /// Clears a reported save error once the user has acknowledged it.
+    func clearSaveError() {
+        saveError = nil
+    }
+
+    /// A stem-keyed snapshot of everything worth saving. Reading this inside
+    /// an observation block also subscribes to changes in all of it.
+    func snapshotState() -> GroupCullState {
+        let stemByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.stem) })
+        return GroupCullState(
+            boundaries: boundaries.sorted().map(position(forPhoto:)),
+            collapsedUpTo: collapsedUpTo > 0 ? position(forPhoto: collapsedUpTo) : nil,
+            selectedStem: selectedPhotoIndex.map { items[$0].stem },
+            scrollAnchor: scrollAnchor.flatMap { anchor in
+                stemByID[anchor.itemID].map {
+                    GroupCullState.ScrollAnchor(stem: $0, offsetFromRowTop: anchor.offsetFromRowTop)
+                }
+            }
+        )
+    }
+
+    /// Replaces the state with restored state, dropping anything that refers
+    /// to a photo no longer in the folder.
+    func applyRestored(state: GroupCullState) {
+        let indexByStem = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($1.stem, $0) })
+        boundaries = Set(state.boundaries.compactMap { photoIndex(for: $0, indexByStem: indexByStem) })
+        collapsedUpTo = state.collapsedUpTo.flatMap { photoIndex(for: $0, indexByStem: indexByStem) } ?? 0
+        selectedPhotoIndex = state.selectedStem.flatMap { indexByStem[$0] }
+        scrollAnchor = state.scrollAnchor.flatMap { anchor in
+            indexByStem[anchor.stem].map {
+                GridScrollAnchor(itemID: items[$0].id, offsetFromRowTop: anchor.offsetFromRowTop)
+            }
+        }
+    }
+
+    /// The saved form of the point just before a photo, or after the last
+    /// one when the index is the photo count.
+    private func position(forPhoto photoIndex: Int) -> GroupCullState.Position {
+        photoIndex < items.count ? .beforePhoto(items[photoIndex].stem) : .end
+    }
+
+    /// The photo index a saved position refers to, or nil if its photo is no
+    /// longer in the folder.
+    private func photoIndex(for position: GroupCullState.Position, indexByStem: [String: Int]) -> Int? {
+        switch position {
+        case let .beforePhoto(stem): indexByStem[stem]
+        case .end: items.count
+        }
     }
 }

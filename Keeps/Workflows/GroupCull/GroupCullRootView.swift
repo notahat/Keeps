@@ -1,12 +1,14 @@
 import SwiftUI
 
 /// The root view of the grouping workflow for one folder session. Owns the
-/// workflow state and hosts the grid screen. The shell hosts this view and
-/// knows nothing else about the workflow.
+/// workflow state and its persistence, hosts the grid screen, and shows the
+/// save-error alert. The shell hosts this view and knows nothing else about
+/// the workflow.
 struct GroupCullRootView: View {
     let session: FolderSession
 
     @State private var workflow: GroupCullWorkflow?
+    @State private var persistence: WorkflowPersistence<GroupCullState>?
 
     var body: some View {
         Group {
@@ -25,17 +27,48 @@ struct GroupCullRootView: View {
                 LoadGraphView().padding(.horizontal, 12)
             }
         }
+        .alert("Couldn't Save Changes", isPresented: Binding(
+            get: { workflow?.saveError != nil },
+            set: { isPresented in
+                if !isPresented {
+                    workflow?.clearSaveError()
+                }
+            }
+        )) {
+            Button("OK") {}
+        } message: {
+            if let error = workflow?.saveError {
+                Text(error.localizedDescription)
+            }
+        }
         .onAppear {
             start()
         }
+        .onDisappear {
+            persistence?.stop()
+        }
     }
 
-    /// Creates the workflow and prefetches thumbnails. Runs once per
-    /// session; the shell re-creates this view (via .id) when the folder
-    /// changes.
+    /// Creates the workflow, restores saved grouping, starts auto-save, and
+    /// prefetches thumbnails. Runs once per session; the shell re-creates
+    /// this view (via .id) when the folder changes.
     private func start() {
         guard workflow == nil else { return }
-        workflow = GroupCullWorkflow(items: session.items)
+        let newWorkflow = GroupCullWorkflow(items: session.items)
+        let newPersistence = WorkflowPersistence<GroupCullState>(
+            folderURL: session.folderURL,
+            workflowName: GroupCullState.workflowName
+        )
+        if let state = newPersistence.restore() {
+            newWorkflow.applyRestored(state: state)
+        }
+        newPersistence.startObserving(
+            read: { _ = newWorkflow.snapshotState() },
+            snapshot: { newWorkflow.snapshotState() },
+            onSaveError: { newWorkflow.recordSaveError($0) }
+        )
+        workflow = newWorkflow
+        persistence = newPersistence
         ImagePipeline.shared.prefetchImages(for: session.items, size: ThumbnailImage.imageSize)
     }
 }

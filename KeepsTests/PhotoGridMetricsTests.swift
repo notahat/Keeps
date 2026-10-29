@@ -110,6 +110,26 @@ struct PhotoGridMetricsTests {
         #expect(offset == 1000)
     }
 
+    @Test("A scroll offset is described by the row at the top and how far into it the view is")
+    func anchorForOffset() {
+        let offset = PhotoGridMetrics.spacing + 3 * rowHeight + 40
+
+        let anchor = PhotoGridMetrics.anchorSlot(forOffset: offset, columnCount: 4)
+
+        #expect(anchor.slot == 12)
+        #expect(anchor.offsetFromRowTop == 40)
+    }
+
+    @Test("Turning an offset into an anchor and back gives the same offset")
+    func anchorRoundTrip() {
+        let offset: CGFloat = 1234.5
+
+        let anchor = PhotoGridMetrics.anchorSlot(forOffset: offset, columnCount: 5)
+        let restored = PhotoGridMetrics.offset(forSlot: anchor.slot, offsetFromRowTop: anchor.offsetFromRowTop, columnCount: 5)
+
+        #expect(restored == offset)
+    }
+
     @Test("An item that moves up two rows keeps its place on screen when the scroll moves up two rows")
     func offsetFollowsItemUp() {
         let offset = PhotoGridMetrics.scrollOffset(
