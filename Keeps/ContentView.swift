@@ -45,19 +45,8 @@ struct ContentView: View {
                 WindowFramePersistence(folder: folder) { frameSaveError = $0 }
             }
         }
-        .alert("Couldn't Save Window Position", isPresented: Binding(
-            get: { frameSaveError != nil },
-            set: { isPresented in
-                if !isPresented {
-                    frameSaveError = nil
-                }
-            }
-        )) {
-            Button("OK") {}
-        } message: {
-            if let frameSaveError {
-                Text(frameSaveError.localizedDescription)
-            }
+        .errorAlert("Couldn't Save Window Position", error: frameSaveError) {
+            frameSaveError = nil
         }
         .task {
             openSession()

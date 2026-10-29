@@ -26,19 +26,8 @@ struct SimpleCullRootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar { toolbar }
-        .alert("Couldn't Save Changes", isPresented: Binding(
-            get: { workflow?.saveError != nil },
-            set: {
-                if !$0 {
-                    workflow?.clearSaveError()
-                }
-            }
-        )) {
-            Button("OK") {}
-        } message: {
-            if let error = workflow?.saveError {
-                Text(error.localizedDescription)
-            }
+        .errorAlert("Couldn't Save Changes", error: workflow?.saveError) {
+            workflow?.clearSaveError()
         }
         .onAppear {
             start()
