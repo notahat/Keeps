@@ -12,7 +12,6 @@ struct FolderView: View {
                 Text("This folder has no photos")
                     .foregroundStyle(.secondary)
             } else {
-                // The one wiring line a workflow experiment replaces.
                 GroupCullRootView(session: session)
             }
         }

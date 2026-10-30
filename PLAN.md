@@ -302,7 +302,9 @@ Each step includes tests where there is testable behaviour, then review and
 commit.
 
 1. **Shared key handling.** Move the hjkl/arrow-to-direction code into a
-   Kit helper, used by `PhotoGridSurface`. No change in behaviour. Tested.
+   Kit helper, used by `PhotoGridSurface`. `NavigationProposal` now holds
+   only a target index, so replace it with a plain index in `onNavigate`
+   on both surfaces. No change in behaviour. Tested.
 2. **Narrowing model.** Keepers and done groups in `GroupCullWorkflow`:
    toggling a keeper, marking a group done, opening a group (collapsing up
    to it), and finding the next closed group that isn't done. Tested.

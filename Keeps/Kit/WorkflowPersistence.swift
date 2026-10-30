@@ -3,8 +3,8 @@ import Observation
 
 /// Saves and restores a workflow's Codable state to keeps.json in the photo
 /// folder. The file holds the state and the name of the workflow that wrote
-/// it, so state left behind by a different workflow experiment is detected
-/// and ignored rather than mis-decoded. Saving replaces the whole file. Does
+/// it, so a file written by anything else, such as an earlier version of
+/// the app, is ignored rather than mis-decoded. Saving replaces the whole file. Does
 /// not manage sandbox access to the folder.
 ///
 /// Call restore() after creating the workflow's state, then startObserving

@@ -2,8 +2,8 @@
 
 ## Architecture
 
-The app is split into a stable rendering kit and a disposable workflow
-module:
+The app is split into a stable rendering kit and the culling workflow
+built on it:
 
 - `Keeps/Kit/` — stable ground: the image engine (ImagePipeline,
   ImageCache, ImageReader), folder scanning and session (FolderScanner,
@@ -11,12 +11,12 @@ module:
   (WorkflowPersistence), and dumb viewing surfaces
   (PhotoGridSurface, PhotoDetailSurface, ThumbnailImage). Surfaces
   interpret spatial keys into NavigationProposals and take cells/overlays
-  via ViewBuilder closures; they know nothing about marks, filters, or any
-  workflow concept.
-- `Keeps/Workflows/<name>/` — everything one culling workflow owns: its
-  state, screens, cell chrome, keymap, toolbar, dialogs, and persistence
-  schema. Currently there is one, `GroupCull`: group by clicking between
-  photos, collapse finished groups.
+  via ViewBuilder closures; they know nothing about groups, keepers, or any
+  other workflow concept.
+- `Keeps/Workflows/GroupCull/` — everything the workflow owns: its state,
+  screens, cell chrome, keymap, toolbar, dialogs, and persistence schema.
+  Photos are grouped by clicking between them, and finished groups
+  collapse.
 - `Keeps/main.swift`, `AppDelegate.swift`, `MainMenu.swift`,
   `FolderDocumentController.swift`, `FolderDocument.swift`,
   `FolderWindowController.swift`, and `FolderView.swift`, plus
@@ -29,17 +29,15 @@ module:
   system setting), sandbox access to them, including after a relaunch, and
   saving each window's frame (in the app's preferences, keyed by folder
   path). The shell adds only what AppKit lacks: the Open panel chooses
-  folders, and shows in place of an untitled document; and one wiring line
-  in FolderView hosts the workflow's root view. The document never saves;
-  workflows write keeps.json themselves.
+  folders, and shows in place of an untitled document; and FolderView
+  hosts the workflow's root view. The document never saves; the workflow
+  writes keeps.json itself.
 
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
-free of workflow vocabulary (marks, filters, sort destinations).
+free of workflow vocabulary (groups, keepers, done status).
 
-To start a new workflow experiment: create `Keeps/Workflows/<name>/` with
-its own state and root view, give its persisted state a distinct workflow
-name (the keeps.json envelope ignores state written by other workflows),
-and swap the one wiring line in FolderView.
+keeps.json stores the workflow name ("group-cull") alongside the state.
+Keep it: folders already saved in that format must still restore.
 
 ## Build & Test
 
