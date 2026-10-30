@@ -242,7 +242,9 @@ starting point to experiment from, not a final design.
   the sort screen's code (`GridScrolling`, blank slots, gap clicks) is
   irrelevant here, and a group is too small to need a lazy grid.
 - **Shared key handling.** The hjkl/arrow-to-direction code moves out of
-  `SortScreen` into a small helper that both screens use.
+  `SortScreen` into a small helper that both screens use. The pick
+  screen's letter keys also need `SortScreen.handleCommandKey`'s check
+  that ⌘, ⌃, and ⌥ aren't held, so F doesn't catch ⌘F.
 - **Layout (`Pick/`, pure).** Takes the photo count, the aspect ratio, the
   available size, the spacing, and a minimum tile size. Returns the column
   count, the tile size, each tile's position, and whether the tiles need
@@ -279,9 +281,9 @@ starting point to experiment from, not a final design.
     "Model and screens" bullet above).
   - `SimpleCullDetailScreen.swift`: a template for the full-size view
     (step 6). It wires `PhotoDetailSurface` to the selection, uses Escape
-    to go back, and overlays a badge and an "n / total" counter.
-  - `SimpleCullWorkflow.swift`, `handleKey`: ignores presses with ⌘, ⌃, or ⌥
-    held, so F doesn't catch ⌘F. The pick screen's keys need the same.
+    to go back, and overlays a badge and an "n / total" counter. Its
+    `onNavigate` took a `NavigationProposal`; it now takes the target
+    index directly.
   - `MarkIcon.swift` and `MarkBadge` in `SimpleCullCell.swift`: a white
     checkmark on a green circle with a shadow, a candidate keeper badge
     for step 4 and done piles in step 7.
@@ -299,8 +301,10 @@ Each step includes tests where there is testable behaviour, then review and
 commit.
 
 1. **Shared key handling.** Move the hjkl/arrow-to-direction code out of
-   `SortScreen` into a helper both screens can use. No change in
-   behaviour. Tested.
+   `SortScreen` into a helper both screens can use, and have
+   `PhotoDetailSurface` use it in place of its own copy. That copy doesn't
+   lowercase, so h/j/k/l there gain Caps Lock support; otherwise no change
+   in behaviour. Tested.
 2. **Narrowing model.** Keepers and done groups in `Grouping`: toggling a
    keeper, marking a group done, opening a group (collapsing up to it),
    and finding the next closed group that isn't done. Tested.
