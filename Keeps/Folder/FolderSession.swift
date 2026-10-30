@@ -3,8 +3,8 @@ import Observation
 
 /// Owns one open photo folder: the scan and the resulting items. Does not
 /// manage sandbox access to the folder; AppKit grants that when it opens the
-/// folder as a document. Does not hold any workflow state — that belongs to
-/// the workflow.
+/// folder as a document. Does not hold the grouping — that belongs to
+/// Grouping.
 @Observable
 @MainActor
 final class FolderSession {

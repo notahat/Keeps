@@ -1,35 +1,35 @@
 import SwiftUI
 
-/// The grid screen of the grouping workflow: a photo grid surface showing the
-/// workflow's cells, with edge clicks toggling group boundaries and cell
-/// clicks selecting photos or collapsed groups.
-struct GroupCullGridScreen: View {
-    @Bindable var workflow: GroupCullWorkflow
+/// The sort screen, where the folder is split into groups: a photo grid
+/// surface showing the grouping's cells, with edge clicks toggling group
+/// boundaries and cell clicks selecting photos or collapsed groups.
+struct SortScreen: View {
+    @Bindable var grouping: Grouping
 
     @State private var hoveredGap: Int?
 
     var body: some View {
         // Found once per render rather than once per cell, since finding
         // the selected cell searches the whole layout.
-        let layout = workflow.layout
-        let selectedCellIndex = workflow.selectedCellIndex
+        let layout = grouping.layout
+        let selectedCellIndex = grouping.selectedCellIndex
         PhotoGridSurface(
-            items: workflow.displayedItems,
+            items: grouping.displayedItems,
             selectedIndex: selectedCellIndex,
-            onNavigate: { proposal in workflow.selectCell(at: proposal.targetIndex) },
+            onNavigate: { proposal in grouping.selectCell(at: proposal.targetIndex) },
             onKeyDown: { press in handleKeyPress(press) },
-            onTap: { index in workflow.selectCell(at: index) },
+            onTap: { index in grouping.selectCell(at: index) },
             onDoubleTap: { _ in },
-            onGapTap: { gapIndex in workflow.toggleBoundary(atGap: gapIndex) },
+            onGapTap: { gapIndex in grouping.toggleBoundary(atGap: gapIndex) },
             hoveredGap: $hoveredGap,
             // Collapsing removes cells ahead of the open photos; matching
             // blanks keep those photos in their original columns.
             leadingBlankSlots: layout.hiddenPhotoCount,
             // Where grouping has reached stays put when groups collapse.
-            stableItemID: workflow.workingPointPhotoIndex.map { workflow.items[$0].id },
-            scrollAnchor: $workflow.scrollAnchor
+            stableItemID: grouping.workingPointPhotoIndex.map { grouping.items[$0].id },
+            scrollAnchor: $grouping.scrollAnchor
         ) { item, index in
-            GroupCullCell(
+            SortCell(
                 item: item,
                 isSelected: index == selectedCellIndex,
                 leadingBoundary: boundaryStyle(atGap: index, in: layout),
@@ -43,12 +43,12 @@ struct GroupCullGridScreen: View {
     /// collapses every group closed so far.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         if press.key == .escape {
-            workflow.clearSelection()
+            grouping.clearSelection()
             return true
         }
         let hasModifiers = !press.modifiers.intersection([.command, .control, .option]).isEmpty
         if !hasModifiers, press.characters.lowercased() == "c" {
-            workflow.collapseClosedGroups()
+            grouping.collapseClosedGroups()
             return true
         }
         return false
@@ -58,12 +58,12 @@ struct GroupCullGridScreen: View {
     /// photo.
     private func collapsedPhotos(ofCell cellIndex: Int, in layout: GroupLayout) -> ArraySlice<PhotoItem>? {
         let cell = layout.cells[cellIndex]
-        return cell.isCollapsed ? workflow.items[cell.photoRange] : nil
+        return cell.isCollapsed ? grouping.items[cell.photoRange] : nil
     }
 
     /// How to draw the bar at a gap: nothing at a locked gap, placed if
     /// there is a boundary there, previewed if the pointer is over it.
-    private func boundaryStyle(atGap gapIndex: Int, in layout: GroupLayout) -> GroupCullCell.BoundaryStyle? {
+    private func boundaryStyle(atGap gapIndex: Int, in layout: GroupLayout) -> SortCell.BoundaryStyle? {
         guard layout.isGapEditable(gapIndex) else { return nil }
         if layout.hasBoundary(atGap: gapIndex) {
             return .placed

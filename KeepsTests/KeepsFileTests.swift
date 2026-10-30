@@ -14,11 +14,11 @@ private final class StubModel {
 }
 
 @MainActor
-struct WorkflowPersistenceTests {
+struct KeepsFileTests {
     @Test func roundTripsStateThroughSaveAndRestore() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
 
         try persistence.save(StubState(names: ["IMG_0001", "IMG_0002"]))
         let restored = persistence.restore()
@@ -34,7 +34,7 @@ struct WorkflowPersistenceTests {
         {"state": {"names": ["IMG_0001"]}, "windowFrame": [[1, 2], [3, 4]], "workflow": "stub-flow"}
         """
         try Data(json.utf8).write(to: folder.appendingPathComponent("keeps.json"))
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
 
         let restored = persistence.restore()
 
@@ -45,7 +45,7 @@ struct WorkflowPersistenceTests {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
 
         #expect(persistence.restore() == nil)
     }
@@ -53,10 +53,10 @@ struct WorkflowPersistenceTests {
     @Test func restoreReturnsNilWhenFileWasWrittenByADifferentWorkflow() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let writer = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "old-flow")
+        let writer = KeepsFile<StubState>(folderURL: folder, workflowName: "old-flow")
         try writer.save(StubState(names: ["IMG_0001"]))
 
-        let reader = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "new-flow")
+        let reader = KeepsFile<StubState>(folderURL: folder, workflowName: "new-flow")
 
         #expect(reader.restore() == nil)
     }
@@ -66,7 +66,7 @@ struct WorkflowPersistenceTests {
         defer { try? FileManager.default.removeItem(at: folder) }
         try Data("not json".utf8).write(to: folder.appendingPathComponent("keeps.json"))
 
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
 
         #expect(persistence.restore() == nil)
     }
@@ -79,7 +79,7 @@ struct WorkflowPersistenceTests {
             at: folder.appendingPathComponent("keeps.json"),
             withIntermediateDirectories: false
         )
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
 
         #expect(throws: (any Error).self) {
             try persistence.save(StubState(names: []))
@@ -89,7 +89,7 @@ struct WorkflowPersistenceTests {
     @Test func observedChangeSavesAFreshSnapshot() async throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
         let model = StubModel()
         persistence.startObserving(
             snapshot: { StubState(names: model.names) },
@@ -112,7 +112,7 @@ struct WorkflowPersistenceTests {
             at: folder.appendingPathComponent("keeps.json"),
             withIntermediateDirectories: false
         )
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
         let model = StubModel()
         let errorBox = ErrorBox()
         persistence.startObserving(
@@ -131,7 +131,7 @@ struct WorkflowPersistenceTests {
     @Test func stopHaltsObservedSaves() async throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
         let model = StubModel()
         persistence.startObserving(
             snapshot: { StubState(names: model.names) },

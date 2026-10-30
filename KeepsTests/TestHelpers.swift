@@ -27,23 +27,23 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
     }
 }
 
-/// Creates a GroupCullWorkflow with the given number of photos, ready for
-/// grouping tests. Places `collapsedBoundaries` and collapses the groups they
-/// close, then places `boundaries`, whose groups stay open.
-func makeGroupCullWorkflow(
+/// Creates a Grouping with the given number of photos. Places
+/// `collapsedBoundaries` and collapses the groups they close, then places
+/// `boundaries`, whose groups stay open.
+func makeGrouping(
     photoCount: Int,
     collapsedBoundaries: Set<Int> = [],
     boundaries: Set<Int> = []
-) -> GroupCullWorkflow {
-    let workflow = GroupCullWorkflow(items: makePhotoItems(count: photoCount))
+) -> Grouping {
+    let grouping = Grouping(items: makePhotoItems(count: photoCount))
     for boundary in collapsedBoundaries.sorted() {
-        workflow.toggleBoundary(atPhoto: boundary)
+        grouping.toggleBoundary(atPhoto: boundary)
     }
     if !collapsedBoundaries.isEmpty {
-        workflow.collapseClosedGroups()
+        grouping.collapseClosedGroups()
     }
     for boundary in boundaries.sorted() {
-        workflow.toggleBoundary(atPhoto: boundary)
+        grouping.toggleBoundary(atPhoto: boundary)
     }
-    return workflow
+    return grouping
 }

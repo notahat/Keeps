@@ -6,8 +6,8 @@ import SwiftUI
 /// 2 behind) at low priority — the loading placeholder, keyboard focus, and
 /// the interpretation of linear navigation keys (arrows and h/j/k/l) into
 /// ±1 NavigationProposals. All policy and chrome belong to the caller via
-/// onNavigate/onKeyDown and the overlay closure. Knows nothing about marks,
-/// filters, or any other workflow concept.
+/// onNavigate/onKeyDown and the overlay closure. Knows nothing about
+/// groups or keepers.
 struct PhotoDetailSurface<Overlay: View>: View {
     var items: [PhotoItem]
     var selectedIndex: Int?

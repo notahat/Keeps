@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// The content of one folder window: the workflow, or a note that the folder
-/// has nothing in it to cull. Everything shown inside a folder with photos
-/// belongs to the workflow.
+/// The content of one folder window: the sort screen, or a note that the
+/// folder has no photos.
 struct FolderView: View {
     let session: FolderSession
 

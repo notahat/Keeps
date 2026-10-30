@@ -24,7 +24,7 @@ final class FolderWindowController: NSWindowController {
     /// Makes the window hosting the folder's view, at the default size.
     private static func makeWindow(session: FolderSession) -> NSWindow {
         let hostingController = NSHostingController(rootView: FolderView(session: session))
-        // Lets the workflow's SwiftUI toolbar items show in the window's
+        // Lets the folder view's SwiftUI toolbar items show in the window's
         // toolbar.
         hostingController.sceneBridgingOptions = [.toolbars]
         let window = NSWindow(contentViewController: hostingController)
@@ -41,9 +41,9 @@ final class FolderWindowController: NSWindowController {
     }
 
     /// Makes an empty toolbar matching the one SwiftUI makes for the
-    /// workflow's toolbar items, which replaces it when there are any. This
-    /// gives a folder with no photos, and so no workflow, the same title bar
-    /// as one with photos.
+    /// folder view's toolbar items, which replaces it when there are any.
+    /// This gives a folder with no photos, and so no toolbar items, the same
+    /// title bar as one with photos.
     private static func makePlaceholderToolbar() -> NSToolbar {
         let toolbar = NSToolbar()
         toolbar.displayMode = .iconOnly

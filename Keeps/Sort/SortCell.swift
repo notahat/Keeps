@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// One grid cell in the grouping workflow: the kit thumbnail plus the
-/// workflow's chrome — selection highlight, the boundary bars on either side,
-/// and, for a collapsed group, a stacked-cards look with a photo count. Bars
-/// are drawn centred in the gap next to the cell, so a boundary at a row wrap
-/// shows at both the end of one row and the start of the next.
-struct GroupCullCell: View {
+/// One cell on the sort screen: the thumbnail plus the selection highlight,
+/// the boundary bars on either side, and, for a collapsed group, a
+/// stacked-cards look with a photo count. Bars are drawn centred in the gap
+/// next to the cell, so a boundary at a row wrap shows at both the end of one
+/// row and the start of the next.
+struct SortCell: View {
     let item: PhotoItem
     var isSelected: Bool = false
     var leadingBoundary: BoundaryStyle?
@@ -120,7 +120,7 @@ private struct CollapsedStack: View {
 
 /// A vertical bar marking a group boundary in the gap beside a cell.
 private struct BoundaryBar: View {
-    let style: GroupCullCell.BoundaryStyle
+    let style: SortCell.BoundaryStyle
 
     static let width: CGFloat = 4
 

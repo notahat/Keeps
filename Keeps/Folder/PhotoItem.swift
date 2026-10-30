@@ -9,8 +9,8 @@ import Foundation
 /// everywhere in memory; `stem` (filename without extension, e.g. "IMG_001") is
 /// used in keeps.json on disk. Stems are used for persistence so that saved state
 /// survives folder moves. Code that crosses the memory/disk boundary must
-/// translate between them — the workflow's persistence schema owns this
-/// translation.
+/// translate between them — Grouping does this when it converts to and from
+/// SavedGrouping.
 struct PhotoItem: Identifiable {
     let id: UUID
     let stem: String

@@ -5,8 +5,8 @@ import AppKit
 /// panel, Open Recent, folders dropped on the Dock icon, bringing forward a
 /// folder that's already open, and reporting a folder that can't be read.
 ///
-/// The document is never saved and never autosaves. The workflow writes its
-/// own state to the folder's keeps.json as it changes.
+/// The document is never saved and never autosaves. The grouping is
+/// written to the folder's keeps.json as it changes.
 final class FolderDocument: NSDocument {
     private var session: FolderSession?
 

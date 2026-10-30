@@ -1,24 +1,23 @@
 import AppKit
 import SwiftUI
 
-/// The root view of the grouping workflow for one folder session. Owns the
-/// workflow state and its persistence, hosts the grid screen, and reports
-/// save failures with AppKit's standard error alert. The shell hosts this
-/// view and knows nothing else about the workflow.
+/// The view of a folder with photos. Owns the grouping and its keeps.json,
+/// hosts the sort screen, and reports save failures with AppKit's standard
+/// error alert.
 struct GroupCullRootView: View {
     let session: FolderSession
 
-    @State private var workflow: GroupCullWorkflow?
-    @State private var persistence: WorkflowPersistence<GroupCullState>?
+    @State private var grouping: Grouping?
+    @State private var persistence: KeepsFile<SavedGrouping>?
 
     var body: some View {
         Group {
-            if let workflow {
-                GroupCullGridScreen(workflow: workflow)
+            if let grouping {
+                SortScreen(grouping: grouping)
             } else {
-                // A real (if invisible) view must render before the workflow
+                // A real (if invisible) view must render before the grouping
                 // exists: onAppear never fires for empty content, and start()
-                // — which creates the workflow — hangs off onAppear.
+                // — which creates the grouping — hangs off onAppear.
                 Color.clear
             }
         }
@@ -39,24 +38,24 @@ struct GroupCullRootView: View {
         }
     }
 
-    /// Creates the workflow, restores saved grouping, starts auto-save, and
+    /// Creates the grouping, restores saved grouping, starts auto-save, and
     /// prefetches thumbnails. Runs once, since a window keeps the same
     /// folder for its whole life.
     private func start() {
-        guard workflow == nil else { return }
-        let newWorkflow = GroupCullWorkflow(items: session.items)
-        let newPersistence = WorkflowPersistence<GroupCullState>(
+        guard grouping == nil else { return }
+        let newGrouping = Grouping(items: session.items)
+        let newPersistence = KeepsFile<SavedGrouping>(
             folderURL: session.folderURL,
-            workflowName: GroupCullState.workflowName
+            workflowName: SavedGrouping.originalFormatName
         )
         if let state = newPersistence.restore() {
-            newWorkflow.applyRestored(state: state)
+            newGrouping.applyRestored(state: state)
         }
         newPersistence.startObserving(
-            snapshot: { newWorkflow.snapshotState() },
+            snapshot: { newGrouping.snapshotState() },
             onSaveError: { NSApp.presentError($0) }
         )
-        workflow = newWorkflow
+        grouping = newGrouping
         persistence = newPersistence
         ImagePipeline.shared.prefetchImages(for: session.items, size: ThumbnailImage.imageSize)
     }

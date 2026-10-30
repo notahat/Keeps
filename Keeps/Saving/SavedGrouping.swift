@@ -1,16 +1,19 @@
 import Foundation
 
-/// The persisted state for the grouping workflow, stored via
-/// WorkflowPersistence under the workflow name "group-cull": everything
-/// needed to pick up exactly where the user left off. Photos are referred to
-/// by stem (filename without extension) rather than in-memory UUIDs so state
-/// survives relaunches and folder moves.
+/// The saved form of a folder's grouping, as written to keeps.json:
+/// everything needed to pick up exactly where the user left off. Photos are
+/// referred to by stem (filename without extension) rather than in-memory
+/// UUIDs so it survives relaunches and folder moves.
+///
+/// keeps.json names its format in its "workflow" field. This format is
+/// named `originalFormatName`, for the name the app had when it was first
+/// saved.
 ///
 /// Declared nonisolated because it is a plain value type with no actor
 /// affinity; otherwise the target's main-actor default would isolate its
 /// Equatable conformance.
-nonisolated struct GroupCullState: Codable, Equatable {
-    static let workflowName = "group-cull"
+nonisolated struct SavedGrouping: Codable, Equatable {
+    static let originalFormatName = "group-cull"
 
     /// A point between photos: just before a named photo, or after the last
     /// one. Written as {"before": stem} or the string "end", so keeps.json
