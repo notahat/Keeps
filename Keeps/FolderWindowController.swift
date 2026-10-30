@@ -28,6 +28,10 @@ final class FolderWindowController: NSWindowController {
         // toolbar.
         hostingController.sceneBridgingOptions = [.toolbars]
         let window = NSWindow(contentViewController: hostingController)
+        // Lets content scroll up under the toolbar and show through it, as
+        // in SwiftUI's own windows. SwiftUI keeps the content's resting
+        // position below the toolbar.
+        window.styleMask.insert(.fullSizeContentView)
         window.toolbar = makePlaceholderToolbar()
         window.toolbarStyle = .unified
         window.setContentSize(defaultContentSize)
