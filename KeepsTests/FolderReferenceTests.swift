@@ -21,6 +21,21 @@ struct FolderReferenceTests {
         #expect(first != second)
     }
 
+    @Test("A reference names its folder however the folder's URL is spelled")
+    func namesItsFolder() {
+        let reference = FolderReference(url: URL(fileURLWithPath: "/tmp/photos", isDirectory: true), bookmark: Data())
+
+        #expect(reference.names(URL(fileURLWithPath: "/tmp/photos/")))
+        #expect(reference.names(URL(fileURLWithPath: "/tmp/other/../photos")))
+    }
+
+    @Test("A reference doesn't name a different folder")
+    func doesNotNameOtherFolder() {
+        let reference = FolderReference(url: URL(fileURLWithPath: "/tmp/photos", isDirectory: true), bookmark: Data())
+
+        #expect(!reference.names(URL(fileURLWithPath: "/tmp/other")))
+    }
+
     @Test("A reference survives encoding and decoding")
     func codableRoundTrip() throws {
         let reference = FolderReference(url: URL(fileURLWithPath: "/tmp/photos", isDirectory: true), bookmark: Data([7, 8]))

@@ -58,9 +58,19 @@ nonisolated struct FolderReference: Codable, Hashable {
         return (url, isStale)
     }
 
+    /// Whether the URL is this reference's folder, however it's spelled.
+    func names(_ otherURL: URL) -> Bool {
+        Self.canonicalPath(of: otherURL) == canonicalPath
+    }
+
     /// The folder's path in a canonical form, so differently spelled URLs
     /// for the same folder compare equal.
     private var canonicalPath: String {
+        Self.canonicalPath(of: url)
+    }
+
+    /// A URL's path in a canonical form.
+    private static func canonicalPath(of url: URL) -> String {
         url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 

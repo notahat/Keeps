@@ -19,14 +19,18 @@ module:
   finished groups) is wired in; `SimpleCull` (flat pick/reject marks) is
   kept for comparison.
 - `Keeps/KeepsApp.swift`, `ContentView.swift`, `FolderReference.swift`,
-  `FolderPicker.swift`, `FolderCommands.swift`, `OpenFolderList.swift`,
-  `AppLifecycle.swift`, and `WindowFramePersistence.swift` — the shell:
-  one window per folder (the window's value is a FolderReference carrying
-  a security-scoped bookmark), File > Open Folder…, reopening the folders
-  that were open at quit (the app does this itself; system window
-  restoration is disabled), keeping each window's size and position in its
-  folder's keeps.json, and one wiring line in ContentView that hosts the
-  workflow's root view.
+  `FolderPicker.swift`, `FolderCommands.swift`, `FolderWindows.swift`,
+  `OpenFolderList.swift`, `RecentFolders.swift`, `AppLifecycle.swift`, and
+  `WindowFramePersistence.swift`, plus `Keeps-Info.plist` at the project
+  root — the shell: one window per folder (the window's value is a
+  FolderReference carrying a security-scoped bookmark), File > Open Folder…
+  and Open Recent (backed by the system's recent documents list, which
+  regrants sandbox access), opening folders dropped on the Dock icon (the
+  plist declares folders as a document type), reopening the folders that
+  were open at quit (the app does this itself; system window restoration
+  is disabled), keeping each window's size and position in its folder's
+  keeps.json, and one wiring line in ContentView that hosts the workflow's
+  root view.
 
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
 free of workflow vocabulary (marks, filters, sort destinations).

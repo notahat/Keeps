@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// The content of one folder window. Each window shows a single folder for
-/// its whole life — the folder comes from the window's value and is never
-/// switched — so this opens that folder's session and hosts the workflow's
-/// root view. A window with no folder yet (as on first launch) offers to open
-/// one. Everything shown inside an open folder belongs to the workflow.
+/// The content of one folder window. The folder comes from the window's
+/// value. A window with no folder yet (as on first launch) offers to open
+/// one and takes on the folder chosen; once a window has a folder it never
+/// switches to another. This opens the folder's session and hosts the
+/// workflow's root view. Everything shown inside an open folder belongs to
+/// the workflow.
 struct ContentView: View {
     @Binding var folder: FolderReference?
 
@@ -47,7 +48,7 @@ struct ContentView: View {
         .errorAlert("Couldn't Save Window Position", error: frameSaveError) {
             frameSaveError = nil
         }
-        .task {
+        .task(id: folder) {
             openSession()
         }
         .onAppear {
@@ -56,11 +57,40 @@ struct ContentView: View {
         .onDisappear {
             forgetFolderIfUserClosedWindow()
         }
+        // Any open window will take a folder handed to the app from
+        // outside, such as one dropped on its Dock icon, so SwiftUI only
+        // makes a new window for one when none are open.
+        .handlesExternalEvents(preferring: [], allowing: ["*"])
+        .onOpenURL { url in
+            guard let opened = FolderPicker.reference(for: url) else { return }
+            // SwiftUI brings this window to the front once the handler
+            // returns, so showing the folder waits until after that, or its
+            // window would end up behind this one.
+            Task {
+                show(opened)
+            }
+        }
     }
 
-    /// Opens the window's folder and remembers it for the next launch, with
-    /// a fresh bookmark if its old one has gone stale, or records the error
-    /// if it can't be reached or read.
+    /// Shows a folder the user has picked. If a window already shows it,
+    /// that window comes forward, and this one closes if it's empty.
+    /// Otherwise an empty window takes the folder on itself, and a window
+    /// with a folder opens a new window for it.
+    private func show(_ picked: FolderReference) {
+        if FolderWindows.bringForward(picked) {
+            if folder == nil {
+                dismiss()
+            }
+        } else if folder == nil {
+            folder = picked
+        } else {
+            openWindow(value: picked)
+        }
+    }
+
+    /// Opens the window's folder, remembers it for the next launch (with a
+    /// fresh bookmark if its old one has gone stale) and in Open Recent, or
+    /// records the error if it can't be reached or read.
     private func openSession() {
         guard let folder else { return }
         OpenFolderList.shared.add(folder)
@@ -68,7 +98,9 @@ struct ContentView: View {
             if let refreshed = try folder.refreshedIfStale() {
                 OpenFolderList.shared.replace(folder, with: refreshed)
             }
-            session = try FolderSession(folderURL: folder.resolve())
+            let opened = try FolderSession(folderURL: folder.resolve())
+            session = opened
+            RecentFolders.shared.note(opened.folderURL)
         } catch {
             folderError = error
         }
@@ -95,13 +127,10 @@ struct ContentView: View {
         OpenFolderList.shared.remove(folder)
     }
 
-    /// Asks for a folder and opens it in its own window, replacing this empty
-    /// one. Going through openWindow means a folder that's already open
-    /// brings its existing window forward.
+    /// Asks for a folder and shows it.
     private func chooseFolder() {
         guard let chosen = FolderPicker.chooseFolder() else { return }
-        openWindow(value: chosen)
-        dismiss()
+        show(chosen)
     }
 
     /// What an open folder shows: the workflow, or a note that there's
