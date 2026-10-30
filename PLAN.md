@@ -371,11 +371,11 @@ Keeps/
   Images/    ImagePipeline, ImageCache, ImageReader, ImageSize,
              ThumbnailImage, LoadProgress, LoadProgressView
   Grouping/  the model: Grouping (later also keepers and done groups),
-             GroupLayout
+             GroupLayout, GridScrollAnchor
   Saving/    keeps.json: KeepsFile (reading and writing), SavedGrouping
              (the format), and later the old-format conversions
   Sort/      the sort screen: SortScreen, GridScrolling, SortCell,
-             PileJitter, PhotoGridMetrics, GridHitTarget, GridScrollAnchor
+             PileJitter, PhotoGridMetrics, GridHitTarget
   Pick/      the pick screen (narrowing plan): PickScreen, tile layout,
              tiles, full-size view (PhotoDetailSurface)
 ```
@@ -398,9 +398,35 @@ Keeps/
   `"workflow": "group-cull"`, and still recognises files by it, so every
   existing keeps.json loads unchanged. `originalFormatRestores` must pass
   untouched throughout.
-- **Layering**, replacing "Kit never imports from Workflows": App → Sort
-  and Pick → Grouping and Saving → Folder and Images. Folder and Images
-  know nothing about groups; Grouping knows nothing about views.
+- **Layering**, replacing "Kit never imports from Workflows". Each arrow
+  means "uses", and there are no cycles. Folder, Images, and Saving know
+  nothing about groups as the app models them (Saving holds only the
+  saved form); Grouping knows nothing about views; neither screen uses the
+  other.
+
+  ```mermaid
+  graph TD
+      App --> Sort
+      App --> Pick
+      App --> Grouping
+      App --> Saving
+      App --> Images
+      App --> Folder
+      Sort --> Grouping
+      Sort --> Images
+      Sort --> Folder
+      Pick --> Grouping
+      Pick --> Images
+      Pick --> Folder
+      Grouping --> Saving
+      Grouping --> Folder
+      Images --> Folder
+  ```
+
+  App uses Images to prefetch thumbnails and show loading progress.
+  Grouping uses Saving because it converts itself to and from
+  `SavedGrouping`. `GridScrollAnchor` lives in Grouping, not Sort, because
+  Grouping holds the saved scroll position.
 - `PileJitter` keeps its name: it describes how a collapsed group is
   drawn, not a concept. The `Grid…` and `PhotoGrid…` helpers keep theirs:
   they're about grid geometry, not sorting.
