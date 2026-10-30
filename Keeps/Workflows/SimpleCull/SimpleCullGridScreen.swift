@@ -17,7 +17,7 @@ struct SimpleCullGridScreen: View {
                     workflow.selectItem(at: proposal.targetIndex)
                 }
             },
-            onKeyDown: { event in handleKeyEvent(event) },
+            onKeyDown: { press in handleKeyPress(press) },
             onTap: { index, extendsRange in
                 if extendsRange {
                     workflow.extendSelection(to: index)
@@ -41,11 +41,11 @@ struct SimpleCullGridScreen: View {
 
     /// Handles non-navigation keys: Return enters the single-image view;
     /// everything else goes to the workflow's keymap.
-    private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        if event.keyCode == .returnKey, workflow.selectedIndex != nil {
+    private func handleKeyPress(_ press: KeyPress) -> Bool {
+        if press.key == .return, workflow.selectedIndex != nil {
             workflow.viewMode = .single
             return true
         }
-        return workflow.handleKey(event)
+        return workflow.handleKey(press)
     }
 }

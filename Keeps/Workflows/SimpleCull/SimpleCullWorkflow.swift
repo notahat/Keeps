@@ -1,6 +1,6 @@
-import AppKit
 import Foundation
 import Observation
+import SwiftUI
 
 /// Holds the culling state for one set of photos: flat pick/reject marks,
 /// selection, and view mode, plus the cross-cutting actions that span them.
@@ -111,11 +111,11 @@ class SimpleCullWorkflow {
     /// The workflow's action keymap: f picks, s rejects, d unmarks. Returns
     /// true when the key was handled. Spatial navigation keys never reach
     /// this — the surfaces interpret those into NavigationProposals first.
-    func handleKey(_ event: NSEvent) -> Bool {
+    func handleKey(_ press: KeyPress) -> Bool {
         guard selectedIndex != nil,
-              event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+              press.modifiers.intersection([.command, .control, .option]).isEmpty
         else { return false }
-        switch event.charactersIgnoringModifiers?.lowercased() {
+        switch press.characters.lowercased() {
         case "f": applyMarkAndAdvance(.pick)
         case "s": applyMarkAndAdvance(.reject)
         case "d": applyMarkAndAdvance(nil)

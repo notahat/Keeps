@@ -15,7 +15,7 @@ struct PhotoDetailSurface<Overlay: View>: View {
 
     /// Receives every key press that isn't a linear navigation key.
     /// Returns true when the key was handled.
-    var onKeyDown: (NSEvent) -> Bool
+    var onKeyDown: (KeyPress) -> Bool
 
     /// Chrome layered over the full surface for the current photo.
     @ViewBuilder var overlay: (_ item: PhotoItem) -> Overlay
@@ -25,7 +25,7 @@ struct PhotoDetailSurface<Overlay: View>: View {
     /// The item currently being loaded at high priority, tracked so it can be
     /// deprioritised when the user navigates away before it finishes.
     @State private var highPriorityItem: PhotoItem?
-    @State private var keyView: KeyAwareView.ResponderView?
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Group {
@@ -51,12 +51,16 @@ struct PhotoDetailSurface<Overlay: View>: View {
             }
         }
         .onTapGesture {
-            keyView?.window?.makeFirstResponder(keyView)
+            isFocused = true
         }
-        .background {
-            KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
+        .focusable()
+        .focusEffectDisabled()
+        .focused($isFocused)
+        .onKeyPress { press in
+            handleKeyPress(press) ? .handled : .ignored
         }
         .onAppear {
+            isFocused = true
             loadWindow()
         }
         .onDisappear {
@@ -105,14 +109,14 @@ struct PhotoDetailSurface<Overlay: View>: View {
 
     /// Turns linear navigation keys into ±1 proposals; forwards everything
     /// else to onKeyDown.
-    private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        guard let step = navigationStep(for: event),
+    private func handleKeyPress(_ press: KeyPress) -> Bool {
+        guard let step = navigationStep(for: press),
               !items.isEmpty,
               let current = selectedIndex
-        else { return onKeyDown(event) }
+        else { return onKeyDown(press) }
         onNavigate(NavigationProposal(
             targetIndex: max(0, min(items.count - 1, current + step)),
-            extendsRange: event.modifierFlags.contains(.shift)
+            extendsRange: press.modifiers.contains(.shift)
         ))
         return true
     }
@@ -122,13 +126,15 @@ struct PhotoDetailSurface<Overlay: View>: View {
         (max(0, index - 2) ... min(items.count - 1, index + 4)).filter { $0 != index }
     }
 
-    private func navigationStep(for event: NSEvent) -> Int? {
-        switch event.keyCode {
+    /// How far an arrow key or vi key (h/j/k/l) moves: back one, forward
+    /// one, or nil for any other key.
+    private func navigationStep(for press: KeyPress) -> Int? {
+        switch press.key {
         case .leftArrow, .upArrow: return -1
         case .rightArrow, .downArrow: return 1
         default: break
         }
-        switch event.charactersIgnoringModifiers {
+        switch press.characters {
         case "h", "k": return -1
         case "l", "j": return 1
         default: return nil

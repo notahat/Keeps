@@ -18,7 +18,7 @@ struct SimpleCullDetailScreen: View {
             items: workflow.items,
             selectedIndex: workflow.selectedIndex,
             onNavigate: { proposal in workflow.selectItem(at: proposal.targetIndex) },
-            onKeyDown: { event in handleKeyEvent(event) }
+            onKeyDown: { press in handleKeyPress(press) }
         ) { item in
             chrome(for: item)
         }
@@ -58,12 +58,12 @@ struct SimpleCullDetailScreen: View {
 
     /// Handles non-navigation keys: Esc returns to the grid; everything
     /// else goes to the workflow's keymap.
-    private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        if event.keyCode == .escape {
+    private func handleKeyPress(_ press: KeyPress) -> Bool {
+        if press.key == .escape {
             workflow.viewMode = .grid
             return true
         }
-        return workflow.handleKey(event)
+        return workflow.handleKey(press)
     }
 
     /// Shows the mark feedback label, then fades it out.

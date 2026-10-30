@@ -16,7 +16,7 @@ struct PhotoGridSurface<Cell: View>: View {
 
     /// Receives every key press that isn't a spatial navigation key.
     /// Returns true when the key was handled.
-    var onKeyDown: (NSEvent) -> Bool
+    var onKeyDown: (KeyPress) -> Bool
 
     var onTap: (_ index: Int, _ extendsRange: Bool) -> Void
     var onDoubleTap: (_ index: Int) -> Void
@@ -52,7 +52,7 @@ struct PhotoGridSurface<Cell: View>: View {
     @ViewBuilder var cell: (_ item: PhotoItem, _ index: Int) -> Cell
 
     @State private var columnCount: Int = 1
-    @State private var keyView: KeyAwareView.ResponderView?
+    @FocusState private var isFocused: Bool
     @State private var scrollPosition = ScrollPosition()
     @State private var visibleRegion = VisibleRegion(offset: 0, height: 0)
     @State private var pinnedItem: PinnedItem?
@@ -163,10 +163,14 @@ struct PhotoGridSurface<Cell: View>: View {
             )) { old, new in
                 respondToChange(from: old, to: new, scrollProxy: scrollProxy)
             }
-            .background {
-                KeyAwareView(onKeyDown: { event in handleKeyEvent(event) }, onViewReady: { keyView = $0 })
+            .focusable()
+            .focusEffectDisabled()
+            .focused($isFocused)
+            .onKeyPress { press in
+                handleKeyPress(press) ? .handled : .ignored
             }
             .onAppear {
+                isFocused = true
                 handleAppear(scrollProxy: scrollProxy)
             }
         }
@@ -338,7 +342,7 @@ struct PhotoGridSurface<Cell: View>: View {
             let isShiftHeld = NSApp.currentEvent?.modifierFlags.contains(.shift) == true
             onTap(index, isShiftHeld)
         }
-        keyView?.window?.makeFirstResponder(keyView)
+        isFocused = true
     }
 
     /// What a point within the slot at `index` targets. Edges only count as
@@ -352,16 +356,16 @@ struct PhotoGridSurface<Cell: View>: View {
 
     /// Turns spatial keys into NavigationProposals using the current column
     /// count; forwards everything else to onKeyDown.
-    private func handleKeyEvent(_ event: NSEvent) -> Bool {
+    private func handleKeyPress(_ press: KeyPress) -> Bool {
         // Changes from here on are keyboard-driven: the selection is
         // followed, and if the items change, the middle of the view holds
         // still.
         pinnedItem = pinForMiddleOfView()
         pendingInitialAnchor = nil
-        guard let direction = direction(for: event),
+        guard let direction = direction(for: press),
               !items.isEmpty,
               let current = selectedIndex
-        else { return onKeyDown(event) }
+        else { return onKeyDown(press) }
         let count = items.count
         let targetIndex = switch direction {
         case .left: max(0, current - 1)
@@ -371,13 +375,15 @@ struct PhotoGridSurface<Cell: View>: View {
         }
         onNavigate(NavigationProposal(
             targetIndex: targetIndex,
-            extendsRange: event.modifierFlags.contains(.shift)
+            extendsRange: press.modifiers.contains(.shift)
         ))
         return true
     }
 
-    private func direction(for event: NSEvent) -> Direction? {
-        switch event.keyCode {
+    /// The direction an arrow key or vi key (h/j/k/l) moves in, or nil for
+    /// any other key.
+    private func direction(for press: KeyPress) -> Direction? {
+        switch press.key {
         case .leftArrow: return .left
         case .rightArrow: return .right
         case .downArrow: return .down
@@ -385,7 +391,7 @@ struct PhotoGridSurface<Cell: View>: View {
         default: break
         }
         // Use lowercased() so shift+vi-key also extends selection.
-        switch event.charactersIgnoringModifiers?.lowercased() {
+        switch press.characters.lowercased() {
         case "h": return .left
         case "l": return .right
         case "j": return .down

@@ -17,7 +17,7 @@ struct GroupCullGridScreen: View {
             items: workflow.displayedItems,
             selectedIndex: selectedCellIndex,
             onNavigate: { proposal in workflow.selectCell(at: proposal.targetIndex) },
-            onKeyDown: { event in handleKeyEvent(event) },
+            onKeyDown: { press in handleKeyPress(press) },
             onTap: { index, _ in workflow.selectCell(at: index) },
             onDoubleTap: { _ in },
             onGapTap: { gapIndex in workflow.toggleBoundary(atGap: gapIndex) },
@@ -41,13 +41,13 @@ struct GroupCullGridScreen: View {
 
     /// Handles non-navigation keys: Escape clears the selection, and C
     /// collapses every group closed so far.
-    private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        if event.keyCode == .escape {
+    private func handleKeyPress(_ press: KeyPress) -> Bool {
+        if press.key == .escape {
             workflow.clearSelection()
             return true
         }
-        let hasModifiers = !event.modifierFlags.intersection([.command, .control, .option]).isEmpty
-        if !hasModifiers, event.charactersIgnoringModifiers?.lowercased() == "c" {
+        let hasModifiers = !press.modifiers.intersection([.command, .control, .option]).isEmpty
+        if !hasModifiers, press.characters.lowercased() == "c" {
             workflow.collapseClosedGroups()
             return true
         }
