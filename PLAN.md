@@ -233,15 +233,47 @@ starting point to experiment from, not a final design.
   the done groups (as the stem of each group's first photo). Both are
   optional, so existing `keeps.json` files still load.
 
-### Kit boundary
+### Implementation
 
-The even-grid layout is generic: it takes a photo count, an aspect ratio,
-the available size, and a minimum tile size, and knows nothing about
-groups or keepers. It belongs in Kit as a pure function, with a surface
-that lays out cells with it and turns hjkl and arrows into
-NavigationProposals, like `PhotoGridSurface`. The full-size view reuses
-`PhotoDetailSurface`. Keepers, done status, and the header stay in the
-workflow.
+- **A new surface, not `PhotoGridSurface`.** The grid's cells have a fixed
+  size and their column count follows the window width; the group screen
+  picks its column count first and the tile size follows. Most of the
+  grid's code (holding position as groups collapse, blank slots, gap
+  clicks, saving the scroll position) is irrelevant here, and a group is
+  too small to need a lazy grid.
+- **Shared key handling.** The hjkl/arrow-to-direction code moves out of
+  `PhotoGridSurface` into a small Kit helper that both surfaces use.
+- **Layout (Kit, pure).** Takes the photo count, the aspect ratio, the
+  available size, the spacing, and a minimum tile size. Returns the column
+  count, the tile size, each tile's position, and whether the tiles need
+  to scroll. It also decides where j and k go when the short last row is
+  centred: the nearest tile horizontally.
+- **Tile surface (Kit).** Measures the space, runs the layout, places the
+  tiles, and scrolls only when they don't fit. Takes focus and keys, with
+  the same callbacks as the grid (moves, other keys, click, double-click),
+  and passes each cell its tile size. Knows nothing about groups or
+  keepers.
+- **Larger images.** Tiles may be several times thumbnail size, so
+  `ThumbnailImage` takes its display size as a parameter, and requests are
+  rounded up to a few fixed pixel sizes so that resizing the window doesn't
+  decode everything again.
+- **Aspect ratios before layout.** Photos don't store their dimensions.
+  The grid will usually have loaded every photo's thumbnail, so the cached
+  thumbnails give the aspect ratios; a photo whose thumbnail isn't cached
+  needs a fallback, such as reading its pixel size from the file header.
+- **Image loading and caching needs experimenting with.** Today each pixel
+  size is a separate cache entry, a larger size doesn't use a smaller one
+  as a placeholder while it loads, and the cache has no size limit, so
+  only memory pressure evicts anything. How sizes are loaded, cached, and
+  reused (including keeping known dimensions somewhere) may change as the
+  group screen is tried, and memory use should be profiled.
+- **Full-size view.** `PhotoDetailSurface`, given only the group's photos.
+  It already steps with h and l and preloads neighbours.
+- **Workflow.** `GroupCullRootView` switches between the grid screen and
+  the group screen, as SimpleCull switches between grid and single view.
+  `GroupCullWorkflow` gains the open group, keepers, and done groups. The
+  group screen is the header plus either the tiles or the full-size view.
+  Keepers, done status, and the header stay out of Kit.
 
 ### Out of scope
 
@@ -255,17 +287,25 @@ happens to photos that weren't kept (moving or deleting them).
 Each step includes tests where there is testable behaviour, then review and
 commit.
 
-1. **Narrowing model.** Keepers and done groups in `GroupCullWorkflow`:
+1. **Shared key handling.** Move the hjkl/arrow-to-direction code into a
+   Kit helper, used by `PhotoGridSurface`. No change in behaviour. Tested.
+2. **Narrowing model.** Keepers and done groups in `GroupCullWorkflow`:
    toggling a keeper, marking a group done, opening a group (collapsing up
    to it), and finding the next closed group that isn't done. Tested.
-2. **Even-grid layout in Kit.** The pure layout function: column choice,
-   centred last row, and the minimum tile size. Tested.
-3. **Group screen.** The Kit tile surface, and the workflow's group screen
-   with its header, F, Return, and Escape, opened by double-click or Return
-   from the grid. First point where narrowing can be tried.
-4. **Full-size view.** Space toggles `PhotoDetailSurface` for the focused
+3. **Even-grid layout in Kit.** The pure layout function: column choice,
+   centred last row, the minimum tile size, and j/k targets. Tested.
+4. **Group screen.** The Kit tile surface, `ThumbnailImage` taking its
+   size, aspect ratios from cached thumbnails, and the workflow's group
+   screen with its header, F, Return, and Escape, opened by double-click or
+   Return from the grid. The simplest image loading that works. First
+   point where narrowing can be tried.
+5. **Image sizes and caching.** Exploratory: try the group screen and the
+   grid, profile memory, and adjust how sizes are loaded, cached, and
+   reused, including the fallback for unknown aspect ratios. Tests are
+   written once the shape settles.
+6. **Full-size view.** Space toggles `PhotoDetailSurface` for the focused
    photo, with movement and F still working.
-5. **Done status on piles.** Keepers on top of the pile, the checkmark and
+7. **Done status on piles.** Keepers on top of the pile, the checkmark and
    "2 of 7" badge, and dimming for groups with no keepers.
-6. **Persistence.** Keepers and done groups in the `group-cull` state,
+8. **Persistence.** Keepers and done groups in the `group-cull` state,
    with old files still loading. Tested like `GroupCullStateTests`.
