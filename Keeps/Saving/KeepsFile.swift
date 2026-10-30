@@ -1,55 +1,54 @@
 import Foundation
 import Observation
 
-/// Saves and restores a workflow's Codable state to keeps.json in the photo
-/// folder. The file holds the state and the name of the workflow that wrote
-/// it, so a file written by anything else, such as an earlier version of
-/// the app, is ignored rather than mis-decoded. Saving replaces the whole file. Does
-/// not manage sandbox access to the folder.
+/// Saves and restores a folder's grouping to keeps.json in the photo folder.
+/// The file holds the saved grouping and the name of its format, so a file
+/// in a format this doesn't know is ignored rather than mis-decoded. Saving
+/// replaces the whole file. Does not manage sandbox access to the folder,
+/// and does not convert between the saved form and the live grouping.
 ///
-/// Call restore() after creating the workflow's state, then startObserving
-/// to begin auto-saving on changes. Call stop() to halt auto-saving when the
-/// workflow's view goes away, such as when its window closes.
-final class KeepsFile<State: Codable> {
-    /// What keeps.json holds: the state, and which workflow wrote it.
+/// Call restore() before showing the grouping, then startObserving to begin
+/// auto-saving on changes. Call stop() to halt auto-saving when the folder's
+/// view goes away, such as when its window closes.
+final class KeepsFile {
+    /// What keeps.json holds: the saved grouping, and the name of its
+    /// format. The format name's key is "workflow", the name it was first
+    /// written under, so existing files keep loading.
     private struct Contents: Codable {
         let workflow: String
-        let state: State
+        let state: SavedGrouping
     }
 
-    /// Just the workflow name, so it can be checked before decoding the
-    /// state.
+    /// Just the format name, so it can be checked before decoding the rest.
     private struct Header: Decodable {
         let workflow: String
     }
 
     private let fileURL: URL
-    private let workflowName: String
     private var isActive = true
 
-    init(folderURL: URL, workflowName: String) {
+    init(folderURL: URL) {
         fileURL = folderURL.appendingPathComponent("keeps.json")
-        self.workflowName = workflowName
     }
 
-    /// Returns the saved state, or nil when the file is missing, unreadable,
-    /// or was written by a different workflow.
-    func restore() -> State? {
+    /// Returns the saved grouping, or nil when the file is missing,
+    /// unreadable, or in a format this doesn't know.
+    func restore() -> SavedGrouping? {
         let decoder = JSONDecoder()
         guard let data = try? Data(contentsOf: fileURL),
-              (try? decoder.decode(Header.self, from: data))?.workflow == workflowName
+              (try? decoder.decode(Header.self, from: data))?.workflow == SavedGrouping.originalFormatName
         else { return nil }
         return try? decoder.decode(Contents.self, from: data).state
     }
 
-    /// Writes the state to keeps.json. Throws if the data cannot be encoded
-    /// or written; callers are expected to surface the failure rather than
+    /// Writes the grouping to keeps.json. Throws if it cannot be encoded or
+    /// written; callers are expected to surface the failure rather than
     /// swallow it, so the user knows their work is at risk.
-    func save(_ state: State) throws {
+    func save(_ savedGrouping: SavedGrouping) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(Contents(workflow: workflowName, state: state))
-        try data.write(to: fileURL)
+        let contents = Contents(workflow: SavedGrouping.originalFormatName, state: savedGrouping)
+        try encoder.encode(contents).write(to: fileURL)
     }
 
     /// Stops auto-saving.
@@ -62,7 +61,7 @@ final class KeepsFile<State: Codable> {
     /// to onSaveError so the UI can alert the user.
     @MainActor
     func startObserving(
-        snapshot: @escaping @MainActor () -> State,
+        snapshot: @escaping @MainActor () -> SavedGrouping,
         onSaveError: @escaping @MainActor (Error) -> Void
     ) {
         withObservationTracking {

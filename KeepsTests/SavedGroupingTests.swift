@@ -82,12 +82,9 @@ struct SavedGroupingTests {
         """
         try Data(json.utf8).write(to: folder.appendingPathComponent("keeps.json"))
         let grouping = makeGrouping(photoCount: 10)
-        let persistence = KeepsFile<SavedGrouping>(
-            folderURL: folder,
-            workflowName: SavedGrouping.originalFormatName
-        )
+        let keepsFile = KeepsFile(folderURL: folder)
 
-        let state = try #require(persistence.restore())
+        let state = try #require(keepsFile.restore())
         grouping.applyRestored(state: state)
 
         #expect(grouping.boundaries == [3, 5, 10])

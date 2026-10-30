@@ -2,76 +2,103 @@ import Foundation
 @testable import Keeps
 import Testing
 
-/// A minimal Codable state shape standing in for a real workflow's schema.
-private struct StubState: Codable, Equatable {
-    var names: [String]
-}
-
 /// A minimal observable model for exercising observation-triggered saves.
 @Observable
 private final class StubModel {
-    var names: [String] = []
+    var selectedStem: String?
+}
+
+/// Makes a saved grouping that differs only in its selection, which is enough
+/// to tell one save from another.
+private func makeSavedGrouping(selectedStem: String?) -> SavedGrouping {
+    SavedGrouping(boundaries: [], collapsedUpTo: nil, selectedStem: selectedStem, scrollAnchor: nil)
 }
 
 @MainActor
 struct KeepsFileTests {
-    @Test func roundTripsStateThroughSaveAndRestore() throws {
+    @Test("A saved grouping is restored as it was saved")
+    func roundTrip() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
+        let saved = SavedGrouping(
+            boundaries: [.beforePhoto("IMG_0002"), .end],
+            collapsedUpTo: .beforePhoto("IMG_0002"),
+            selectedStem: "IMG_0001",
+            scrollAnchor: SavedGrouping.ScrollAnchor(stem: "IMG_0001", offsetFromRowTop: 3)
+        )
 
-        try persistence.save(StubState(names: ["IMG_0001", "IMG_0002"]))
-        let restored = persistence.restore()
+        try keepsFile.save(saved)
+        let restored = keepsFile.restore()
 
-        #expect(restored == StubState(names: ["IMG_0001", "IMG_0002"]))
+        #expect(restored == saved)
     }
 
-    @Test("State is restored from a file that also has entries it doesn't know")
+    @Test("Saving writes the original format's name")
+    func saveWritesFormatName() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let keepsFile = KeepsFile(folderURL: folder)
+
+        try keepsFile.save(makeSavedGrouping(selectedStem: nil))
+        let data = try Data(contentsOf: folder.appendingPathComponent("keeps.json"))
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        #expect(json["workflow"] as? String == "group-cull")
+    }
+
+    @Test("A grouping is restored from a file that also has entries it doesn't know")
     func restoreIgnoresOtherEntries() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let json = """
-        {"state": {"names": ["IMG_0001"]}, "windowFrame": [[1, 2], [3, 4]], "workflow": "stub-flow"}
+        {"state": {"boundaries": [], "selectedStem": "IMG_0001"}, "windowFrame": [[1, 2], [3, 4]], "workflow": "group-cull"}
         """
         try Data(json.utf8).write(to: folder.appendingPathComponent("keeps.json"))
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
 
-        let restored = persistence.restore()
+        let restored = keepsFile.restore()
 
-        #expect(restored == StubState(names: ["IMG_0001"]))
+        #expect(restored == makeSavedGrouping(selectedStem: "IMG_0001"))
     }
 
-    @Test func restoreReturnsNilWhenNoFileExists() throws {
+    @Test("Restores nothing when there is no keeps.json")
+    func restoreWithNoFile() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
 
-        #expect(persistence.restore() == nil)
+        #expect(keepsFile.restore() == nil)
     }
 
-    @Test func restoreReturnsNilWhenFileWasWrittenByADifferentWorkflow() throws {
+    @Test("Restores nothing from a keeps.json in a format it doesn't know")
+    func restoreWithUnknownFormat() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let writer = KeepsFile<StubState>(folderURL: folder, workflowName: "old-flow")
-        try writer.save(StubState(names: ["IMG_0001"]))
+        let json = """
+        {"state": {"boundaries": [], "selectedStem": "IMG_0001"}, "workflow": "some-other-format"}
+        """
+        try Data(json.utf8).write(to: folder.appendingPathComponent("keeps.json"))
 
-        let reader = KeepsFile<StubState>(folderURL: folder, workflowName: "new-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
 
-        #expect(reader.restore() == nil)
+        #expect(keepsFile.restore() == nil)
     }
 
-    @Test func restoreReturnsNilWhenFileIsNotValidJson() throws {
+    @Test("Restores nothing from a keeps.json that isn't JSON")
+    func restoreWithInvalidJSON() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         try Data("not json".utf8).write(to: folder.appendingPathComponent("keeps.json"))
 
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
 
-        #expect(persistence.restore() == nil)
+        #expect(keepsFile.restore() == nil)
     }
 
-    @Test func saveThrowsWhenFileCannotBeWritten() throws {
+    @Test("Saving throws when keeps.json can't be written")
+    func saveFailureThrows() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         // Pre-create a directory at the keeps.json path so the write fails.
@@ -79,48 +106,50 @@ struct KeepsFileTests {
             at: folder.appendingPathComponent("keeps.json"),
             withIntermediateDirectories: false
         )
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
 
         #expect(throws: (any Error).self) {
-            try persistence.save(StubState(names: []))
+            try keepsFile.save(makeSavedGrouping(selectedStem: nil))
         }
     }
 
-    @Test func observedChangeSavesAFreshSnapshot() async throws {
+    @Test("An observed change saves a fresh snapshot")
+    func observedChangeSaves() async throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
         let model = StubModel()
-        persistence.startObserving(
-            snapshot: { StubState(names: model.names) },
+        keepsFile.startObserving(
+            snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
             onSaveError: { _ in }
         )
 
         // The save runs on the next main-actor turn; yield until it has.
-        model.names = ["IMG_0001"]
-        for _ in 0 ..< 10 where persistence.restore() == nil {
+        model.selectedStem = "IMG_0001"
+        for _ in 0 ..< 10 where keepsFile.restore() == nil {
             await Task.yield()
         }
 
-        #expect(persistence.restore() == StubState(names: ["IMG_0001"]))
+        #expect(keepsFile.restore() == makeSavedGrouping(selectedStem: "IMG_0001"))
     }
 
-    @Test func observedSaveFailureReportsTheError() async throws {
+    @Test("A failed observed save reports the error")
+    func observedSaveFailureReported() async throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         try FileManager.default.createDirectory(
             at: folder.appendingPathComponent("keeps.json"),
             withIntermediateDirectories: false
         )
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
         let model = StubModel()
         let errorBox = ErrorBox()
-        persistence.startObserving(
-            snapshot: { StubState(names: model.names) },
+        keepsFile.startObserving(
+            snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
             onSaveError: { errorBox.error = $0 }
         )
 
-        model.names = ["IMG_0001"]
+        model.selectedStem = "IMG_0001"
         for _ in 0 ..< 10 where errorBox.error == nil {
             await Task.yield()
         }
@@ -128,23 +157,24 @@ struct KeepsFileTests {
         #expect(errorBox.error != nil)
     }
 
-    @Test func stopHaltsObservedSaves() async throws {
+    @Test("Stopping halts observed saves")
+    func stopHaltsObservedSaves() async throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let persistence = KeepsFile<StubState>(folderURL: folder, workflowName: "stub-flow")
+        let keepsFile = KeepsFile(folderURL: folder)
         let model = StubModel()
-        persistence.startObserving(
-            snapshot: { StubState(names: model.names) },
+        keepsFile.startObserving(
+            snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
             onSaveError: { _ in }
         )
 
-        persistence.stop()
-        model.names = ["IMG_0001"]
+        keepsFile.stop()
+        model.selectedStem = "IMG_0001"
         for _ in 0 ..< 10 {
             await Task.yield()
         }
 
-        #expect(persistence.restore() == nil)
+        #expect(keepsFile.restore() == nil)
     }
 }
 

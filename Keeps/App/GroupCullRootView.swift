@@ -8,7 +8,7 @@ struct GroupCullRootView: View {
     let session: FolderSession
 
     @State private var grouping: Grouping?
-    @State private var persistence: KeepsFile<SavedGrouping>?
+    @State private var keepsFile: KeepsFile?
 
     var body: some View {
         Group {
@@ -34,7 +34,7 @@ struct GroupCullRootView: View {
             start()
         }
         .onDisappear {
-            persistence?.stop()
+            keepsFile?.stop()
         }
     }
 
@@ -44,19 +44,16 @@ struct GroupCullRootView: View {
     private func start() {
         guard grouping == nil else { return }
         let newGrouping = Grouping(items: session.items)
-        let newPersistence = KeepsFile<SavedGrouping>(
-            folderURL: session.folderURL,
-            workflowName: SavedGrouping.originalFormatName
-        )
-        if let state = newPersistence.restore() {
+        let newKeepsFile = KeepsFile(folderURL: session.folderURL)
+        if let state = newKeepsFile.restore() {
             newGrouping.applyRestored(state: state)
         }
-        newPersistence.startObserving(
+        newKeepsFile.startObserving(
             snapshot: { newGrouping.snapshotState() },
             onSaveError: { NSApp.presentError($0) }
         )
         grouping = newGrouping
-        persistence = newPersistence
+        keepsFile = newKeepsFile
         ImagePipeline.shared.prefetchImages(for: session.items, size: ThumbnailImage.imageSize)
     }
 }
