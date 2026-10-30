@@ -20,12 +20,11 @@ struct ContentView: View {
             if let folderError {
                 errorState(folderError)
             } else if let session {
-                if session.items.isEmpty {
-                    noPhotosState
-                } else {
-                    // The one wiring line a workflow experiment replaces.
-                    GroupCullRootView(session: session)
-                }
+                // The folder as the window's document gives the title bar
+                // its folder icon, with the usual drag and Command-click
+                // path menu.
+                sessionContent(session)
+                    .navigationDocument(session.folderURL)
             } else if folder == nil {
                 emptyState
             } else {
@@ -103,6 +102,18 @@ struct ContentView: View {
         guard let chosen = FolderPicker.chooseFolder() else { return }
         openWindow(value: chosen)
         dismiss()
+    }
+
+    /// What an open folder shows: the workflow, or a note that there's
+    /// nothing in it to cull.
+    @ViewBuilder
+    private func sessionContent(_ session: FolderSession) -> some View {
+        if session.items.isEmpty {
+            noPhotosState
+        } else {
+            // The one wiring line a workflow experiment replaces.
+            GroupCullRootView(session: session)
+        }
     }
 
     private var emptyState: some View {
