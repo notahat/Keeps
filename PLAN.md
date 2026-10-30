@@ -181,7 +181,7 @@ running the app.
 2. ✅ **Window frames in keeps.json.** Apply the saved frame before the window
    shows, and save moves and resizes. The frame's reading and writing is
    tested against a temporary folder.
-3. **Always reopen folders.** Register `NSQuitAlwaysKeepsWindows` and check
+3. ✅ **Always reopen folders.** Register `NSQuitAlwaysKeepsWindows` and check
    folders come back after quitting whatever the system setting. Drop it
    if it misbehaves.
 4. **Docs.** Update the shell description in `CLAUDE.md`.
