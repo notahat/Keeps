@@ -18,19 +18,21 @@ module:
   schema. Currently `GroupCull` (group by clicking between photos, collapse
   finished groups) is wired in; `SimpleCull` (flat pick/reject marks) is
   kept for comparison.
-- `Keeps/KeepsApp.swift`, `ContentView.swift`, `FolderReference.swift`,
-  `FolderPicker.swift`, `FolderCommands.swift`, `FolderWindows.swift`,
-  `OpenFolderList.swift`, `RecentFolders.swift`, `AppLifecycle.swift`, and
-  `WindowFramePersistence.swift`, plus `Keeps-Info.plist` at the project
-  root — the shell: one window per folder (the window's value is a
-  FolderReference carrying a security-scoped bookmark), File > Open Folder…
-  and Open Recent (backed by the system's recent documents list, which
-  regrants sandbox access), opening folders dropped on the Dock icon (the
-  plist declares folders as a document type), reopening the folders that
-  were open at quit (the app does this itself; system window restoration
-  is disabled), keeping each window's size and position in its folder's
-  keeps.json, and one wiring line in ContentView that hosts the workflow's
-  root view.
+- `Keeps/main.swift`, `AppDelegate.swift`, `MainMenu.swift`,
+  `FolderDocumentController.swift`, `FolderDocument.swift`,
+  `FolderWindowController.swift`, `FolderView.swift`, and
+  `WindowFrameStore.swift`, plus `Keeps-Info.plist` at the project root —
+  the shell, built on AppKit's document architecture. Each open folder is
+  a `FolderDocument` (the plist declares folders as a document type with
+  that class), so AppKit provides Open, Open Recent, opening folders
+  dropped on the Dock icon, bringing an open folder's window forward,
+  reopening folders at launch (`NSQuitAlwaysKeepsWindows` is registered so
+  this happens whatever the system setting), and sandbox access to them
+  again after a relaunch. The shell adds only what AppKit lacks: the Open
+  panel chooses folders, and shows in place of an untitled document; each
+  window keeps its size and position in its folder's keeps.json; and one
+  wiring line in FolderView hosts the workflow's root view. The document
+  never saves; workflows write keeps.json themselves.
 
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
 free of workflow vocabulary (marks, filters, sort destinations).
@@ -38,7 +40,7 @@ free of workflow vocabulary (marks, filters, sort destinations).
 To start a new workflow experiment: create `Keeps/Workflows/<name>/` with
 its own state and root view, give its persisted state a distinct workflow
 name (the keeps.json envelope ignores state written by other workflows),
-and swap the one wiring line in ContentView.
+and swap the one wiring line in FolderView.
 
 ## Build & Test
 

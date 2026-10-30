@@ -184,4 +184,4 @@ running the app.
 3. ✅ **Always reopen folders.** Register `NSQuitAlwaysKeepsWindows` and check
    folders come back after quitting whatever the system setting. Drop it
    if it misbehaves.
-4. **Docs.** Update the shell description in `CLAUDE.md`.
+4. ✅ **Docs.** Update the shell description in `CLAUDE.md`.
