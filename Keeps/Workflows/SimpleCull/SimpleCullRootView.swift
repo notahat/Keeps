@@ -1,9 +1,11 @@
+import AppKit
 import SwiftUI
 
 /// The root view of the simple culling workflow for one folder session.
 /// Owns the workflow state and its persistence, routes between the grid and
-/// single-image screens, and provides the toolbar and save-error alert. The
-/// shell hosts this view and knows nothing else about the workflow.
+/// single-image screens, provides the toolbar, and reports save failures
+/// with AppKit's standard error alert. The shell hosts this view and knows
+/// nothing else about the workflow.
 struct SimpleCullRootView: View {
     let session: FolderSession
 
@@ -26,9 +28,6 @@ struct SimpleCullRootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar { toolbar }
-        .errorAlert("Couldn't Save Changes", error: workflow?.saveError) {
-            workflow?.clearSaveError()
-        }
         .onAppear {
             start()
         }
@@ -86,7 +85,7 @@ struct SimpleCullRootView: View {
         }
         newPersistence.startObserving(
             snapshot: { newWorkflow.snapshotState() },
-            onSaveError: { newWorkflow.recordSaveError($0) }
+            onSaveError: { NSApp.presentError($0) }
         )
         workflow = newWorkflow
         persistence = newPersistence

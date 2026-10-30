@@ -10,9 +10,6 @@ import SwiftUI
 class SimpleCullWorkflow {
     enum ViewMode { case grid, single }
 
-    /// Set when persistence fails to write keeps.json. The UI observes this
-    /// to alert the user that their marks may not have been saved.
-    private(set) var saveError: Error?
     private(set) var selectedItemID: UUID?
     private(set) var rangeAnchorID: UUID?
     var viewMode: ViewMode = .grid
@@ -122,18 +119,6 @@ class SimpleCullWorkflow {
         default: return false
         }
         return true
-    }
-
-    /// Reports a failure to persist workflow state to disk. Called by the
-    /// persistence observation when keeps.json could not be written.
-    func recordSaveError(_ error: Error) {
-        saveError = error
-    }
-
-    /// Clears any reported save error. Called by the UI after the user has
-    /// acknowledged the failure.
-    func clearSaveError() {
-        saveError = nil
     }
 
     /// A stem-keyed snapshot of the current marks, for persistence. Reading

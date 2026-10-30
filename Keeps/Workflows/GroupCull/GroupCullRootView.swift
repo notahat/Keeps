@@ -1,9 +1,10 @@
+import AppKit
 import SwiftUI
 
 /// The root view of the grouping workflow for one folder session. Owns the
-/// workflow state and its persistence, hosts the grid screen, and shows the
-/// save-error alert. The shell hosts this view and knows nothing else about
-/// the workflow.
+/// workflow state and its persistence, hosts the grid screen, and reports
+/// save failures with AppKit's standard error alert. The shell hosts this
+/// view and knows nothing else about the workflow.
 struct GroupCullRootView: View {
     let session: FolderSession
 
@@ -30,9 +31,6 @@ struct GroupCullRootView: View {
             }
             .sharedBackgroundVisibility(.hidden)
         }
-        .errorAlert("Couldn't Save Changes", error: workflow?.saveError) {
-            workflow?.clearSaveError()
-        }
         .onAppear {
             start()
         }
@@ -56,7 +54,7 @@ struct GroupCullRootView: View {
         }
         newPersistence.startObserving(
             snapshot: { newWorkflow.snapshotState() },
-            onSaveError: { newWorkflow.recordSaveError($0) }
+            onSaveError: { NSApp.presentError($0) }
         )
         workflow = newWorkflow
         persistence = newPersistence

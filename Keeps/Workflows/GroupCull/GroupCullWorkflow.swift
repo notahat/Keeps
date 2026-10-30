@@ -21,10 +21,6 @@ class GroupCullWorkflow {
     /// when it changes.
     var scrollAnchor: GridScrollAnchor?
 
-    /// Set when keeps.json could not be written, so the UI can warn the
-    /// user that their grouping may not be saved.
-    private(set) var saveError: Error?
-
     /// The photo index up to which groups are collapsed; 0 for none. Set
     /// only by collapsing, and never undone, so the gaps beside collapsed
     /// groups are locked (see GroupLayout.isGapEditable).
@@ -101,16 +97,6 @@ class GroupCullWorkflow {
     /// Deselects everything.
     func clearSelection() {
         selectedPhotoIndex = nil
-    }
-
-    /// Records a failure to write keeps.json.
-    func recordSaveError(_ error: Error) {
-        saveError = error
-    }
-
-    /// Clears a reported save error once the user has acknowledged it.
-    func clearSaveError() {
-        saveError = nil
     }
 
     /// A stem-keyed snapshot of everything worth saving. Reading this inside
