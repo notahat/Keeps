@@ -1,16 +1,34 @@
 import AppKit
 
-/// The app's document controller. Its only change from AppKit's is that the
-/// Open panel chooses folders, since every document is a folder.
+/// The app's document controller. It changes two things from AppKit's: the
+/// Open panel chooses folders, since every document is a folder, and only
+/// one Open panel shows at a time.
 final class FolderDocumentController: NSDocumentController {
-    /// Sets the Open panel to choose folders and not files, then shows it.
+    private var shownOpenPanel: NSOpenPanel?
+
+    /// Shows the Open panel set to choose folders and not files. If one is
+    /// already showing, brings it forward instead and cancels this request.
+    /// The app shows the panel whenever it has no windows (see AppDelegate),
+    /// and the panel doesn't count as one, so without this each click on
+    /// the Dock icon would add another.
     override func beginOpenPanel(
         _ openPanel: NSOpenPanel,
         forTypes types: [String]?,
         completionHandler: @escaping (Int) -> Void
     ) {
+        if let shownOpenPanel {
+            shownOpenPanel.makeKeyAndOrderFront(nil)
+            completionHandler(NSApplication.ModalResponse.cancel.rawValue)
+            return
+        }
         openPanel.canChooseDirectories = true
         openPanel.canChooseFiles = false
-        super.beginOpenPanel(openPanel, forTypes: types, completionHandler: completionHandler)
+        shownOpenPanel = openPanel
+        super.beginOpenPanel(openPanel, forTypes: types) { result in
+            MainActor.assumeIsolated {
+                self.shownOpenPanel = nil
+            }
+            completionHandler(result)
+        }
     }
 }
