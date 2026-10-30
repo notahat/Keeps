@@ -2,7 +2,11 @@
 
 ## Architecture
 
-The code under `Keeps/` is organised by what each part of the app does:
+The code under `Keeps/` is organised by what each part of the app does.
+Each folder's `README.md` describes its responsibilities; update it when
+they change. The READMEs are excluded from the app target in the project
+file (otherwise they'd collide as bundle resources), so a README in a new
+folder needs adding to that exception list.
 
 - `App/` — the shell, built on AppKit's document architecture, plus
   `Keeps-Info.plist` at the project root. Each open folder is a

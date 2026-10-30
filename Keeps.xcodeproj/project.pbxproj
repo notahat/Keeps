@@ -23,9 +23,28 @@
 		34AA6A392F9DE8AE007BA223 /* KeepsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KeepsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		34C0DE012FA0000000ABCDEF /* Exceptions for "Keeps" folder in "Keeps" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/README.md,
+				Folder/README.md,
+				Grouping/README.md,
+				Images/README.md,
+				Pick/README.md,
+				Saving/README.md,
+				Sort/README.md,
+			);
+			target = 34AA6A2B2F9DE8AD007BA223 /* Keeps */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		34AA6A2E2F9DE8AD007BA223 /* Keeps */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				34C0DE012FA0000000ABCDEF /* Exceptions for "Keeps" folder in "Keeps" target */,
+			);
 			path = Keeps;
 			sourceTree = "<group>";
 		};
