@@ -5,8 +5,7 @@ import Observation
 /// folder, under the "state" entry. The "workflow" entry records which
 /// workflow wrote it, so state left behind by a different workflow
 /// experiment is detected and ignored rather than mis-decoded. Other entries
-/// in the file are left alone. Does not manage folder access — FolderSession
-/// owns the security scope.
+/// in the file are left alone. Does not manage sandbox access to the folder.
 ///
 /// Call restore() after creating the workflow's state, then startObserving
 /// to begin auto-saving on changes. Call stop() to halt auto-saving when the
