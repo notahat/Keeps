@@ -448,21 +448,22 @@ so check by hand: clicking boundaries and the hover preview, C to collapse
 with the working point held still, arrow and hjkl keys, Escape, and
 reopening a folder at its saved scroll position and selection.
 
-1. **Move and rename.** Files into the folders above (the Xcode groups
+1. ✅ **Move and rename.** Files into the folders above (the Xcode groups
    follow the file system, so `git mv` is enough), and the type renames
    from the table, with their tests (`GroupingTests`,
    `SavedGroupingTests`, `KeepsFileTests`) and `makeGrouping` in
    TestHelpers. `SavedGrouping.originalFormatName` replaces
    `workflowName`. Nothing merged yet.
-2. **Specific saving.** `KeepsFile` saves and restores `SavedGrouping`
+2. ✅ **Specific saving.** `KeepsFile` saves and restores `SavedGrouping`
    only. Its tests move from the stub state to `SavedGrouping`.
-3. **FolderView owns the grouping.** Merge `GroupCullRootView` into
+3. ✅ **FolderView owns the grouping.** Merge `GroupCullRootView` into
    `FolderView`.
-4. **One sort screen.** Merge `PhotoGridSurface` into `SortScreen`, reading
-   the grouping directly. Remove `NavigationProposal` and
-   `displayedItems`.
-5. **Split out the scrolling.** Move the scroll behaviour from
+4. ✅ **One sort screen.** Merge `PhotoGridSurface` into `SortScreen`, reading
+   the grouping directly. Remove `NavigationProposal`. (`displayedItems`
+   stayed on `Grouping` as `cellItems`, since the screen still needs it and
+   it is tested there.)
+5. ✅ **Split out the scrolling.** Move the scroll behaviour from
    `SortScreen` into `GridScrolling`.
-6. **Docs.** Rewrite the architecture section of `CLAUDE.md` for the new
+6. ✅ **Docs.** Rewrite the architecture section of `CLAUDE.md` for the new
    folders and layering, add the vocabulary above as a glossary, and
    update the keeps.json rule's test reference.

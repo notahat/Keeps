@@ -2,48 +2,68 @@
 
 ## Architecture
 
-The app is split into a stable rendering kit and the culling workflow
-built on it:
+The code under `Keeps/` is organised by what each part of the app does:
 
-- `Keeps/Kit/` — stable ground: the image engine (ImagePipeline,
-  ImageCache, ImageReader), folder scanning and session (FolderScanner,
-  FolderSession), keeps.json and the generic persistence harness
-  (WorkflowPersistence), and dumb viewing surfaces
-  (PhotoGridSurface, PhotoDetailSurface, ThumbnailImage). Surfaces
-  interpret spatial keys into NavigationProposals and take cells/overlays
-  via ViewBuilder closures; they know nothing about groups, keepers, or any
-  other workflow concept.
-- `Keeps/Workflows/GroupCull/` — everything the workflow owns: its state,
-  screens, cell chrome, keymap, toolbar, dialogs, and persistence schema.
-  Photos are grouped by clicking between them, and finished groups
-  collapse.
-- `Keeps/main.swift`, `AppDelegate.swift`, `MainMenu.swift`,
-  `FolderDocumentController.swift`, `FolderDocument.swift`,
-  `FolderWindowController.swift`, and `FolderView.swift`, plus
-  `Keeps-Info.plist` at the project root — the shell, built on AppKit's
-  document architecture. Each open folder is a `FolderDocument` (the plist
-  declares folders as a document type with that class), so AppKit provides
-  Open, Open Recent, opening folders dropped on the Dock icon, bringing an
-  open folder's window forward, reopening folders at launch
-  (`NSQuitAlwaysKeepsWindows` is registered so this happens whatever the
-  system setting), sandbox access to them, including after a relaunch, and
-  saving each window's frame (in the app's preferences, keyed by folder
-  path). The shell adds only what AppKit lacks: the Open panel chooses
-  folders, and shows in place of an untitled document; and FolderView
-  hosts the workflow's root view. The document never saves; the workflow
-  writes keeps.json itself.
+- `App/` — the shell, built on AppKit's document architecture, plus
+  `Keeps-Info.plist` at the project root. Each open folder is a
+  `FolderDocument` (the plist declares folders as a document type with
+  that class), so AppKit provides Open, Open Recent, opening folders
+  dropped on the Dock icon, bringing an open folder's window forward,
+  reopening folders at launch (`NSQuitAlwaysKeepsWindows` is registered so
+  this happens whatever the system setting), sandbox access to them,
+  including after a relaunch, and saving each window's frame. The shell
+  adds only what AppKit lacks: the Open panel chooses folders, and shows in
+  place of an untitled document. `FolderView` owns the folder's `Grouping`
+  and its `KeepsFile`, and shows the sort screen. The document never saves;
+  `KeepsFile` writes keeps.json as the grouping changes.
+- `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
+  `FolderSession`).
+- `Images/` — loading, caching, and showing images (`ImagePipeline`,
+  `ThumbnailImage`, load progress).
+- `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
+  selection, and scroll position, and `GroupLayout` derives the cells.
+- `Saving/` — keeps.json: `KeepsFile` reads and writes it, and
+  `SavedGrouping` is its format.
+- `Sort/` — the sort screen. `SortScreen` draws cells and handles input;
+  `GridScrolling` does the scrolling; the geometry is in pure, tested
+  helpers (`PhotoGridMetrics`, `GridHitTarget`).
+- `Pick/` — the pick screen, being built (see PLAN.md).
 
-**Dependency rule: Kit never imports from Workflows.** The kit must stay
-free of workflow vocabulary (groups, keepers, done status).
+**Layering.** The folders use each other only like this, with no cycles:
+
+- App uses everything.
+- Sort and Pick use Grouping, Images, and Folder, and never each other.
+- Grouping uses Saving and Folder, converting itself to and from
+  `SavedGrouping`.
+- Images uses Folder.
+- Saving uses nothing.
+
+Grouping, Saving, and Folder have no views, which keeps them testable.
 
 **keeps.json files already on disk must keep loading.** Real folders have
 been grouped, and losing that work is not acceptable. Any change to the
 saved format must still restore every earlier format, by converting it on
 load, with a test that restores a hand-written file in the old format (see
-`originalFormatRestores` in GroupCullStateTests). Never edit an existing
-format fixture to make a test pass. The file's `"workflow"` name
-(`"group-cull"`) identifies the format, so a new format can be written
-under a new name and the old one recognised by its name.
+`originalFormatRestores` in SavedGroupingTests). Never edit an existing
+format fixture to make a test pass. The file's `"workflow"` field names
+its format (`SavedGrouping.originalFormatName`, `"group-cull"`), so a new
+format can be written under a new name and the old one recognised by its
+name.
+
+## Glossary
+
+- **Group**: a run of photos between two boundaries. No type is called
+  plain `Group`, which SwiftUI already has; use `PhotoGroup` if one is
+  needed.
+- **Boundary**: the split between two groups, placed by clicking between
+  photos.
+- **Working point**: where grouping has reached, the first photo after the
+  last boundary. It holds still on screen as groups collapse.
+- **Collapsed**: a closed group drawn as a pile, after C. It can't be
+  changed.
+- **Sort screen**: the grid where the folder is split into groups.
+- **Pick screen**: one group at a time, where its **keepers** are picked
+  and the group is marked **done**.
 
 ## Build & Test
 
