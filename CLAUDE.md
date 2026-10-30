@@ -36,8 +36,14 @@ built on it:
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
 free of workflow vocabulary (groups, keepers, done status).
 
-keeps.json stores the workflow name ("group-cull") alongside the state.
-Keep it: folders already saved in that format must still restore.
+**keeps.json files already on disk must keep loading.** Real folders have
+been grouped, and losing that work is not acceptable. Any change to the
+saved format must still restore every earlier format, by converting it on
+load, with a test that restores a hand-written file in the old format (see
+`originalFormatRestores` in GroupCullStateTests). Never edit an existing
+format fixture to make a test pass. The file's `"workflow"` name
+(`"group-cull"`) identifies the format, so a new format can be written
+under a new name and the old one recognised by its name.
 
 ## Build & Test
 
