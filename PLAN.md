@@ -95,8 +95,8 @@ commit.
 5. ✅ **Persistence.** The `group-cull` state schema with snapshot and
    restore of boundaries, collapse point, selection, and scroll position,
    tested like `SimpleCullStateTests`.
-6. **Read-only detail view.** Double-click to open the photo at full size,
-   Esc to return.
+6. ~~**Read-only detail view.**~~ Replaced by the group screen's full-size
+   view in "GroupCull — narrowing each group to its keepers" below.
 
 ---
 
@@ -185,3 +185,87 @@ running the app.
    folders come back after quitting whatever the system setting. Drop it
    if it misbehaves.
 4. ✅ **Docs.** Update the shell description in `CLAUDE.md`.
+
+---
+
+# Plan: GroupCull — narrowing each group to its keepers
+
+## Goal
+
+The second pass of GroupCull: pick the one or two photos worth keeping
+from each group, then mark the group done. The screen shows one group at a
+time and nothing else, so narrowing never feels overwhelming. This is a
+starting point to experiment from, not a final design.
+
+## Design
+
+- **Opening a group.** Double-click or Return on a closed group in the grid
+  (one with a boundary after it) opens the group screen. Ungrouped photos
+  past the working point can't be opened. Opening a group collapses every
+  group up to and including it, as if C had been pressed with the last
+  boundary at the end of that group. C itself is unchanged. Groups that are
+  already done can be reopened, with their keepers still marked.
+- **Group screen.** Only the group's photos, plus a quiet header such as
+  "Group 12 of 47" (counting closed groups). One photo has focus.
+- **Tile layout.** An even grid. Every column count from 1 to the photo
+  count is tried, and the one giving the largest tiles wins. Cells take the
+  group's most common aspect ratio, and each photo is fitted inside its
+  cell. A short last row is centred. Tiles stop shrinking at a minimum
+  size, and past that the grid scrolls. Nothing moves while you're in the
+  group.
+- **Keys.**
+  - hjkl and the arrows move focus.
+  - Space toggles a full-size view of the focused photo. Moving and marking
+    still work while full-size.
+  - F toggles keep on the focused photo.
+  - Return marks the group done and opens the next closed group that isn't
+    done. When there isn't one, it returns to the grid with the working
+    point in view.
+  - Escape returns to the grid without changing whether the group is done.
+- **Keepers.** Shown with a clear badge or border. The other photos stay at
+  full brightness on the group screen.
+- **Done groups in the grid.** A done group is always collapsed, so only
+  piles show done status. The keepers sit on top of the pile, and the badge
+  shows a checkmark and "2 of 7". A done group with no keepers is allowed,
+  meaning the whole group is rejected; its pile is dimmed and shows "0 of
+  7". Piles that aren't done look as they do now.
+- **Persistence.** The `group-cull` state gains the keepers (as stems) and
+  the done groups (as the stem of each group's first photo). Both are
+  optional, so existing `keeps.json` files still load.
+
+### Kit boundary
+
+The even-grid layout is generic: it takes a photo count, an aspect ratio,
+the available size, and a minimum tile size, and knows nothing about
+groups or keepers. It belongs in Kit as a pure function, with a surface
+that lays out cells with it and turns hjkl and arrows into
+NavigationProposals, like `PhotoGridSurface`. The full-size view reuses
+`PhotoDetailSurface`. Keepers, done status, and the header stay in the
+workflow.
+
+### Out of scope
+
+Regrouping after collapse: once a group is collapsed, its boundaries can't
+change. Zooming beyond full-size, synced zoom across a group, a "keep and
+finish" key, and animated transitions between groups. Deciding what
+happens to photos that weren't kept (moving or deleting them).
+
+## Steps
+
+Each step includes tests where there is testable behaviour, then review and
+commit.
+
+1. **Narrowing model.** Keepers and done groups in `GroupCullWorkflow`:
+   toggling a keeper, marking a group done, opening a group (collapsing up
+   to it), and finding the next closed group that isn't done. Tested.
+2. **Even-grid layout in Kit.** The pure layout function: column choice,
+   centred last row, and the minimum tile size. Tested.
+3. **Group screen.** The Kit tile surface, and the workflow's group screen
+   with its header, F, Return, and Escape, opened by double-click or Return
+   from the grid. First point where narrowing can be tried.
+4. **Full-size view.** Space toggles `PhotoDetailSurface` for the focused
+   photo, with movement and F still working.
+5. **Done status on piles.** Keepers on top of the pile, the checkmark and
+   "2 of 7" badge, and dimming for groups with no keepers.
+6. **Persistence.** Keepers and done groups in the `group-cull` state,
+   with old files still loading. Tested like `GroupCullStateTests`.
