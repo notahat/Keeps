@@ -270,7 +270,7 @@ starting point to experiment from, not a final design.
 - **Full-size view.** `PhotoDetailSurface`, given only the group's photos.
   It already steps with h and l and preloads neighbours.
 - **Workflow.** `GroupCullRootView` switches between the grid screen and
-  the group screen, as SimpleCull switches between grid and single view.
+  the group screen, from a view mode on the workflow.
   `GroupCullWorkflow` gains the open group, keepers, and done groups. The
   group screen is the header plus either the tiles or the full-size view.
   Keepers, done status, and the header stay out of Kit.

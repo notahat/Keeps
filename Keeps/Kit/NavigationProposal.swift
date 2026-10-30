@@ -6,7 +6,4 @@ import Foundation
 struct NavigationProposal {
     /// The index in the surface's items array that the move points at.
     let targetIndex: Int
-
-    /// True when shift was held, asking to extend a range selection.
-    let extendsRange: Bool
 }

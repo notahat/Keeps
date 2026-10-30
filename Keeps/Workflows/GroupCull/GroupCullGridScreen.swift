@@ -18,7 +18,7 @@ struct GroupCullGridScreen: View {
             selectedIndex: selectedCellIndex,
             onNavigate: { proposal in workflow.selectCell(at: proposal.targetIndex) },
             onKeyDown: { press in handleKeyPress(press) },
-            onTap: { index, _ in workflow.selectCell(at: index) },
+            onTap: { index in workflow.selectCell(at: index) },
             onDoubleTap: { _ in },
             onGapTap: { gapIndex in workflow.toggleBoundary(atGap: gapIndex) },
             hoveredGap: $hoveredGap,

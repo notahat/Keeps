@@ -27,12 +27,6 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
     }
 }
 
-/// Creates a SimpleCullWorkflow with the given number of photos, ready for
-/// marking tests.
-func makeWorkflow(photoCount: Int) -> SimpleCullWorkflow {
-    SimpleCullWorkflow(items: makePhotoItems(count: photoCount))
-}
-
 /// Creates a GroupCullWorkflow with the given number of photos, ready for
 /// grouping tests. Places `collapsedBoundaries` and collapses the groups they
 /// close, then places `boundaries`, whose groups stay open.

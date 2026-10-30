@@ -15,9 +15,8 @@ module:
   workflow concept.
 - `Keeps/Workflows/<name>/` — everything one culling workflow owns: its
   state, screens, cell chrome, keymap, toolbar, dialogs, and persistence
-  schema. Currently `GroupCull` (group by clicking between photos, collapse
-  finished groups) is wired in; `SimpleCull` (flat pick/reject marks) is
-  kept for comparison.
+  schema. Currently there is one, `GroupCull`: group by clicking between
+  photos, collapse finished groups.
 - `Keeps/main.swift`, `AppDelegate.swift`, `MainMenu.swift`,
   `FolderDocumentController.swift`, `FolderDocument.swift`,
   `FolderWindowController.swift`, and `FolderView.swift`, plus

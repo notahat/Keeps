@@ -114,10 +114,7 @@ struct PhotoDetailSurface<Overlay: View>: View {
               !items.isEmpty,
               let current = selectedIndex
         else { return onKeyDown(press) }
-        onNavigate(NavigationProposal(
-            targetIndex: max(0, min(items.count - 1, current + step)),
-            extendsRange: press.modifiers.contains(.shift)
-        ))
+        onNavigate(NavigationProposal(targetIndex: max(0, min(items.count - 1, current + step))))
         return true
     }
 

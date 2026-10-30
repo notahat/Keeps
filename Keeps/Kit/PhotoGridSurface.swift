@@ -18,7 +18,7 @@ struct PhotoGridSurface<Cell: View>: View {
     /// Returns true when the key was handled.
     var onKeyDown: (KeyPress) -> Bool
 
-    var onTap: (_ index: Int, _ extendsRange: Bool) -> Void
+    var onTap: (_ index: Int) -> Void
     var onDoubleTap: (_ index: Int) -> Void
 
     /// Receives clicks on a gap, identified by the index of the item after
@@ -339,8 +339,7 @@ struct PhotoGridSurface<Cell: View>: View {
         case let .gap(gapIndex):
             onGapTap?(gapIndex)
         case .item:
-            let isShiftHeld = NSApp.currentEvent?.modifierFlags.contains(.shift) == true
-            onTap(index, isShiftHeld)
+            onTap(index)
         }
         isFocused = true
     }
@@ -373,10 +372,7 @@ struct PhotoGridSurface<Cell: View>: View {
         case .up: current - columnCount >= 0 ? current - columnCount : current
         case .down: current + columnCount < count ? current + columnCount : current
         }
-        onNavigate(NavigationProposal(
-            targetIndex: targetIndex,
-            extendsRange: press.modifiers.contains(.shift)
-        ))
+        onNavigate(NavigationProposal(targetIndex: targetIndex))
         return true
     }
 
@@ -390,7 +386,7 @@ struct PhotoGridSurface<Cell: View>: View {
         case .upArrow: return .up
         default: break
         }
-        // Use lowercased() so shift+vi-key also extends selection.
+        // Lowercased so the keys still work with Caps Lock on.
         switch press.characters.lowercased() {
         case "h": return .left
         case "l": return .right
