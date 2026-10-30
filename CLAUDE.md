@@ -20,19 +20,19 @@ module:
   kept for comparison.
 - `Keeps/main.swift`, `AppDelegate.swift`, `MainMenu.swift`,
   `FolderDocumentController.swift`, `FolderDocument.swift`,
-  `FolderWindowController.swift`, `FolderView.swift`, and
-  `WindowFrameStore.swift`, plus `Keeps-Info.plist` at the project root —
-  the shell, built on AppKit's document architecture. Each open folder is
-  a `FolderDocument` (the plist declares folders as a document type with
-  that class), so AppKit provides Open, Open Recent, opening folders
-  dropped on the Dock icon, bringing an open folder's window forward,
-  reopening folders at launch (`NSQuitAlwaysKeepsWindows` is registered so
-  this happens whatever the system setting), and sandbox access to them
-  again after a relaunch. The shell adds only what AppKit lacks: the Open
-  panel chooses folders, and shows in place of an untitled document; each
-  window keeps its size and position in its folder's keeps.json; and one
-  wiring line in FolderView hosts the workflow's root view. The document
-  never saves; workflows write keeps.json themselves.
+  `FolderWindowController.swift`, and `FolderView.swift`, plus
+  `Keeps-Info.plist` at the project root — the shell, built on AppKit's
+  document architecture. Each open folder is a `FolderDocument` (the plist
+  declares folders as a document type with that class), so AppKit provides
+  Open, Open Recent, opening folders dropped on the Dock icon, bringing an
+  open folder's window forward, reopening folders at launch
+  (`NSQuitAlwaysKeepsWindows` is registered so this happens whatever the
+  system setting), sandbox access to them, including after a relaunch, and
+  saving each window's frame (in the app's preferences, keyed by folder
+  path). The shell adds only what AppKit lacks: the Open panel chooses
+  folders, and shows in place of an untitled document; and one wiring line
+  in FolderView hosts the workflow's root view. The document never saves;
+  workflows write keeps.json themselves.
 
 **Dependency rule: Kit never imports from Workflows.** The kit must stay
 free of workflow vocabulary (marks, filters, sort destinations).

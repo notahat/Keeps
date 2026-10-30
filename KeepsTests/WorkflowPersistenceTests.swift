@@ -27,7 +27,7 @@ struct WorkflowPersistenceTests {
         #expect(restored == StubState(names: ["IMG_0001", "IMG_0002"]))
     }
 
-    @Test("Saving workflow state keeps the window frame already in the file")
+    @Test("Saving workflow state keeps other entries already in the file")
     func saveKeepsOtherEntries() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }

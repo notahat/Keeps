@@ -1,9 +1,8 @@
 import Foundation
 
 /// The keeps.json file in a photo folder: a JSON object of named entries,
-/// each written and read independently, so the window's frame and a
-/// workflow's state can share the file without overwriting each other. Knows
-/// nothing about what the entries mean.
+/// each written and read independently, so writing one never overwrites the
+/// others. Knows nothing about what the entries mean.
 nonisolated struct KeepsFile {
     let fileURL: URL
 

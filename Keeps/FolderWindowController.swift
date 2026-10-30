@@ -1,64 +1,24 @@
 import AppKit
 import SwiftUI
 
-/// Makes and runs one folder's window, which hosts FolderView. The document
-/// gives the window its title and its title-bar folder icon; this adds the
-/// folder's path as the subtitle, and keeps the window's frame in the
-/// folder's keeps.json: the saved frame is applied before the window first
-/// shows, and moves and resizes are saved. Full-screen frames aren't saved,
-/// so a window left in full screen reopens at its ordinary size.
-final class FolderWindowController: NSWindowController, NSWindowDelegate {
+/// Makes one folder's window, which hosts FolderView. The document gives the
+/// window its title and its title-bar folder icon; this adds the folder's
+/// path as the subtitle. AppKit saves the window's frame in the app's
+/// preferences under the folder's path, so a folder reopens where its window
+/// was last left.
+final class FolderWindowController: NSWindowController {
     private static let defaultContentSize = NSSize(width: 1000, height: 700)
-
-    private let folderURL: URL
 
     /// Makes the window for an open folder session, at the folder's saved
     /// frame if it has one.
     init(session: FolderSession) {
-        folderURL = session.folderURL
-        let window = Self.makeWindow(session: session)
-        super.init(window: window)
-        if let savedFrame = WindowFrameStore.savedFrame(in: folderURL) {
-            window.setFrame(savedFrame, display: false)
-            // Cascading would move the window off its saved position.
-            shouldCascadeWindows = false
-        }
-        // Set last, so applying the saved frame doesn't save it again.
-        window.delegate = self
+        super.init(window: Self.makeWindow(session: session))
+        windowFrameAutosaveName = session.folderURL.path
     }
 
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) is not used")
-    }
-
-    /// Saves the frame after the user moves the window.
-    func windowDidMove(_: Notification) {
-        saveFrame()
-    }
-
-    /// Saves the frame after a resize, except during a live resize, which
-    /// is saved once when it ends.
-    func windowDidResize(_: Notification) {
-        guard window?.inLiveResize == false else { return }
-        saveFrame()
-    }
-
-    /// Saves the frame when the user finishes resizing the window.
-    func windowDidEndLiveResize(_: Notification) {
-        saveFrame()
-    }
-
-    /// Saves the window's frame unless it's full screen, and shows an alert
-    /// on the window if that fails.
-    private func saveFrame() {
-        guard let window, !window.styleMask.contains(.fullScreen) else { return }
-        do {
-            try WindowFrameStore.save(window.frame, in: folderURL)
-        } catch {
-            window.presentError(error, modalFor: window, delegate: nil,
-                                didPresent: nil, contextInfo: nil)
-        }
     }
 
     /// Makes the window hosting the folder's view, at the default size.
