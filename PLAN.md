@@ -97,3 +97,92 @@ commit.
    tested like `SimpleCullStateTests`.
 6. **Read-only detail view.** Double-click to open the photo at full size,
    Esc to return.
+
+---
+
+# Plan: Keeps as an AppKit document app
+
+## Goal
+
+Stop reimplementing standard Mac document behaviour by hand. Each folder
+becomes an `NSDocument`, and AppKit's document machinery provides what the
+SwiftUI shell builds itself today: Open, Open Recent, opening folders
+dropped on the Dock icon, bringing forward a folder's existing window, the
+title bar's folder icon, the Open panel when there's nothing to show, and
+regaining sandbox access to folders on relaunch.
+
+A throwaway experiment confirmed all of this works for folders in the
+sandboxed app, including the Open panel at launch and on a Dock click with
+no windows open, with Open Recent still usable while that panel is up.
+
+## Design
+
+- **Entry point.** `main.swift` replaces the SwiftUI `App`. It makes the
+  document controller, sets the app delegate and main menu, and runs the
+  app, all inside `MainActor.assumeIsolated`, since top-level code isn't
+  main-actor isolated here.
+- **Folders as documents.** `Keeps-Info.plist` declares `public.folder` as a
+  document type with the Viewer role, an `Alternate` handler rank (Finder
+  keeps opening folders on double-click), and `FolderDocument` as its class.
+- **`FolderDocument`.** An `NSDocument` that overrides
+  `read(from:ofType:)` to open a `FolderSession`, so AppKit never loads the
+  folder into a file wrapper. It never saves and doesn't autosave.
+  `keeps.json` keeps being written by the workflow's own persistence, as
+  now. A folder that can't be read fails to open, and AppKit reports the
+  error, so windows no longer need an error state.
+- **Window.** `FolderDocument` makes a window controller whose window hosts
+  the workflow's root view in an `NSHostingController`. The one wiring line
+  a workflow experiment replaces moves there from `ContentView`. The "no
+  photos" message stays.
+- **Document controller.** A small `NSDocumentController` subclass lets the
+  Open panel choose folders and not files.
+- **App delegate.** When AppKit asks for an untitled document (at launch
+  with nothing to restore, or on a Dock click with no windows), it shows
+  the Open panel instead, since a folder can't be untitled.
+- **Main menu.** Built in code: the app menu (About, Hide, Quit), File
+  (Open…, Open Recent, Close), and Window. Open Recent is first tried as
+  AppKit's own, with a Clear Menu item using `clearRecentDocuments:`. If
+  AppKit doesn't fill a code-built menu, the menu is filled from the
+  document controller's recent list when it opens, as the experiment did.
+- **Window frames.** Still kept in each folder's `keeps.json`. The window
+  controller applies the saved frame before the window is first shown,
+  which removes today's hide-then-reveal trick, and saves moves and
+  resizes, skipping full screen, as now.
+- **Reopening at launch.** AppKit's standard window restoration. By
+  default macOS only restores windows when the user has turned off "Close
+  windows when quitting an application"; that default is acceptable. Last
+  step: try registering `NSQuitAlwaysKeepsWindows` to always restore.
+
+### Removed
+
+The SwiftUI shell that AppKit replaces: `KeepsApp`, `ContentView`,
+`FolderReference` (bookmarks are no longer needed), `OpenFolderList`,
+`RecentFolders`, `FolderWindows`, `FolderCommands`, `FolderPicker`, and
+`AppLifecycle`, with their tests.
+
+### Out of scope
+
+Following a folder that's renamed or moved while open: `NSDocument`
+updates its URL, but the open `FolderSession` keeps the old one. Kit and
+the workflows don't change.
+
+## Steps
+
+Each step includes tests where there is testable behaviour, then review and
+commit. The shell has little logic of its own, so most checking is by
+running the app.
+
+1. **Switch to AppKit documents.** Entry point, app delegate, document
+   controller, main menu, `FolderDocument` and its window controller
+   hosting the workflow, and the plist changes. Remove the SwiftUI shell.
+   Windows open at the default size until step 2. Check by hand: Open
+   panel at launch and on a Dock click, Open and Open Recent, Dock drops
+   (running and at launch), reopening an open folder brings its window
+   forward, an unreadable folder reports an error.
+2. **Window frames in keeps.json.** Apply the saved frame before the window
+   shows, and save moves and resizes. The frame's reading and writing is
+   tested against a temporary folder.
+3. **Always reopen folders.** Register `NSQuitAlwaysKeepsWindows` and check
+   folders come back after quitting whatever the system setting. Drop it
+   if it misbehaves.
+4. **Docs.** Update the shell description in `CLAUDE.md`.
