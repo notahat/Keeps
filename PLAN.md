@@ -140,10 +140,9 @@ no windows open, with Open Recent still usable while that panel is up.
   with nothing to restore, or on a Dock click with no windows), it shows
   the Open panel instead, since a folder can't be untitled.
 - **Main menu.** Built in code: the app menu (About, Hide, Quit), File
-  (Open…, Open Recent, Close), and Window. Open Recent is first tried as
-  AppKit's own, with a Clear Menu item using `clearRecentDocuments:`. If
-  AppKit doesn't fill a code-built menu, the menu is filled from the
-  document controller's recent list when it opens, as the experiment did.
+  (Open…, Close), and Window. AppKit adds Open Recent next to Open… by
+  itself, even in a code-built menu (the experiment's own Open Recent
+  showed up as a duplicate), so the menu doesn't include one.
 - **Window frames.** Still kept in each folder's `keeps.json`. The window
   controller applies the saved frame before the window is first shown,
   which removes today's hide-then-reveal trick, and saves moves and
