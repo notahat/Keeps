@@ -294,13 +294,14 @@ commit.
    to it), and finding the next closed group that isn't done. Tested.
 3. **Even-grid layout in Kit.** The pure layout function: column choice,
    centred last row, the minimum tile size, and j/k targets. Tested.
-4. **Group screen.** The Kit tile surface, `ThumbnailImage` taking its
-   size, aspect ratios from cached thumbnails, and the workflow's group
-   screen with its header, F, Return, and Escape, opened by double-click or
-   Return from the grid. The simplest image loading that works. First
-   point where narrowing can be tried.
-5. **Image sizes and caching.** Exploratory: try the group screen and the
-   grid, profile memory, and adjust how sizes are loaded, cached, and
+4. **Group screen.** The Kit tile surface, aspect ratios from cached
+   thumbnails, and the workflow's group screen with its header, F, Return,
+   and Escape, opened by double-click or Return from the grid. Tiles scale
+   up the grid's existing thumbnails, so there's no new image loading and
+   it's quick to try. First point where narrowing can be tried.
+5. **Image sizes and caching.** Exploratory: `ThumbnailImage` taking its
+   size, larger images for tiles, then trying the group screen and the
+   grid, profiling memory, and adjusting how sizes are loaded, cached, and
    reused, including the fallback for unknown aspect ratios. Tests are
    written once the shape settles.
 6. **Full-size view.** Space toggles `PhotoDetailSurface` for the focused
