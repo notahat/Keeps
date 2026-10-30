@@ -1,4 +1,3 @@
-import CoreGraphics
 import Foundation
 @testable import Keeps
 import Testing
@@ -27,17 +26,19 @@ struct WorkflowPersistenceTests {
         #expect(restored == StubState(names: ["IMG_0001", "IMG_0002"]))
     }
 
-    @Test("Saving workflow state keeps other entries already in the file")
-    func saveKeepsOtherEntries() throws {
+    @Test("State is restored from a file that also has entries it doesn't know")
+    func restoreIgnoresOtherEntries() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        let file = KeepsFile(folderURL: folder)
-        try file.write(["windowFrame": CGRect(x: 1, y: 2, width: 3, height: 4)])
+        let json = """
+        {"state": {"names": ["IMG_0001"]}, "windowFrame": [[1, 2], [3, 4]], "workflow": "stub-flow"}
+        """
+        try Data(json.utf8).write(to: folder.appendingPathComponent("keeps.json"))
         let persistence = WorkflowPersistence<StubState>(folderURL: folder, workflowName: "stub-flow")
 
-        try persistence.save(StubState(names: ["IMG_0001"]))
+        let restored = persistence.restore()
 
-        #expect(file.read(CGRect.self, forKey: "windowFrame") == CGRect(x: 1, y: 2, width: 3, height: 4))
+        #expect(restored == StubState(names: ["IMG_0001"]))
     }
 
     @Test func restoreReturnsNilWhenNoFileExists() throws {

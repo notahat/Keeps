@@ -8,7 +8,7 @@ module:
 - `Keeps/Kit/` — stable ground: the image engine (ImagePipeline,
   ImageCache, ImageReader), folder scanning and session (FolderScanner,
   FolderSession), keeps.json and the generic persistence harness
-  (KeepsFile, WorkflowPersistence), and dumb viewing surfaces
+  (WorkflowPersistence), and dumb viewing surfaces
   (PhotoGridSurface, PhotoDetailSurface, ThumbnailImage). Surfaces
   interpret spatial keys into NavigationProposals and take cells/overlays
   via ViewBuilder closures; they know nothing about marks, filters, or any
