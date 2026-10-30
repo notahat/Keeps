@@ -178,7 +178,7 @@ running the app.
    panel at launch and on a Dock click, Open and Open Recent, Dock drops
    (running and at launch), reopening an open folder brings its window
    forward, an unreadable folder reports an error.
-2. **Window frames in keeps.json.** Apply the saved frame before the window
+2. ✅ **Window frames in keeps.json.** Apply the saved frame before the window
    shows, and save moves and resizes. The frame's reading and writing is
    tested against a temporary folder.
 3. **Always reopen folders.** Register `NSQuitAlwaysKeepsWindows` and check
