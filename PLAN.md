@@ -274,6 +274,20 @@ starting point to experiment from, not a final design.
   `GroupCullWorkflow` gains the open group, keepers, and done groups. The
   group screen is the header plus either the tiles or the full-size view.
   Keepers, done status, and the header stay out of Kit.
+- **Borrowing from the removed SimpleCull workflow.** SimpleCull was deleted
+  before this work began. Copy what helps into GroupCull rather than
+  reviving it. View any of its files as they last stood with
+  `git show 12dbc04:Keeps/Workflows/SimpleCull/<file>`. Worth a look:
+  - `SimpleCullRootView.swift`: picking a screen from a view mode on the
+    workflow (the Workflow bullet above).
+  - `SimpleCullDetailScreen.swift`: a template for the full-size view
+    (step 6). It wires `PhotoDetailSurface` to the selection, uses Escape
+    to go back, and overlays a badge and an "n / total" counter.
+  - `SimpleCullWorkflow.swift`, `handleKey`: ignores presses with ⌘, ⌃, or ⌥
+    held, so F doesn't catch ⌘F. The group screen's keys need the same.
+  - `MarkIcon.swift` and `MarkBadge` in `SimpleCullCell.swift`: a white
+    checkmark on a green circle with a shadow, a candidate keeper badge
+    for step 4 and done piles in step 7.
 
 ### Out of scope
 
