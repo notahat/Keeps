@@ -5,13 +5,16 @@ import SwiftUI
 /// loading — the current photo at high priority, a preload window (4 ahead,
 /// 2 behind) at low priority — the loading placeholder, keyboard focus, and
 /// the interpretation of linear navigation keys (arrows and h/j/k/l) into
-/// ±1 NavigationProposals. All policy and chrome belong to the caller via
-/// onNavigate/onKeyDown and the overlay closure. Knows nothing about
+/// moves of one photo either way. All policy and chrome belong to the caller
+/// via onNavigate/onKeyDown and the overlay closure. Knows nothing about
 /// groups or keepers.
 struct PhotoDetailSurface<Overlay: View>: View {
     var items: [PhotoItem]
     var selectedIndex: Int?
-    var onNavigate: (NavigationProposal) -> Void
+
+    /// Receives the index a navigation key moves to; the caller decides
+    /// whether to select it.
+    var onNavigate: (_ targetIndex: Int) -> Void
 
     /// Receives every key press that isn't a linear navigation key.
     /// Returns true when the key was handled.
@@ -107,14 +110,14 @@ struct PhotoDetailSurface<Overlay: View>: View {
         }
     }
 
-    /// Turns linear navigation keys into ±1 proposals; forwards everything
-    /// else to onKeyDown.
+    /// Turns linear navigation keys into a move of one photo; forwards
+    /// everything else to onKeyDown.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         guard let step = navigationStep(for: press),
               !items.isEmpty,
               let current = selectedIndex
         else { return onKeyDown(press) }
-        onNavigate(NavigationProposal(targetIndex: max(0, min(items.count - 1, current + step))))
+        onNavigate(max(0, min(items.count - 1, current + step)))
         return true
     }
 

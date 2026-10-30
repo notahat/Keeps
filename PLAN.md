@@ -311,7 +311,10 @@ commit.
    the pick screen with its header, F, Return, and Escape, opened by
    double-click or Return from the sort screen. Tiles scale up the sort
    screen's existing thumbnails, so there's no new image loading and it's
-   quick to try. First point where narrowing can be tried.
+   quick to try. First point where narrowing can be tried. Give sort cells
+   the double-click as `onTapGesture(count: 2)` with the single click as a
+   `simultaneousGesture(SpatialTapGesture())`: a plain single-tap gesture
+   waits out the double-click timeout, which makes selection lag.
 5. **Image sizes and caching.** Exploratory: `ThumbnailImage` taking its
    size, larger images for tiles, then trying the pick screen and the
    sort screen, profiling memory, and adjusting how sizes are loaded, cached, and

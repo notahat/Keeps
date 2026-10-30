@@ -135,11 +135,11 @@ struct GroupingTests {
         #expect(grouping.selectedCellIndex == 0)
     }
 
-    @Test("Displayed items are the first photo of each cell")
-    func displayedItemsAreCellRepresentatives() {
+    @Test("Each cell shows the first photo of its group or its own photo")
+    func cellItemsAreFirstPhotos() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3], boundaries: [5, 8])
 
-        #expect(grouping.displayedItems.first?.id == grouping.items[0].id)
-        #expect(grouping.displayedItems.count == 8)
+        #expect(grouping.cellItems.first?.id == grouping.items[0].id)
+        #expect(grouping.cellItems.count == 8)
     }
 }

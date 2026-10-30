@@ -44,9 +44,10 @@ class Grouping {
         layout = GroupLayout(photoCount: items.count, boundaries: boundaries, collapsedUpTo: collapsedUpTo)
     }
 
-    /// The photo each cell displays: its own photo, or a collapsed group's
-    /// first photo.
-    var displayedItems: [PhotoItem] {
+    /// The photo each cell shows: its own photo, or a collapsed group's
+    /// first photo. The sort screen identifies cells, and saves its scroll
+    /// position, by this photo.
+    var cellItems: [PhotoItem] {
         layout.cells.map { items[$0.photoRange.lowerBound] }
     }
 
