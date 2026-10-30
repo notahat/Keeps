@@ -1,0 +1,66 @@
+import AppKit
+
+/// Builds the app's main menu: the app menu, File, and Window. Each item
+/// sends a standard AppKit action up the responder chain. AppKit adds Open
+/// Recent next to Open… and the full-screen items to Window by itself, so
+/// they aren't built here.
+@MainActor
+enum MainMenu {
+    /// Makes the whole menu bar.
+    static func make() -> NSMenu {
+        let menuBar = NSMenu()
+        for menu in [appMenu(), fileMenu(), windowMenu()] {
+            let barItem = NSMenuItem()
+            barItem.submenu = menu
+            menuBar.addItem(barItem)
+        }
+        return menuBar
+    }
+
+    /// Makes the menu named after the app: About, hiding, and Quit.
+    private static func appMenu() -> NSMenu {
+        let appName = ProcessInfo.processInfo.processName
+        let menu = NSMenu(title: appName)
+        menu.addItem(withTitle: "About \(appName)",
+                     action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
+                     keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Hide \(appName)",
+                     action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        let hideOthers = menu.addItem(withTitle: "Hide Others",
+                                      action: #selector(NSApplication.hideOtherApplications(_:)),
+                                      keyEquivalent: "h")
+        hideOthers.keyEquivalentModifierMask = [.command, .option]
+        menu.addItem(withTitle: "Show All",
+                     action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit \(appName)",
+                     action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        return menu
+    }
+
+    /// Makes the File menu: Open… and Close.
+    private static func fileMenu() -> NSMenu {
+        let menu = NSMenu(title: "File")
+        menu.addItem(withTitle: "Open…",
+                     action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Close",
+                     action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        return menu
+    }
+
+    /// Makes the Window menu and registers it with the app, which lists the
+    /// open windows in it.
+    private static func windowMenu() -> NSMenu {
+        let menu = NSMenu(title: "Window")
+        menu.addItem(withTitle: "Minimize",
+                     action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        menu.addItem(withTitle: "Zoom", action: #selector(NSWindow.performZoom(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Bring All to Front",
+                     action: #selector(NSApplication.arrangeInFront(_:)), keyEquivalent: "")
+        NSApplication.shared.windowsMenu = menu
+        return menu
+    }
+}

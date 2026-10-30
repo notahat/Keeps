@@ -171,7 +171,7 @@ Each step includes tests where there is testable behaviour, then review and
 commit. The shell has little logic of its own, so most checking is by
 running the app.
 
-1. **Switch to AppKit documents.** Entry point, app delegate, document
+1. ✅ **Switch to AppKit documents.** Entry point, app delegate, document
    controller, main menu, `FolderDocument` and its window controller
    hosting the workflow, and the plist changes. Remove the SwiftUI shell.
    Windows open at the default size until step 2. Check by hand: Open
