@@ -96,7 +96,7 @@ commit.
    restore of boundaries, collapse point, selection, and scroll position,
    tested like `SimpleCullStateTests`.
 6. ~~**Read-only detail view.**~~ Replaced by the group screen's full-size
-   view in "GroupCull — narrowing each group to its keepers" below.
+   view in "Narrowing each group to its keepers" below.
 
 ---
 
@@ -188,24 +188,24 @@ running the app.
 
 ---
 
-# Plan: GroupCull — narrowing each group to its keepers
+# Plan: Narrowing each group to its keepers
 
 ## Goal
 
-The second pass of GroupCull: pick the one or two photos worth keeping
+The second pass: pick the one or two photos worth keeping
 from each group, then mark the group done. The screen shows one group at a
 time and nothing else, so narrowing never feels overwhelming. This is a
 starting point to experiment from, not a final design.
 
 ## Design
 
-- **Opening a group.** Double-click or Return on a closed group in the grid
-  (one with a boundary after it) opens the group screen. Ungrouped photos
+- **Opening a group.** Double-click or Return on a closed group in the sort
+  screen (one with a boundary after it) opens the pick screen. Ungrouped photos
   past the working point can't be opened. Opening a group collapses every
   group up to and including it, as if C had been pressed with the last
   boundary at the end of that group. C itself is unchanged. Groups that are
   already done can be reopened, with their keepers still marked.
-- **Group screen.** Only the group's photos, plus a quiet header such as
+- **Pick screen.** Only the group's photos, plus a quiet header such as
   "Group 12 of 47" (counting closed groups). One photo has focus.
 - **Tile layout.** An even grid. Every column count from 1 to the photo
   count is tried, and the one giving the largest tiles wins. Cells take the
@@ -219,40 +219,38 @@ starting point to experiment from, not a final design.
     still work while full-size.
   - F toggles keep on the focused photo.
   - Return marks the group done and opens the next closed group that isn't
-    done. When there isn't one, it returns to the grid with the working
-    point in view.
-  - Escape returns to the grid without changing whether the group is done.
+    done. When there isn't one, it returns to the sort screen with the
+    working point in view.
+  - Escape returns to the sort screen without changing whether the group
+    is done.
 - **Keepers.** Shown with a clear badge or border. The other photos stay at
-  full brightness on the group screen.
-- **Done groups in the grid.** A done group is always collapsed, so only
+  full brightness on the pick screen.
+- **Done groups on the sort screen.** A done group is always collapsed, so only
   piles show done status. The keepers sit on top of the pile, and the badge
   shows a checkmark and "2 of 7". A done group with no keepers is allowed,
   meaning the whole group is rejected; its pile is dimmed and shows "0 of
   7". Piles that aren't done look as they do now.
-- **Persistence.** The `group-cull` state gains the keepers (as stems) and
+- **Persistence.** `SavedGrouping` gains the keepers (as stems) and
   the done groups (as the stem of each group's first photo). Both are
   optional, so existing `keeps.json` files still load.
 
 ### Implementation
 
-- **A new surface, not `PhotoGridSurface`.** The grid's cells have a fixed
-  size and their column count follows the window width; the group screen
-  picks its column count first and the tile size follows. Most of the
-  grid's code (holding position as groups collapse, blank slots, gap
-  clicks, saving the scroll position) is irrelevant here, and a group is
-  too small to need a lazy grid.
+- **New tiles, not the sort screen's grid.** The sort screen's cells have
+  a fixed size and their column count follows the window width; the pick
+  screen picks its column count first and the tile size follows. Most of
+  the sort screen's code (`GridScrolling`, blank slots, gap clicks) is
+  irrelevant here, and a group is too small to need a lazy grid.
 - **Shared key handling.** The hjkl/arrow-to-direction code moves out of
-  `PhotoGridSurface` into a small Kit helper that both surfaces use.
-- **Layout (Kit, pure).** Takes the photo count, the aspect ratio, the
+  `SortScreen` into a small helper that both screens use.
+- **Layout (`Pick/`, pure).** Takes the photo count, the aspect ratio, the
   available size, the spacing, and a minimum tile size. Returns the column
   count, the tile size, each tile's position, and whether the tiles need
   to scroll. It also decides where j and k go when the short last row is
   centred: the nearest tile horizontally.
-- **Tile surface (Kit).** Measures the space, runs the layout, places the
-  tiles, and scrolls only when they don't fit. Takes focus and keys, with
-  the same callbacks as the grid (moves, other keys, click, double-click),
-  and passes each cell its tile size. Knows nothing about groups or
-  keepers.
+- **Tiles (`Pick/`).** Measures the space, runs the layout, places the
+  tiles, and scrolls only when they don't fit. Takes focus and keys, and
+  passes each tile its size.
 - **Larger images.** Tiles may be several times thumbnail size, so
   `ThumbnailImage` takes its display size as a parameter, and requests are
   rounded up to a few fixed pixel sizes so that resizing the window doesn't
@@ -266,25 +264,24 @@ starting point to experiment from, not a final design.
   as a placeholder while it loads, and the cache has no size limit, so
   only memory pressure evicts anything. How sizes are loaded, cached, and
   reused (including keeping known dimensions somewhere) may change as the
-  group screen is tried, and memory use should be profiled.
+  pick screen is tried, and memory use should be profiled.
 - **Full-size view.** `PhotoDetailSurface`, given only the group's photos.
   It already steps with h and l and preloads neighbours.
-- **Workflow.** `GroupCullRootView` switches between the grid screen and
-  the group screen, from a view mode on the workflow.
-  `GroupCullWorkflow` gains the open group, keepers, and done groups. The
-  group screen is the header plus either the tiles or the full-size view.
-  Keepers, done status, and the header stay out of Kit.
+- **Model and screens.** `FolderView` switches between the sort screen and
+  the pick screen, from a view mode on `Grouping`. `Grouping` gains the
+  open group, keepers, and done groups. The pick screen is the header
+  plus either the tiles or the full-size view.
 - **Borrowing from the removed SimpleCull workflow.** SimpleCull was deleted
-  before this work began. Copy what helps into GroupCull rather than
-  reviving it. View any of its files as they last stood with
+  before this work began. Copy what helps rather than reviving it. View
+  any of its files as they last stood with
   `git show 12dbc04:Keeps/Workflows/SimpleCull/<file>`. Worth a look:
-  - `SimpleCullRootView.swift`: picking a screen from a view mode on the
-    workflow (the Workflow bullet above).
+  - `SimpleCullRootView.swift`: picking a screen from a view mode (the
+    "Model and screens" bullet above).
   - `SimpleCullDetailScreen.swift`: a template for the full-size view
     (step 6). It wires `PhotoDetailSurface` to the selection, uses Escape
     to go back, and overlays a badge and an "n / total" counter.
   - `SimpleCullWorkflow.swift`, `handleKey`: ignores presses with ⌘, ⌃, or ⌥
-    held, so F doesn't catch ⌘F. The group screen's keys need the same.
+    held, so F doesn't catch ⌘F. The pick screen's keys need the same.
   - `MarkIcon.swift` and `MarkBadge` in `SimpleCullCell.swift`: a white
     checkmark on a green circle with a shadow, a candidate keeper badge
     for step 4 and done piles in step 7.
@@ -301,28 +298,142 @@ happens to photos that weren't kept (moving or deleting them).
 Each step includes tests where there is testable behaviour, then review and
 commit.
 
-1. **Shared key handling.** Move the hjkl/arrow-to-direction code into a
-   Kit helper, used by `PhotoGridSurface`. `NavigationProposal` now holds
-   only a target index, so replace it with a plain index in `onNavigate`
-   on both surfaces. No change in behaviour. Tested.
-2. **Narrowing model.** Keepers and done groups in `GroupCullWorkflow`:
-   toggling a keeper, marking a group done, opening a group (collapsing up
-   to it), and finding the next closed group that isn't done. Tested.
-3. **Even-grid layout in Kit.** The pure layout function: column choice,
-   centred last row, the minimum tile size, and j/k targets. Tested.
-4. **Group screen.** The Kit tile surface, aspect ratios from cached
-   thumbnails, and the workflow's group screen with its header, F, Return,
-   and Escape, opened by double-click or Return from the grid. Tiles scale
-   up the grid's existing thumbnails, so there's no new image loading and
-   it's quick to try. First point where narrowing can be tried.
+1. **Shared key handling.** Move the hjkl/arrow-to-direction code out of
+   `SortScreen` into a helper both screens can use. No change in
+   behaviour. Tested.
+2. **Narrowing model.** Keepers and done groups in `Grouping`: toggling a
+   keeper, marking a group done, opening a group (collapsing up to it),
+   and finding the next closed group that isn't done. Tested.
+3. **Even-grid layout.** The pure layout function in `Pick/`: column
+   choice, centred last row, the minimum tile size, and j/k targets.
+   Tested.
+4. **Pick screen.** The tiles, aspect ratios from cached thumbnails, and
+   the pick screen with its header, F, Return, and Escape, opened by
+   double-click or Return from the sort screen. Tiles scale up the sort
+   screen's existing thumbnails, so there's no new image loading and it's
+   quick to try. First point where narrowing can be tried.
 5. **Image sizes and caching.** Exploratory: `ThumbnailImage` taking its
-   size, larger images for tiles, then trying the group screen and the
-   grid, profiling memory, and adjusting how sizes are loaded, cached, and
+   size, larger images for tiles, then trying the pick screen and the
+   sort screen, profiling memory, and adjusting how sizes are loaded, cached, and
    reused, including the fallback for unknown aspect ratios. Tests are
    written once the shape settles.
 6. **Full-size view.** Space toggles `PhotoDetailSurface` for the focused
    photo, with movement and F still working.
-7. **Done status on piles.** Keepers on top of the pile, the checkmark and
+7. **Done status on collapsed groups.** Keepers on top of the pile, the checkmark and
    "2 of 7" badge, and dimming for groups with no keepers.
-8. **Persistence.** Keepers and done groups in the `group-cull` state,
-   with old files still loading. Tested like `GroupCullStateTests`.
+8. **Persistence.** Keepers and done groups in `SavedGrouping`, with old
+   files still loading. Tested like `SavedGroupingTests`.
+
+---
+
+# Plan: Structure the app around what it does
+
+## Goal
+
+The code is split into a workflow-neutral Kit and a GroupCull workflow, a
+split made for swapping between several workflows. There is now only one,
+and the split costs more than it gives: `PhotoGridSurface` describes
+everything in neutral terms (items, gaps, blank slots, a stable item), and
+`GroupCullGridScreen` translates them back into groups. Organise the code
+by what each part of the app does instead, and drop the names "GroupCull"
+and "Cull". Do this before the narrowing plan above, which is written in
+the new names.
+
+## Vocabulary
+
+- **Group**: a run of photos between two boundaries. Not "pile", and no
+  type is called plain `Group`, which SwiftUI already has; use
+  `PhotoGroup` if a single group ever needs a type.
+- **Sort screen**: the grid where the folder is split into groups.
+- **Pick screen**: one group at a time, where its keepers are picked.
+- **Keepers**, **done**, **boundary**, and **working point** keep their
+  meanings.
+- `"group-cull"` survives only as the name of the original keeps.json
+  format, as `SavedGrouping.originalFormatName`.
+
+| Now | New |
+|---|---|
+| GroupCullWorkflow | Grouping |
+| GroupCullGridScreen + PhotoGridSurface | SortScreen + GridScrolling |
+| GroupCullCell | SortCell |
+| GroupCullRootView | merged into FolderView |
+| GroupCullState | SavedGrouping |
+| WorkflowPersistence | KeepsFile |
+| NavigationProposal | removed |
+
+## Design
+
+```
+Keeps/
+  App/       main, AppDelegate, MainMenu, FolderDocumentController,
+             FolderDocument, FolderWindowController, FolderView
+  Folder/    PhotoItem, FolderScanner, FolderSession
+  Images/    ImagePipeline, ImageCache, ImageReader, ImageSize,
+             ThumbnailImage, LoadProgress, LoadProgressView
+  Grouping/  the model: Grouping (later also keepers and done groups),
+             GroupLayout
+  Saving/    keeps.json: KeepsFile (reading and writing), SavedGrouping
+             (the format), and later the old-format conversions
+  Sort/      the sort screen: SortScreen, GridScrolling, SortCell,
+             PileJitter, PhotoGridMetrics, GridHitTarget, GridScrollAnchor
+  Pick/      the pick screen (narrowing plan): PickScreen, tile layout,
+             tiles, full-size view (PhotoDetailSurface)
+```
+
+- **SortScreen** merges `PhotoGridSurface` and `GroupCullGridScreen`. It
+  reads the layout's cells itself, calls `selectCell`, `toggleBoundary`,
+  and `collapseClosedGroups` directly, and keeps the hovered gap as its own
+  state. `displayedItems`, `NavigationProposal`, the generic cell closure,
+  and the unused double-tap callback go.
+- **GridScrolling** holds the scroll behaviour, the bulk of today's
+  `PhotoGridSurface`: holding the working point still as groups collapse,
+  restoring the saved position, following keyboard selection, and
+  reporting the scroll position. A view modifier or small helper, so
+  SortScreen only draws cells and handles input.
+- **FolderView** absorbs `GroupCullRootView`: it creates the `Grouping`
+  and its `KeepsFile`, and shows the sort screen (and later picks between
+  the sort and pick screens).
+- **KeepsFile** reads and writes `SavedGrouping` only, no longer generic
+  over the state or the workflow name. It still writes the envelope with
+  `"workflow": "group-cull"`, and still recognises files by it, so every
+  existing keeps.json loads unchanged. `originalFormatRestores` must pass
+  untouched throughout.
+- **Layering**, replacing "Kit never imports from Workflows": App → Sort
+  and Pick → Grouping and Saving → Folder and Images. Folder and Images
+  know nothing about groups; Grouping knows nothing about views.
+- `PileJitter` keeps its name: it describes how a collapsed group is
+  drawn, not a concept. The `Grid…` and `PhotoGrid…` helpers keep theirs:
+  they're about grid geometry, not sorting.
+- `PhotoDetailSurface` is unused until the pick screen's full-size view,
+  and moves to `Pick/` as it is.
+
+### Out of scope
+
+Any change in behaviour, and any change to the keeps.json format.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit. No step
+changes behaviour. Steps 3–5 touch views, which have no automated tests,
+so check by hand: clicking boundaries and the hover preview, C to collapse
+with the working point held still, arrow and hjkl keys, Escape, and
+reopening a folder at its saved scroll position and selection.
+
+1. **Move and rename.** Files into the folders above (the Xcode groups
+   follow the file system, so `git mv` is enough), and the type renames
+   from the table, with their tests (`GroupingTests`,
+   `SavedGroupingTests`, `KeepsFileTests`) and `makeGrouping` in
+   TestHelpers. `SavedGrouping.originalFormatName` replaces
+   `workflowName`. Nothing merged yet.
+2. **Specific saving.** `KeepsFile` saves and restores `SavedGrouping`
+   only. Its tests move from the stub state to `SavedGrouping`.
+3. **FolderView owns the grouping.** Merge `GroupCullRootView` into
+   `FolderView`.
+4. **One sort screen.** Merge `PhotoGridSurface` into `SortScreen`, reading
+   the grouping directly. Remove `NavigationProposal` and
+   `displayedItems`.
+5. **Split out the scrolling.** Move the scroll behaviour from
+   `SortScreen` into `GridScrolling`.
+6. **Docs.** Rewrite the architecture section of `CLAUDE.md` for the new
+   folders and layering, add the vocabulary above as a glossary, and
+   update the keeps.json rule's test reference.
