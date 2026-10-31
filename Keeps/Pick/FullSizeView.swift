@@ -22,31 +22,29 @@ struct FullSizeView: View {
     @Environment(\.accessibilityReduceMotion) private var isReducingMotion
 
     var body: some View {
-        PhotoDetailSurface(items: photos, selectedIndex: focusedIndex) { _ in
-            ZStack {
+        FullSizeImage(items: photos, index: focusedIndex)
+            .overlay(alignment: .topTrailing) {
                 if isKeeper {
                     KeeperBadge(size: 40)
                         .padding(12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 }
+            }
+            .overlay(alignment: .bottomTrailing) {
                 Text("\(focusedIndex + 1) / \(photos.count)")
                     .font(.caption)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                     .padding(12)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
-            .allowsHitTesting(false)
-        }
-        // The same inset as the tile's thumbnail, so the photo doesn't jump
-        // as it takes over from the tile.
-        .padding(ThumbnailImage.imageInset)
-        .matchedGeometryEffect(
-            id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(photos[focusedIndex].id),
-            in: zoomNamespace,
-            isSource: false
-        )
-        .opacity(isReducingMotion && !isZoomed ? 0 : 1)
+            // The same inset as the tile's thumbnail, so the photo doesn't jump
+            // as it takes over from the tile.
+            .padding(ThumbnailImage.imageInset)
+            .matchedGeometryEffect(
+                id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(photos[focusedIndex].id),
+                in: zoomNamespace,
+                isSource: false
+            )
+            .opacity(isReducingMotion && !isZoomed ? 0 : 1)
     }
 }

@@ -509,7 +509,8 @@ Escape.
    the zoom state and passing in the namespace. A helper turns a place in
    the group into a photo index. Try one zoom-state enum in place of
    `isFullSize` and `isZoomed`, kept only if it reads better.
-2. **Simplify the full-size photo.** `PhotoDetailSurface` becomes
+2. ✅ **Simplify the full-size photo.** (Named `FullSizeImage` instead, to
+   match `ThumbnailImage`.) `PhotoDetailSurface` becomes
    `FullSizePhoto`: a non-optional index and no overlay closure, since the
    caller can add its own overlay.
 3. **Sort keys in `PhotoGridMetrics`.** The arrow-key target cell moves

@@ -11,7 +11,7 @@ place of them, and you stay on the pick screen while it's up: the tiles
 keep keyboard focus, and `PickScreen` handles its keys and decides when it
 zooms. It zooms out of the focused tile and back into it (a fade with
 Reduce Motion on), which shows where you are in the grid on the way back.
-`PhotoDetailSurface`, inside it, loads and draws the photo, showing the
+`FullSizeImage`, inside it, loads and draws the photo, showing the
 thumbnail while the full image loads and preloading its neighbours.
 
 `TileLayout` is the pure, tested part: the column count, tile size, and
