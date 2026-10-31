@@ -135,3 +135,35 @@ struct PhotoGridMetricsTests {
         #expect(offset == 1000)
     }
 }
+
+struct PhotoGridMetricsMovementTests {
+    @Test("Left and right step through the cells, stopping at either end")
+    func leftAndRight() {
+        let targets = [
+            PhotoGridMetrics.targetCell(from: 5, moving: .left, cellCount: 10, columnCount: 4),
+            PhotoGridMetrics.targetCell(from: 5, moving: .right, cellCount: 10, columnCount: 4),
+            PhotoGridMetrics.targetCell(from: 0, moving: .left, cellCount: 10, columnCount: 4),
+            PhotoGridMetrics.targetCell(from: 9, moving: .right, cellCount: 10, columnCount: 4),
+        ]
+
+        #expect(targets == [4, 6, 0, 9])
+    }
+
+    @Test("Up and down move a whole row")
+    func upAndDown() {
+        let up = PhotoGridMetrics.targetCell(from: 5, moving: .up, cellCount: 10, columnCount: 4)
+        let down = PhotoGridMetrics.targetCell(from: 5, moving: .down, cellCount: 10, columnCount: 4)
+
+        #expect(up == 1)
+        #expect(down == 9)
+    }
+
+    @Test("Up and down stay put when there's no cell in that direction")
+    func noCellAboveOrBelow() {
+        let up = PhotoGridMetrics.targetCell(from: 2, moving: .up, cellCount: 10, columnCount: 4)
+        let down = PhotoGridMetrics.targetCell(from: 7, moving: .down, cellCount: 10, columnCount: 4)
+
+        #expect(up == 2)
+        #expect(down == 7)
+    }
+}

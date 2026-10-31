@@ -16,6 +16,6 @@ badge shows a checkmark and how many were kept, and its other photos are
 faded.
 
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
-slots, and scroll offsets, `GridHitTarget` for whether a click landed on a
+slots, scroll offsets, and where the movement keys go, `GridHitTarget` for whether a click landed on a
 photo or a gap, and `PileJitter` for how a collapsed pile is drawn. Uses
 Grouping, Images, Folder, and Keys, and never Pick.

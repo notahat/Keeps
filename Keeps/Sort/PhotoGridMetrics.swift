@@ -11,6 +11,26 @@ enum PhotoGridMetrics {
     /// The space between cells, horizontally and vertically.
     static let spacing: CGFloat = 12
 
+    /// The width each cell occupies: the cell plus half the gap on either
+    /// side. Cells own their share of the gap so that clicks and hovers
+    /// there land on a cell instead of falling through, so the grid itself
+    /// has no horizontal spacing.
+    static var slotWidth: CGFloat {
+        cellSize + spacing
+    }
+
+    /// The cell a movement key goes to from the given cell. Left and right
+    /// step through the cells in order; up and down move a whole row. Stays
+    /// put when there's no cell in that direction. Pure.
+    static func targetCell(from index: Int, moving direction: MoveDirection, cellCount: Int, columnCount: Int) -> Int {
+        switch direction {
+        case .left: max(0, index - 1)
+        case .right: min(cellCount - 1, index + 1)
+        case .up: index - columnCount >= 0 ? index - columnCount : index
+        case .down: index + columnCount < cellCount ? index + columnCount : index
+        }
+    }
+
     /// How many blank slots to show before the first item for a requested
     /// count: only the remainder by the column count, so at most a partial
     /// row. Pure.

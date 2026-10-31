@@ -20,22 +20,13 @@ struct SortScreen: View {
     @State private var scrolling = GridScrolling()
     @FocusState private var isFocused: Bool
 
-    private static var cellSize: CGFloat {
-        PhotoGridMetrics.cellSize
-    }
+    private static let cellSize = PhotoGridMetrics.cellSize
+    private static let spacing = PhotoGridMetrics.spacing
+    private static let slotWidth = PhotoGridMetrics.slotWidth
 
-    private static var spacing: CGFloat {
-        PhotoGridMetrics.spacing
-    }
-
-    /// The width each cell occupies: the cell plus half the gap on either
-    /// side. Cells own their share of the gap so that clicks and hovers
-    /// there land on a cell instead of falling through, so the grid itself
-    /// has no horizontal spacing.
-    private static var slotWidth: CGFloat {
-        cellSize + spacing
-    }
-
+    /// Fixed-width columns, as many as fit. The grid has no horizontal
+    /// spacing, since each slot carries its share of the gap (see
+    /// PhotoGridMetrics.slotWidth).
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: Self.slotWidth, maximum: Self.slotWidth), spacing: 0)]
     }
@@ -203,19 +194,15 @@ struct SortScreen: View {
     /// and handles the other keys the screen knows.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         scrolling.noteKeyPress(cells: scrollCells)
-        let cellCount = grouping.layout.cells.count
-        let columnCount = scrolling.columnCount
         guard let direction = MoveDirection(press),
-              cellCount > 0,
               let current = grouping.selectedCellIndex
         else { return handleCommandKey(press) }
-        let targetIndex = switch direction {
-        case .left: max(0, current - 1)
-        case .right: min(cellCount - 1, current + 1)
-        case .up: current - columnCount >= 0 ? current - columnCount : current
-        case .down: current + columnCount < cellCount ? current + columnCount : current
-        }
-        grouping.selectCell(at: targetIndex)
+        grouping.selectCell(at: PhotoGridMetrics.targetCell(
+            from: current,
+            moving: direction,
+            cellCount: grouping.layout.cells.count,
+            columnCount: scrolling.columnCount
+        ))
         return true
     }
 

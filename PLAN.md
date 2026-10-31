@@ -513,7 +513,7 @@ Escape.
    match `ThumbnailImage`.) `PhotoDetailSurface` becomes
    `FullSizePhoto`: a non-optional index and no overlay closure, since the
    caller can add its own overlay.
-3. **Sort keys in `PhotoGridMetrics`.** The arrow-key target cell moves
+3. ✅ **Sort keys in `PhotoGridMetrics`.** (`targetCell`.) The arrow-key target cell moves
    from `SortScreen` into `PhotoGridMetrics`, tested, as does `slotWidth`.
 4. **Shared keyboard focus.** One modifier in `Keys/` for the focusable,
    focused, key-handling setup both screens repeat.
