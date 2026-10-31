@@ -3,8 +3,8 @@ import SwiftUI
 /// The pick screen: one group's photos as an even grid of tiles under a
 /// quiet header, where the group's keepers are picked. Arrow and h/j/k/l
 /// keys move focus, F toggles keep on the focused photo, Space or a
-/// double-click toggles a full-size view of it, Return marks the group done
-/// and moves on to the next, and Escape leaves the full-size view or goes
+/// double-click toggles a full-size view of it, Return marks the group done,
+/// and Escape leaves the full-size view or goes
 /// back to the sort screen. Clicking a tile focuses it.
 ///
 /// Places the tiles (PickTile), shows FullSizeView over them, and handles
@@ -221,7 +221,7 @@ struct PickScreen: View {
         case .space:
             openFullSize()
         case .return:
-            grouping.finishOpenGroup()
+            grouping.markOpenGroupDone()
         case .escape where isFullSize:
             closeFullSize()
         case .escape:

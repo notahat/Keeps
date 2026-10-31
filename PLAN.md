@@ -544,7 +544,7 @@ Each step builds and passes the tests, then review and commit.
 1. ✅ **Share the pile jitter.** Move `PileJitter` from `Sort/` to `Images/`,
    so the pick screen's pile can tilt its prints the same way the sort
    screen's do without Pick using Sort.
-2. **Return marks done and stays.** `Grouping.finishOpenGroup()` becomes
+2. ✅ **Return marks done and stays.** `Grouping.finishOpenGroup()` becomes
    `markOpenGroupDone()`, which marks the open group done and leaves it
    open. Tested in place of the tests for moving on.
 3. **Which photos are tiles.** A pure, tested helper in `Pick/` that says

@@ -127,17 +127,10 @@ class Grouping {
         open(group)
     }
 
-    /// Marks the open group done, and opens the next closed group after it
-    /// that isn't done, or closes it when there is none.
-    func finishOpenGroup() {
-        guard let finished = openGroup else { return }
-        doneGroupStarts.insert(finished.lowerBound)
-        let next = layout.groups.first { $0.lowerBound >= finished.upperBound && !isDone($0) }
-        if let next {
-            open(next)
-        } else {
-            openGroup = nil
-        }
+    /// Marks the open group done, leaving it open.
+    func markOpenGroupDone() {
+        guard let openGroup else { return }
+        doneGroupStarts.insert(openGroup.lowerBound)
     }
 
     /// Closes the open group, leaving whether it is done unchanged.

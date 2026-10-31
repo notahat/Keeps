@@ -194,39 +194,24 @@ struct GroupingTests {
         #expect(grouping.keepers.isEmpty)
     }
 
-    @Test("Finishing a group marks it done and opens the next group")
-    func finishingOpensNextGroup() {
+    @Test("Marking the open group done leaves it open")
+    func markingDoneLeavesGroupOpen() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
         grouping.open(groupAtCell: 0)
 
-        grouping.finishOpenGroup()
+        grouping.markOpenGroupDone()
 
         #expect(grouping.isDone(0 ..< 3))
-        #expect(grouping.openGroup == 3 ..< 5)
-        #expect(grouping.layout.cells.prefix(2) == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)])
+        #expect(grouping.openGroup == 0 ..< 3)
     }
 
-    @Test("Finishing a group skips later groups that are already done")
-    func finishingSkipsDoneGroups() {
-        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
-        grouping.open(groupAtCell: 3)
-        grouping.finishOpenGroup()
-        grouping.open(groupAtCell: 0)
-
-        grouping.finishOpenGroup()
-
-        #expect(grouping.openGroup == 5 ..< 8)
-    }
-
-    @Test("Finishing the last group closes it")
-    func finishingLastGroupCloses() {
+    @Test("Marking done with no group open marks nothing")
+    func markingDoneWithNothingOpen() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])
-        grouping.open(groupAtCell: 0)
 
-        grouping.finishOpenGroup()
+        grouping.markOpenGroupDone()
 
-        #expect(grouping.isDone(0 ..< 3))
-        #expect(grouping.openGroup == nil)
+        #expect(!grouping.isDone(0 ..< 3))
     }
 
     @Test("Closing a group leaves it not done")
@@ -245,7 +230,7 @@ struct GroupingTests {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])
         grouping.open(groupAtCell: 0)
         grouping.toggleKeeper(atPhoto: 1)
-        grouping.finishOpenGroup()
+        grouping.markOpenGroupDone()
 
         grouping.open(groupAtCell: 0)
 

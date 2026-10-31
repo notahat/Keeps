@@ -43,7 +43,7 @@ struct FolderView: View {
     @ViewBuilder
     private var screen: some View {
         if let grouping, let openGroup = grouping.openGroup {
-            // Identified by the group, so moving on to the next group starts
+            // Identified by the group, so opening a different group starts
             // the screen afresh.
             PickScreen(grouping: grouping, group: openGroup)
                 .id(openGroup)

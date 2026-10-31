@@ -34,7 +34,7 @@ struct SavedGroupingTests {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 6])
         grouping.open(groupAtCell: 0)
         grouping.toggleKeeper(atPhoto: 1)
-        grouping.finishOpenGroup()
+        grouping.markOpenGroupDone()
         grouping.toggleKeeper(atPhoto: 4)
         let keepsFile = KeepsFile(folderURL: folder)
 
