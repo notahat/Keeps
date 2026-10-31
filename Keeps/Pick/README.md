@@ -6,6 +6,11 @@ under a header, and handles its keys: moving focus, F to keep, Space for a
 full-size view, Return to mark the group done, and Escape to go
 back. Tiles scale up the sort screen's thumbnails for now.
 
+Once the group is done, only its keepers are tiles, re-flowed beside a
+`SetAsidePile` in the bottom-right corner holding the photos that weren't
+kept, and F and Return do nothing. `PickArrangement` is the pure, tested
+part that says which photos are tiles and which are on the pile.
+
 The full-size view (`FullSizeView`) is shown over the tiles rather than in
 place of them, and you stay on the pick screen while it's up: the tiles
 keep keyboard focus, and `PickScreen` handles its keys and decides when it

@@ -551,7 +551,7 @@ Each step builds and passes the tests, then review and commit.
    which of a group's photos are laid out as tiles (all of them, or only
    the keepers once done) and which are on the pile, and where focus lands
    when the group becomes done.
-4. **Draw the pile.** `PickScreen` lays the tiles out beside a pile in the
+4. ✅ **Draw the pile.** (`SetAsidePile`.) `PickScreen` lays the tiles out beside a pile in the
    bottom-right corner once the group is done, with a count of the photos
    on it. Movement keys and the full-size view cover only the tiles, and F
    does nothing on a done group. Check by hand: finish a group with some
