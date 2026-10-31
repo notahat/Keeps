@@ -29,6 +29,14 @@ struct MoveDirectionTests {
         #expect(MoveDirection(key: "c", characters: "c") == nil)
     }
 
+    @Test("Stepping through photos in order, left and up go back one, and right and down go forward one")
+    func linearSteps() {
+        #expect(MoveDirection.left.linearStep == -1)
+        #expect(MoveDirection.up.linearStep == -1)
+        #expect(MoveDirection.right.linearStep == 1)
+        #expect(MoveDirection.down.linearStep == 1)
+    }
+
     @Test("A letter with no modifiers is plain")
     func plainLetter() {
         #expect(isPlainLetter("c", characters: "c", modifiers: []))

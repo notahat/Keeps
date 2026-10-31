@@ -3,22 +3,13 @@ import SwiftUI
 
 /// Full-window view of the photo at selectedIndex. Owns full-size image
 /// loading — the current photo at high priority, a preload window (4 ahead,
-/// 2 behind) at low priority — the loading placeholder, keyboard focus, and
-/// the interpretation of linear navigation keys (arrows and h/j/k/l) into
-/// moves of one photo either way. All policy and chrome belong to the caller
-/// via onNavigate/onKeyDown and the overlay closure. Knows nothing about
-/// groups or keepers.
+/// 2 behind) at low priority — and the loading placeholder. Display only:
+/// keys, focus, and chrome belong to the caller, which changes
+/// selectedIndex and supplies the overlay. Knows nothing about groups or
+/// keepers.
 struct PhotoDetailSurface<Overlay: View>: View {
     var items: [PhotoItem]
     var selectedIndex: Int?
-
-    /// Receives the index a navigation key moves to; the caller decides
-    /// whether to select it.
-    var onNavigate: (_ targetIndex: Int) -> Void
-
-    /// Receives every key press that isn't a linear navigation key.
-    /// Returns true when the key was handled.
-    var onKeyDown: (KeyPress) -> Bool
 
     /// Chrome layered over the full surface for the current photo.
     @ViewBuilder var overlay: (_ item: PhotoItem) -> Overlay
@@ -28,7 +19,6 @@ struct PhotoDetailSurface<Overlay: View>: View {
     /// The item currently being loaded at high priority, tracked so it can be
     /// deprioritised when the user navigates away before it finishes.
     @State private var highPriorityItem: PhotoItem?
-    @FocusState private var isFocused: Bool
 
     var body: some View {
         Group {
@@ -53,17 +43,7 @@ struct PhotoDetailSurface<Overlay: View>: View {
                 overlay(item)
             }
         }
-        .onTapGesture {
-            isFocused = true
-        }
-        .focusable()
-        .focusEffectDisabled()
-        .focused($isFocused)
-        .onKeyPress { press in
-            handleKeyPress(press) ? .handled : .ignored
-        }
         .onAppear {
-            isFocused = true
             loadWindow()
         }
         .onDisappear {
@@ -110,29 +90,8 @@ struct PhotoDetailSurface<Overlay: View>: View {
         }
     }
 
-    /// Turns linear navigation keys into a move of one photo; forwards
-    /// everything else to onKeyDown.
-    private func handleKeyPress(_ press: KeyPress) -> Bool {
-        guard let step = navigationStep(for: press),
-              !items.isEmpty,
-              let current = selectedIndex
-        else { return onKeyDown(press) }
-        onNavigate(max(0, min(items.count - 1, current + step)))
-        return true
-    }
-
     /// Returns 4 indices ahead and 2 behind, excluding the current index.
     private func preloadIndices(around index: Int) -> [Int] {
         (max(0, index - 2) ... min(items.count - 1, index + 4)).filter { $0 != index }
-    }
-
-    /// How far an arrow key or vi key (h/j/k/l) moves: back one for left and
-    /// up, forward one for right and down, or nil for any other key.
-    private func navigationStep(for press: KeyPress) -> Int? {
-        switch MoveDirection(press) {
-        case .left, .up: -1
-        case .right, .down: 1
-        case nil: nil
-        }
     }
 }

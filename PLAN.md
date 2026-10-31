@@ -267,8 +267,10 @@ starting point to experiment from, not a final design.
   only memory pressure evicts anything. How sizes are loaded, cached, and
   reused (including keeping known dimensions somewhere) may change as the
   pick screen is tried, and memory use should be profiled.
-- **Full-size view.** `PhotoDetailSurface`, given only the group's photos.
-  It already steps with h and l and preloads neighbours.
+- **Full-size view.** `PhotoDetailSurface`, given only the group's photos,
+  shown over the tiles like a popover: the tiles keep keyboard focus and
+  `PickScreen` handles its keys, since moving focus to it from code didn't
+  take. It only draws and preloads neighbours.
 - **Model and screens.** `FolderView` switches between the sort screen and
   the pick screen, from a view mode on `Grouping`. `Grouping` gains the
   open group, keepers, and done groups. The pick screen is the header
@@ -328,7 +330,10 @@ commit.
    sort screen, profiling memory, and adjusting how sizes are loaded, cached, and
    reused, including the fallback for unknown aspect ratios. Tests are
    written once the shape settles.
-6. **Full-size view.** Space toggles `PhotoDetailSurface` for the focused
+6. ✅ **Full-size view.** (Done before step 5. Escape at full size goes
+   back to the tiles; double-clicking a tile also opens it full size. It
+   covers the tiles, which keep focus; see "Full-size view" above.)
+   Space toggles `PhotoDetailSurface` for the focused
    photo, with movement and F still working.
 7. **Done status on collapsed groups.** Keepers on top of the pile, the checkmark and
    "2 of 7" badge, and dimming for groups with no keepers.
