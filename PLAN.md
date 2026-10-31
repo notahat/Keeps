@@ -300,7 +300,8 @@ happens to photos that weren't kept (moving or deleting them).
 Each step includes tests where there is testable behaviour, then review and
 commit.
 
-1. **Shared key handling.** Move the hjkl/arrow-to-direction code out of
+1. ✅ **Shared key handling.** (`MoveDirection` and `isPlainLetter`, in a
+   new `Keys/` folder both screens use.) Move the hjkl/arrow-to-direction code out of
    `SortScreen` into a helper both screens can use, and have
    `PhotoDetailSurface` use it in place of its own copy. That copy doesn't
    lowercase, so h/j/k/l there gain Caps Lock support; otherwise no change

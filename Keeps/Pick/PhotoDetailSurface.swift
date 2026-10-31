@@ -126,18 +126,13 @@ struct PhotoDetailSurface<Overlay: View>: View {
         (max(0, index - 2) ... min(items.count - 1, index + 4)).filter { $0 != index }
     }
 
-    /// How far an arrow key or vi key (h/j/k/l) moves: back one, forward
-    /// one, or nil for any other key.
+    /// How far an arrow key or vi key (h/j/k/l) moves: back one for left and
+    /// up, forward one for right and down, or nil for any other key.
     private func navigationStep(for press: KeyPress) -> Int? {
-        switch press.key {
-        case .leftArrow, .upArrow: return -1
-        case .rightArrow, .downArrow: return 1
-        default: break
-        }
-        switch press.characters {
-        case "h", "k": return -1
-        case "l", "j": return 1
-        default: return nil
+        switch MoveDirection(press) {
+        case .left, .up: -1
+        case .right, .down: 1
+        case nil: nil
         }
     }
 }

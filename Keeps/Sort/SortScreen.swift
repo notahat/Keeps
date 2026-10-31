@@ -169,15 +169,13 @@ struct SortScreen: View {
         GridHitTarget.resolve(offset: location.x, cellWidth: Self.slotWidth, index: index)
     }
 
-    private enum Direction { case left, right, up, down }
-
     /// Moves the selection for spatial keys using the current column count,
     /// and handles the other keys the screen knows.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         scrolling.noteKeyPress(cells: scrollCells)
         let cellCount = grouping.layout.cells.count
         let columnCount = scrolling.columnCount
-        guard let direction = direction(for: press),
+        guard let direction = MoveDirection(press),
               cellCount > 0,
               let current = grouping.selectedCellIndex
         else { return handleCommandKey(press) }
@@ -199,31 +197,10 @@ struct SortScreen: View {
             grouping.clearSelection()
             return true
         }
-        let hasModifiers = !press.modifiers.intersection([.command, .control, .option]).isEmpty
-        if !hasModifiers, press.characters.lowercased() == "c" {
+        if press.isPlain(letter: "c") {
             grouping.collapseClosedGroups()
             return true
         }
         return false
-    }
-
-    /// The direction an arrow key or vi key (h/j/k/l) moves in, or nil for
-    /// any other key.
-    private func direction(for press: KeyPress) -> Direction? {
-        switch press.key {
-        case .leftArrow: return .left
-        case .rightArrow: return .right
-        case .downArrow: return .down
-        case .upArrow: return .up
-        default: break
-        }
-        // Lowercased so the keys still work with Caps Lock on.
-        switch press.characters.lowercased() {
-        case "h": return .left
-        case "l": return .right
-        case "j": return .down
-        case "k": return .up
-        default: return nil
-        }
     }
 }

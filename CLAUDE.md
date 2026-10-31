@@ -32,17 +32,20 @@ folder needs adding to that exception list.
   `GridScrolling` does the scrolling; the geometry is in pure, tested
   helpers (`PhotoGridMetrics`, `GridHitTarget`).
 - `Pick/` — the pick screen, being built (see PLAN.md).
+- `Keys/` — key handling the screens share (`MoveDirection`,
+  `isPlainLetter`).
 
 **Layering.** The folders use each other only like this, with no cycles:
 
 - App uses everything.
-- Sort and Pick use Grouping, Images, and Folder, and never each other.
+- Sort and Pick use Grouping, Images, Folder, and Keys, and never each
+  other.
 - Grouping uses Saving and Folder, converting itself to and from
   `SavedGrouping`.
 - Images uses Folder.
-- Saving uses nothing.
+- Saving and Keys use nothing.
 
-Grouping, Saving, and Folder have no views, which keeps them testable.
+Grouping, Saving, Folder, and Keys have no views, which keeps them testable.
 
 **keeps.json files already on disk must keep loading.** Real folders have
 been grouped, and losing that work is not acceptable. Any change to the

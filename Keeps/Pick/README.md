@@ -5,4 +5,4 @@ is being built; see the narrowing plan in PLAN.md. So far this holds only
 `PhotoDetailSurface`, a full-window view of one photo that isn't used yet
 and will become the pick screen's full-size view.
 
-Uses Grouping, Images, and Folder, and never Sort.
+Uses Grouping, Images, Folder, and Keys, and never Sort.

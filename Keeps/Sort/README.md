@@ -11,4 +11,4 @@ selection.
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
 slots, and scroll offsets, `GridHitTarget` for whether a click landed on a
 photo or a gap, and `PileJitter` for how a collapsed pile is drawn. Uses
-Grouping, Images, and Folder, and never Pick.
+Grouping, Images, Folder, and Keys, and never Pick.
