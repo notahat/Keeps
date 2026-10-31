@@ -547,7 +547,7 @@ Each step builds and passes the tests, then review and commit.
 2. ✅ **Return marks done and stays.** `Grouping.finishOpenGroup()` becomes
    `markOpenGroupDone()`, which marks the open group done and leaves it
    open. Tested in place of the tests for moving on.
-3. **Which photos are tiles.** A pure, tested helper in `Pick/` that says
+3. ✅ **Which photos are tiles.** (`PickArrangement`.) A pure, tested helper in `Pick/` that says
    which of a group's photos are laid out as tiles (all of them, or only
    the keepers once done) and which are on the pile, and where focus lands
    when the group becomes done.
