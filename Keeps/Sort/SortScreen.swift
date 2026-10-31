@@ -56,15 +56,7 @@ struct SortScreen: View {
                 scrollAnchor: $grouping.scrollAnchor,
                 scrollProxy: scrollProxy
             )
-            .focusable()
-            .focusEffectDisabled()
-            .focused($isFocused)
-            .onKeyPress { press in
-                handleKeyPress(press) ? .handled : .ignored
-            }
-            .onAppear {
-                isFocused = true
-            }
+            .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
         }
     }
 

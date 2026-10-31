@@ -515,7 +515,7 @@ Escape.
    caller can add its own overlay.
 3. ✅ **Sort keys in `PhotoGridMetrics`.** (`targetCell`.) The arrow-key target cell moves
    from `SortScreen` into `PhotoGridMetrics`, tested, as does `slotWidth`.
-4. **Shared keyboard focus.** One modifier in `Keys/` for the focusable,
+4. ✅ **Shared keyboard focus.** (`handlesKeys`.) One modifier in `Keys/` for the focusable,
    focused, key-handling setup both screens repeat.
 5. **Shorter save conversion.** A small pure helper in `Grouping/` for
    converting between photo indices and stems, tested.

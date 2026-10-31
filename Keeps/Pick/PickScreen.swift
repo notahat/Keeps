@@ -156,16 +156,10 @@ struct PickScreen: View {
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
             scrollOffset = offset
         }
-        .focusable()
-        .focusEffectDisabled()
-        .focused($isFocused)
-        .onKeyPress { press in
+        .handlesKeys(isFocused: $isFocused) { press in
             // The tile area's height: with the edge room above and below,
             // a tile revealed within it keeps its highlight in view.
-            handleKeyPress(press, layout: layout, viewportHeight: tileArea.height) ? .handled : .ignored
-        }
-        .onAppear {
-            isFocused = true
+            handleKeyPress(press, layout: layout, viewportHeight: tileArea.height)
         }
         .onChange(of: isFullSize) { _, isNowFullSize in
             guard !isNowFullSize else { return }

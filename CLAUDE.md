@@ -37,7 +37,7 @@ folder needs adding to that exception list.
   handles input; the geometry is in `TileLayout`, pure and tested. Still
   being built (see PLAN.md).
 - `Keys/` — key handling the screens share (`MoveDirection`,
-  `isPlainLetter`).
+  `isPlainLetter`, and the `handlesKeys` modifier).
 
 **Layering.** The folders use each other only like this, with no cycles:
 
@@ -49,7 +49,8 @@ folder needs adding to that exception list.
 - Images uses Folder.
 - Saving and Keys use nothing.
 
-Grouping, Saving, Folder, and Keys have no views, which keeps them testable.
+Grouping, Saving, Folder, and Keys have no views (Keys has only a
+modifier), which keeps them testable.
 
 **keeps.json files already on disk must keep loading.** Real folders have
 been grouped, and losing that work is not acceptable. Any change to the
