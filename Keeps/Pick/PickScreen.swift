@@ -7,9 +7,10 @@ import SwiftUI
 /// and moves on to the next, and Escape leaves the full-size view or goes
 /// back to the sort screen. Clicking a tile focuses it.
 ///
-/// Draws the tiles, switches to PhotoDetailSurface for full size, and
-/// handles input. The layout is TileLayout's, and the open group, keepers,
-/// and done groups are Grouping's. Tiles scale up the sort screen's
+/// Draws the tiles, shows PhotoDetailSurface over them for full size,
+/// zooming it out of the focused tile and back in, and handles input. The
+/// layout is TileLayout's, and the open group, keepers, and done groups are
+/// Grouping's. Tiles scale up the sort screen's
 /// thumbnails rather than loading larger images.
 struct PickScreen: View {
     let grouping: Grouping
@@ -18,8 +19,15 @@ struct PickScreen: View {
     /// The focused photo, as an index into the group.
     @State private var focusedIndex = 0
 
-    /// Whether the focused photo is shown full size in place of the tiles.
+    /// Whether the full-size view is up, covering the tiles and taking the
+    /// movement keys. True for the whole zoom in and out, not just while
+    /// it's fully zoomed.
     @State private var isFullSize = false
+
+    /// Whether the full-size view is at full size, rather than sitting
+    /// exactly over the focused tile at the start of zooming in or the end
+    /// of zooming out.
+    @State private var isZoomed = false
 
     /// The tiles' shape, worked out once when the group opens so that
     /// nothing moves while it's open.
@@ -28,6 +36,22 @@ struct PickScreen: View {
     @State private var scrollPosition = ScrollPosition()
     @State private var scrollOffset: CGFloat = 0
     @FocusState private var isFocused: Bool
+
+    /// Pairs each tile with the full-size view, so opening and closing it
+    /// zooms between the focused tile and the full size. Tiles always
+    /// supply their frames; the full-size view takes the focused tile's
+    /// frame until zoomed, and its own once zoomed.
+    @Namespace private var zoomNamespace
+
+    /// The full-size view's matched id once zoomed: one no tile has, so it
+    /// keeps its own frame.
+    private static let zoomedID = AnyHashable("zoomed")
+
+    private static let zoomAnimation = Animation.snappy(duration: 0.2)
+
+    /// With Reduce Motion on, the full-size view fades in and out where it
+    /// is instead of zooming.
+    @Environment(\.accessibilityReduceMotion) private var isReducingMotion
 
     private static let spacing: CGFloat = 12
     private static let minimumTileLength: CGFloat = 200
@@ -50,8 +74,14 @@ struct PickScreen: View {
         _aspectRatio = State(initialValue: Self.tileAspectRatio(of: grouping.items[group]))
     }
 
+    /// The group's photos. A slice keeps the folder's indices, so index it
+    /// with `group.lowerBound + focusedIndex`, not `focusedIndex` alone.
     private var photos: ArraySlice<PhotoItem> {
         grouping.items[group]
+    }
+
+    private var focusedPhoto: PhotoItem {
+        grouping.items[group.lowerBound + focusedIndex]
     }
 
     var body: some View {
@@ -66,7 +96,7 @@ struct PickScreen: View {
                 tiles(in: proxy.size)
             }
             .padding(Self.spacing - Self.edgeRoom)
-            .opacity(isFullSize ? 0 : 1)
+            .opacity(isZoomed ? 0 : 1)
             .allowsHitTesting(!isFullSize)
             .overlay {
                 if isFullSize {
@@ -75,6 +105,11 @@ struct PickScreen: View {
                         // A click would otherwise leave the tiles without
                         // focus.
                         .onTapGesture { isFocused = true }
+                        // It first appears exactly over the focused tile,
+                        // then zooms out from there.
+                        .onAppear {
+                            withAnimation(Self.zoomAnimation) { isZoomed = true }
+                        }
                 }
             }
         }
@@ -100,6 +135,15 @@ struct PickScreen: View {
             }
             .allowsHitTesting(false)
         }
+        // The same inset as the tile's thumbnail, so the photo doesn't jump
+        // as it takes over from the tile.
+        .padding(ThumbnailImage.imageInset)
+        .matchedGeometryEffect(
+            id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(focusedPhoto.id),
+            in: zoomNamespace,
+            isSource: false
+        )
+        .opacity(isReducingMotion && !isZoomed ? 0 : 1)
     }
 
     /// Which group this is among the closed groups, and how many of its
@@ -168,12 +212,14 @@ struct PickScreen: View {
             isFocused: index == focusedIndex,
             isKeeper: grouping.keepers.contains(group.lowerBound + index)
         )
+        // Supplies the frame the full-size view zooms out of and back into.
+        .matchedGeometryEffect(id: AnyHashable(photo.id), in: zoomNamespace)
         .contentShape(Rectangle())
         // The single click is simultaneous rather than a second tap
         // gesture, which would wait out the double-click time and make
         // focus lag.
         .onTapGesture(count: 2) {
-            isFullSize = true
+            setFullSize(true)
         }
         .simultaneousGesture(TapGesture().onEnded {
             focusedIndex = index
@@ -204,17 +250,37 @@ struct PickScreen: View {
         }
         switch press.key {
         case .space:
-            isFullSize.toggle()
+            setFullSize(!isFullSize)
         case .return:
             grouping.finishOpenGroup()
         case .escape where isFullSize:
-            isFullSize = false
+            setFullSize(false)
         case .escape:
             grouping.closeOpenGroup()
         default:
             return false
         }
         return true
+    }
+
+    /// Opens or closes the full-size view, zooming the photo between its
+    /// tile and full size while the other tiles fade.
+    /// Opening puts the full-size view up over the focused tile, and it
+    /// zooms out from there as it appears. Closing zooms it back into the
+    /// focused tile, and takes it down only once it's there.
+    private func setFullSize(_ isNowFullSize: Bool) {
+        if isNowFullSize {
+            isFullSize = true
+            return
+        }
+        withAnimation(Self.zoomAnimation) {
+            isZoomed = false
+        } completion: {
+            // Unless it was reopened during the zoom back in.
+            if !isZoomed {
+                isFullSize = false
+            }
+        }
     }
 
     /// Scrolls just far enough to bring a tile fully into view.

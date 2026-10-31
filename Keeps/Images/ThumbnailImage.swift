@@ -49,6 +49,11 @@ struct ThumbnailImage: View {
     static let pixelSize: Int = displaySize * 2
     static let imageSize: ImageSize = .thumbnail(maxPixelSize: pixelSize)
 
+    /// How far in from the frame's edges the image is drawn. Views that zoom
+    /// out of a thumbnail inset their image by the same amount, so it lines
+    /// up.
+    static let imageInset: CGFloat = 3
+
     @State private var image: NSImage?
 
     var body: some View {
@@ -61,7 +66,7 @@ struct ThumbnailImage: View {
                     .scaledToFit()
                     .padding(borderWidth)
                     .background(borderFill)
-                    .padding(3)
+                    .padding(Self.imageInset)
             } else {
                 placeholderView
             }
@@ -97,7 +102,7 @@ struct ThumbnailImage: View {
                 .padding(borderWidth)
                 .background(borderFill)
                 .aspectRatio(aspectRatio, contentMode: .fit)
-                .padding(3)
+                .padding(Self.imageInset)
         case .none:
             EmptyView()
         }

@@ -332,7 +332,9 @@ commit.
    written once the shape settles.
 6. ✅ **Full-size view.** (Done before step 5. Escape at full size goes
    back to the tiles; double-clicking a tile also opens it full size. It
-   covers the tiles, which keep focus; see "Full-size view" above.)
+   covers the tiles, which keep focus; see "Full-size view" above. It
+   zooms out of the focused tile and back in with `matchedGeometryEffect`,
+   showing the thumbnail until the full image loads.)
    Space toggles `PhotoDetailSurface` for the focused
    photo, with movement and F still working.
 7. **Done status on collapsed groups.** Keepers on top of the pile, the checkmark and

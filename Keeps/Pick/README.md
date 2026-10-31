@@ -8,8 +8,11 @@ back. Tiles scale up the sort screen's thumbnails for now.
 
 The full-size view is shown over the tiles rather than in place of them,
 and you stay on the pick screen while it's up: the tiles keep keyboard
-focus, and `PickScreen` handles its keys too. `PhotoDetailSurface` only
-draws it, loading full images for the current photo and its neighbours.
+focus, and `PickScreen` handles its keys too. It zooms out of the focused
+tile and back into it (a fade with Reduce Motion on), which shows where you
+are in the grid on the way back. `PhotoDetailSurface` only draws it,
+showing the thumbnail while the full image for the current photo loads and
+preloading its neighbours.
 
 `TileLayout` is the pure, tested part: the column count, tile size, and
 positions, where the movement keys go, how far to scroll to reveal a tile,

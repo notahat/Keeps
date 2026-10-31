@@ -3,7 +3,8 @@ import SwiftUI
 
 /// Full-window view of the photo at selectedIndex. Owns full-size image
 /// loading — the current photo at high priority, a preload window (4 ahead,
-/// 2 behind) at low priority — and the loading placeholder. Display only:
+/// 2 behind) at low priority — and what shows while it loads: the
+/// thumbnail if there is one, otherwise a spinner. Display only:
 /// keys, focus, and chrome belong to the caller, which changes
 /// selectedIndex and supplies the overlay. Knows nothing about groups or
 /// keepers.
@@ -22,8 +23,10 @@ struct PhotoDetailSurface<Overlay: View>: View {
 
     var body: some View {
         Group {
-            if let image {
-                Image(nsImage: image)
+            // The sort screen's thumbnail stands in while the full image
+            // loads, so there's a photo to see straight away.
+            if let shownImage = image ?? selectedItem.flatMap(cachedThumbnail) {
+                Image(nsImage: shownImage)
                     .resizable()
                     .scaledToFit()
             } else {
@@ -59,6 +62,11 @@ struct PhotoDetailSurface<Overlay: View>: View {
             else { return }
             image = ImagePipeline.shared.cachedImage(for: item, size: .full)
         }
+    }
+
+    /// The photo's thumbnail, if it's already loaded.
+    private func cachedThumbnail(for item: PhotoItem) -> NSImage? {
+        ImagePipeline.shared.cachedImage(for: item, size: ThumbnailImage.imageSize)
     }
 
     private var selectedItem: PhotoItem? {
