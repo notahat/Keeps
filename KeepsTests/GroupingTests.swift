@@ -142,4 +142,106 @@ struct GroupingTests {
         #expect(grouping.cellItems.first?.id == grouping.items[0].id)
         #expect(grouping.cellItems.count == 8)
     }
+
+    @Test("Opening a group collapses every group up to and including it")
+    func openingCollapsesUpToGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+
+        grouping.open(groupAtCell: 4)
+
+        #expect(grouping.openGroup == 3 ..< 5)
+        #expect(grouping.layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
+    }
+
+    @Test("Opening an early group leaves later collapsed groups collapsed")
+    func openingEarlyGroupKeepsLaterCollapsed() {
+        let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3, 5])
+
+        grouping.open(groupAtCell: 0)
+
+        #expect(grouping.openGroup == 0 ..< 3)
+        #expect(grouping.layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
+    }
+
+    @Test("Photos after the working point can't be opened")
+    func ungroupedPhotosDoNotOpen() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+
+        grouping.open(groupAtCell: 5)
+
+        #expect(grouping.openGroup == nil)
+        #expect(grouping.layout.cells.allSatisfy { !$0.isCollapsed })
+    }
+
+    @Test("Toggling a keeper marks the photo, and toggling it again unmarks it")
+    func toggleKeeper() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+
+        grouping.toggleKeeper(atPhoto: 1)
+        let afterFirstToggle = grouping.keepers
+        grouping.toggleKeeper(atPhoto: 1)
+
+        #expect(afterFirstToggle == [1])
+        #expect(grouping.keepers.isEmpty)
+    }
+
+    @Test("Finishing a group marks it done and opens the next group")
+    func finishingOpensNextGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+        grouping.open(groupAtCell: 0)
+
+        grouping.finishOpenGroup()
+
+        #expect(grouping.isDone(0 ..< 3))
+        #expect(grouping.openGroup == 3 ..< 5)
+        #expect(grouping.layout.cells.prefix(2) == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)])
+    }
+
+    @Test("Finishing a group skips later groups that are already done")
+    func finishingSkipsDoneGroups() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+        grouping.open(groupAtCell: 3)
+        grouping.finishOpenGroup()
+        grouping.open(groupAtCell: 0)
+
+        grouping.finishOpenGroup()
+
+        #expect(grouping.openGroup == 5 ..< 8)
+    }
+
+    @Test("Finishing the last group closes it")
+    func finishingLastGroupCloses() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+        grouping.open(groupAtCell: 0)
+
+        grouping.finishOpenGroup()
+
+        #expect(grouping.isDone(0 ..< 3))
+        #expect(grouping.openGroup == nil)
+    }
+
+    @Test("Closing a group leaves it not done")
+    func closingLeavesGroupNotDone() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+        grouping.open(groupAtCell: 0)
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.openGroup == nil)
+        #expect(!grouping.isDone(0 ..< 3))
+    }
+
+    @Test("A done group can be reopened, and stays done with its keepers")
+    func reopeningDoneGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+        grouping.open(groupAtCell: 0)
+        grouping.toggleKeeper(atPhoto: 1)
+        grouping.finishOpenGroup()
+
+        grouping.open(groupAtCell: 0)
+
+        #expect(grouping.openGroup == 0 ..< 3)
+        #expect(grouping.isDone(0 ..< 3))
+        #expect(grouping.keepers == [1])
+    }
 }

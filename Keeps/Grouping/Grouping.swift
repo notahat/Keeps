@@ -2,8 +2,9 @@ import Foundation
 import Observation
 
 /// Holds the grouping state for one set of photos: the group boundaries, how
-/// far groups have been collapsed, the selection, and the last reported
-/// scroll position. The sort screen shows cells, not photos, so this
+/// far groups have been collapsed, the selection, the last reported scroll
+/// position, and the narrowing state (the open group, the keepers, and which
+/// groups are done). The sort screen shows cells, not photos, so this
 /// translates between cell indices (what the screen speaks) and photo indices
 /// (what boundaries are made of). GroupLayout derives the cells from this state.
 /// Translates to and from SavedGrouping for saving, but does not scan the
@@ -27,6 +28,17 @@ class Grouping {
     private(set) var collapsedUpTo = 0 {
         didSet { updateLayout() }
     }
+
+    /// The group shown on the pick screen, or nil while the sort screen is
+    /// showing. Always collapsed, so its photos can't change while it's open.
+    private(set) var openGroup: Range<Int>?
+
+    /// The photos picked to keep.
+    private(set) var keepers: Set<Int> = []
+
+    /// The groups marked done, by the index of each one's first photo. Done
+    /// groups are always collapsed, so their first photos never move.
+    private var doneGroupStarts: Set<Int> = []
 
     /// The current groups and grid cells, derived from the boundaries and
     /// the collapse point. Kept rather than computed on demand because the
@@ -98,6 +110,57 @@ class Grouping {
     /// Deselects everything.
     func clearSelection() {
         selectedPhotoIndex = nil
+    }
+
+    /// Opens the closed group a sort-screen cell belongs to, collapsing every
+    /// group up to and including it. Photos after the working point
+    /// aren't in a group, so their cells open nothing.
+    func open(groupAtCell cellIndex: Int) {
+        let layout = layout
+        guard layout.cells.indices.contains(cellIndex) else { return }
+        let photoIndex = layout.cells[cellIndex].photoRange.lowerBound
+        guard let group = layout.groups.first(where: { $0.contains(photoIndex) }) else { return }
+        open(group)
+    }
+
+    /// Marks the open group done, and opens the next closed group after it
+    /// that isn't done, or closes it when there is none.
+    func finishOpenGroup() {
+        guard let finished = openGroup else { return }
+        doneGroupStarts.insert(finished.lowerBound)
+        let next = layout.groups.first { $0.lowerBound >= finished.upperBound && !isDone($0) }
+        if let next {
+            open(next)
+        } else {
+            openGroup = nil
+        }
+    }
+
+    /// Closes the open group, leaving whether it is done unchanged.
+    func closeOpenGroup() {
+        openGroup = nil
+    }
+
+    /// Whether a closed group has been marked done.
+    func isDone(_ group: Range<Int>) -> Bool {
+        doneGroupStarts.contains(group.lowerBound)
+    }
+
+    /// Marks a photo as a keeper, or unmarks it if it already is one.
+    func toggleKeeper(atPhoto photoIndex: Int) {
+        guard items.indices.contains(photoIndex) else { return }
+        if keepers.contains(photoIndex) {
+            keepers.remove(photoIndex)
+        } else {
+            keepers.insert(photoIndex)
+        }
+    }
+
+    /// Collapses every group up to and including the given one, without
+    /// reopening any collapsed later, then opens it.
+    private func open(_ group: Range<Int>) {
+        collapsedUpTo = max(collapsedUpTo, group.upperBound)
+        openGroup = group
     }
 
     /// A stem-keyed snapshot of everything worth saving. Reading this inside

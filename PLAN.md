@@ -306,7 +306,7 @@ commit.
    `PhotoDetailSurface` use it in place of its own copy. That copy doesn't
    lowercase, so h/j/k/l there gain Caps Lock support; otherwise no change
    in behaviour. Tested.
-2. **Narrowing model.** Keepers and done groups in `Grouping`: toggling a
+2. ✅ **Narrowing model.** Keepers and done groups in `Grouping`: toggling a
    keeper, marking a group done, opening a group (collapsing up to it),
    and finding the next closed group that isn't done. Tested.
 3. **Even-grid layout.** The pure layout function in `Pick/`: column
