@@ -485,3 +485,35 @@ reopening a folder at its saved scroll position and selection.
 6. ✅ **Docs.** Rewrite the architecture section of `CLAUDE.md` for the new
    folders and layering, add the vocabulary above as a glossary, and
    update the keeps.json rule's test reference.
+
+---
+
+# Plan: Tidying for readability
+
+## Goal
+
+Make the code easier to follow, mainly by splitting `PickScreen`, the one
+file doing too many jobs. No change in behaviour, and no change to the
+keeps.json format.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit. Views have
+no automated tests, so check the pick screen by hand after steps 1, 2, and
+4: moving, F, Space and double-click zooming in and out, Return, and
+Escape.
+
+1. **Split `PickScreen`.** `PickTile` and `KeeperBadge` move to their own
+   file, and the full-size view to its own view, with `PickScreen` keeping
+   the zoom state and passing in the namespace. A helper turns a place in
+   the group into a photo index. Try one zoom-state enum in place of
+   `isFullSize` and `isZoomed`, kept only if it reads better.
+2. **Simplify the full-size photo.** `PhotoDetailSurface` becomes
+   `FullSizePhoto`: a non-optional index and no overlay closure, since the
+   caller can add its own overlay.
+3. **Sort keys in `PhotoGridMetrics`.** The arrow-key target cell moves
+   from `SortScreen` into `PhotoGridMetrics`, tested, as does `slotWidth`.
+4. **Shared keyboard focus.** One modifier in `Keys/` for the focusable,
+   focused, key-handling setup both screens repeat.
+5. **Shorter save conversion.** A small pure helper in `Grouping/` for
+   converting between photo indices and stems, tested.
