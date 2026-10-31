@@ -58,10 +58,9 @@ struct SortCell: View {
 /// Pile), each tilted and nudged a little (see PileJitter), with a badge in
 /// the corner: the photo count, or once the group is done, a checkmark and
 /// how many were kept. Once done, the photos that weren't kept are faded.
-/// Using the
-/// real photos keeps every layer the right shape. Only the first few are
-/// drawn, since deeper layers can't be seen and each one costs a thumbnail
-/// load.
+/// Using the real photos keeps every layer the right shape. Only the first
+/// few are drawn, since deeper layers can't be seen and each one costs a
+/// thumbnail load.
 private struct CollapsedStack: View {
     let pile: Pile
 

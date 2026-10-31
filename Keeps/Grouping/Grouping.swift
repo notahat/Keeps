@@ -46,8 +46,12 @@ class Grouping {
     /// whole folder.
     private(set) var layout: GroupLayout
 
+    /// Converts photos to and from the stems they're saved by.
+    @ObservationIgnored private let stems: PhotoStems
+
     init(items: [PhotoItem]) {
         self.items = items
+        stems = PhotoStems(items: items)
         layout = GroupLayout(photoCount: items.count, boundaries: [])
     }
 
@@ -168,55 +172,32 @@ class Grouping {
     /// A stem-keyed snapshot of everything worth saving. Reading this inside
     /// an observation block also subscribes to changes in all of it.
     func snapshotState() -> SavedGrouping {
-        let stemByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.stem) })
-        return SavedGrouping(
-            boundaries: boundaries.sorted().map(position(forPhoto:)),
-            collapsedUpTo: collapsedUpTo > 0 ? position(forPhoto: collapsedUpTo) : nil,
+        SavedGrouping(
+            boundaries: boundaries.sorted().map(stems.position(beforePhoto:)),
+            collapsedUpTo: collapsedUpTo > 0 ? stems.position(beforePhoto: collapsedUpTo) : nil,
             selectedStem: selectedPhotoIndex.map { items[$0].stem },
             scrollAnchor: scrollAnchor.flatMap { anchor in
-                stemByID[anchor.itemID].map {
+                stems.stem(ofItemID: anchor.itemID).map {
                     SavedGrouping.ScrollAnchor(stem: $0, offsetFromRowTop: anchor.offsetFromRowTop)
                 }
             },
-            keeperStems: stems(ofPhotos: keepers),
-            doneGroupStartStems: stems(ofPhotos: doneGroupStarts)
+            keeperStems: stems.stems(ofPhotos: keepers),
+            doneGroupStartStems: stems.stems(ofPhotos: doneGroupStarts)
         )
-    }
-
-    /// The stems of a set of photos in folder order, or nil when there are
-    /// none, so a folder with nothing picked saves no entry.
-    private func stems(ofPhotos photoIndices: Set<Int>) -> [String]? {
-        photoIndices.isEmpty ? nil : photoIndices.sorted().map { items[$0].stem }
     }
 
     /// Replaces the state with restored state, dropping anything that refers
     /// to a photo no longer in the folder.
     func applyRestored(state: SavedGrouping) {
-        let indexByStem = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($1.stem, $0) })
-        boundaries = Set(state.boundaries.compactMap { photoIndex(for: $0, indexByStem: indexByStem) })
-        collapsedUpTo = state.collapsedUpTo.flatMap { photoIndex(for: $0, indexByStem: indexByStem) } ?? 0
-        selectedPhotoIndex = state.selectedStem.flatMap { indexByStem[$0] }
+        boundaries = Set(state.boundaries.compactMap(stems.photoIndex(at:)))
+        collapsedUpTo = state.collapsedUpTo.flatMap(stems.photoIndex(at:)) ?? 0
+        selectedPhotoIndex = state.selectedStem.flatMap(stems.photoIndex(ofStem:))
         scrollAnchor = state.scrollAnchor.flatMap { anchor in
-            indexByStem[anchor.stem].map {
+            stems.photoIndex(ofStem: anchor.stem).map {
                 GridScrollAnchor(itemID: items[$0].id, offsetFromRowTop: anchor.offsetFromRowTop)
             }
         }
-        keepers = Set((state.keeperStems ?? []).compactMap { indexByStem[$0] })
-        doneGroupStarts = Set((state.doneGroupStartStems ?? []).compactMap { indexByStem[$0] })
-    }
-
-    /// The saved form of the point just before a photo, or after the last
-    /// one when the index is the photo count.
-    private func position(forPhoto photoIndex: Int) -> SavedGrouping.Position {
-        photoIndex < items.count ? .beforePhoto(items[photoIndex].stem) : .end
-    }
-
-    /// The photo index a saved position refers to, or nil if its photo is no
-    /// longer in the folder.
-    private func photoIndex(for position: SavedGrouping.Position, indexByStem: [String: Int]) -> Int? {
-        switch position {
-        case let .beforePhoto(stem): indexByStem[stem]
-        case .end: items.count
-        }
+        keepers = stems.photoIndices(ofStems: state.keeperStems)
+        doneGroupStarts = stems.photoIndices(ofStems: state.doneGroupStartStems)
     }
 }

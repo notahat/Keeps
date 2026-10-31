@@ -517,5 +517,5 @@ Escape.
    from `SortScreen` into `PhotoGridMetrics`, tested, as does `slotWidth`.
 4. ✅ **Shared keyboard focus.** (`handlesKeys`.) One modifier in `Keys/` for the focusable,
    focused, key-handling setup both screens repeat.
-5. **Shorter save conversion.** A small pure helper in `Grouping/` for
+5. ✅ **Shorter save conversion.** (`PhotoStems`.) A small pure helper in `Grouping/` for
    converting between photo indices and stems, tested.
