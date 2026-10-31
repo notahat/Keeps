@@ -519,3 +519,40 @@ Escape.
    focused, key-handling setup both screens repeat.
 5. ✅ **Shorter save conversion.** (`PhotoStems`.) A small pure helper in `Grouping/` for
    converting between photo indices and stems, tested.
+
+---
+
+# Plan: Piling up a done group on the pick screen
+
+## Goal
+
+Make finishing a group feel more tangible. When Return marks the open group
+done, its photos that weren't kept move into a pile in the pick screen's
+bottom-right corner, the keepers re-flow into the space left, and the group
+stays open. A done group always shows this way, including when it's
+reopened from the sort screen.
+
+Out of scope for now: animating the move, moving on to the next group
+(Return on a done group does nothing; Escape goes back), and any way to
+undo it. No change to the keeps.json format, which already saves keepers
+and done groups.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **Share the pile jitter.** Move `PileJitter` from `Sort/` to `Images/`,
+   so the pick screen's pile can tilt its prints the same way the sort
+   screen's do without Pick using Sort.
+2. **Return marks done and stays.** `Grouping.finishOpenGroup()` becomes
+   `markOpenGroupDone()`, which marks the open group done and leaves it
+   open. Tested in place of the tests for moving on.
+3. **Which photos are tiles.** A pure, tested helper in `Pick/` that says
+   which of a group's photos are laid out as tiles (all of them, or only
+   the keepers once done) and which are on the pile, and where focus lands
+   when the group becomes done.
+4. **Draw the pile.** `PickScreen` lays the tiles out beside a pile in the
+   bottom-right corner once the group is done, with a count of the photos
+   on it. Movement keys and the full-size view cover only the tiles, and F
+   does nothing on a done group. Check by hand: finish a group with some
+   keepers, none, and all; reopen a done group from the sort screen.
