@@ -27,6 +27,11 @@ struct ThumbnailImage: View {
     /// whatever this is, so a larger frame scales it up.
     var frameSize = CGSize(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
 
+    /// How far the image and its border are washed toward the window's
+    /// background colour, from 0 for not at all to 1 for entirely. The image
+    /// stays solid, so nothing behind it shows through.
+    var fadeAmount: Double = 0
+
     /// Receives the image's width-to-height ratio once it has loaded.
     var onAspectRatioKnown: ((CGFloat) -> Void)?
 
@@ -66,6 +71,7 @@ struct ThumbnailImage: View {
                     .scaledToFit()
                     .padding(borderWidth)
                     .background(borderFill)
+                    .overlay(fade)
                     .padding(Self.imageInset)
             } else {
                 placeholderView
@@ -101,11 +107,18 @@ struct ThumbnailImage: View {
             Color(white: 0.5)
                 .padding(borderWidth)
                 .background(borderFill)
+                .overlay(fade)
                 .aspectRatio(aspectRatio, contentMode: .fit)
                 .padding(Self.imageInset)
         case .none:
             EmptyView()
         }
+    }
+
+    /// The wash of window background laid over the image and border to fade
+    /// them (see fadeAmount).
+    private var fade: some View {
+        Color(nsColor: .windowBackgroundColor).opacity(fadeAmount)
     }
 
     /// What fills the border around the image: the border colour, or

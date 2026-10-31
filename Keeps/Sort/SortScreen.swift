@@ -110,7 +110,7 @@ struct SortScreen: View {
             isSelected: isSelected,
             leadingBoundary: boundaryStyle(atGap: index, in: layout),
             trailingBoundary: boundaryStyle(atGap: index + 1, in: layout),
-            collapsedPhotos: collapsedPhotos(ofCell: index, in: layout)
+            pile: pile(ofCell: index, in: layout)
         )
         .padding(.horizontal, Self.spacing / 2)
         .contentShape(Rectangle())
@@ -129,11 +129,17 @@ struct SortScreen: View {
         .id(item.id)
     }
 
-    /// The photos in a cell's group if it is collapsed, or nil for a single
+    /// The pile a cell draws if it is a collapsed group, or nil for a single
     /// photo.
-    private func collapsedPhotos(ofCell cellIndex: Int, in layout: GroupLayout) -> ArraySlice<PhotoItem>? {
+    private func pile(ofCell cellIndex: Int, in layout: GroupLayout) -> Pile? {
         let cell = layout.cells[cellIndex]
-        return cell.isCollapsed ? grouping.items[cell.photoRange] : nil
+        guard cell.isCollapsed else { return nil }
+        return Pile(
+            group: cell.photoRange,
+            items: grouping.items,
+            keepers: grouping.keepers,
+            isDone: grouping.isDone(cell.photoRange)
+        )
     }
 
     /// How to draw the bar at a gap: nothing at a locked gap, placed if

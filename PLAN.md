@@ -337,7 +337,8 @@ commit.
    showing the thumbnail until the full image loads.)
    Space toggles `PhotoDetailSurface` for the focused
    photo, with movement and F still working.
-7. **Done status on collapsed groups.** Keepers on top of the pile, the checkmark and
+7. ✅ **Done status on collapsed groups.** (`Pile`, in `Sort/`. Keepers go
+   on top of any pile, done or not.) Keepers on top of the pile, the checkmark and
    "2 of 7" badge, and dimming for groups with no keepers.
 8. **Persistence.** Keepers and done groups in `SavedGrouping`, with old
    files still loading. Tested like `SavedGroupingTests`.
