@@ -503,7 +503,8 @@ no automated tests, so check the pick screen by hand after steps 1, 2, and
 4: moving, F, Space and double-click zooming in and out, Return, and
 Escape.
 
-1. **Split `PickScreen`.** `PickTile` and `KeeperBadge` move to their own
+1. ✅ **Split `PickScreen`.** (`PickTile.swift` and `FullSizeView.swift`;
+   the enum, `FullSizeState`, was kept.) `PickTile` and `KeeperBadge` move to their own
    file, and the full-size view to its own view, with `PickScreen` keeping
    the zoom state and passing in the namespace. A helper turns a place in
    the group into a photo index. Try one zoom-state enum in place of

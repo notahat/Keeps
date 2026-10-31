@@ -7,27 +7,25 @@ import SwiftUI
 /// and moves on to the next, and Escape leaves the full-size view or goes
 /// back to the sort screen. Clicking a tile focuses it.
 ///
-/// Draws the tiles, shows PhotoDetailSurface over them for full size,
-/// zooming it out of the focused tile and back in, and handles input. The
-/// layout is TileLayout's, and the open group, keepers, and done groups are
-/// Grouping's. Tiles scale up the sort screen's
-/// thumbnails rather than loading larger images.
+/// Places the tiles (PickTile), shows FullSizeView over them, and handles
+/// input, including the full-size view's. The layout is TileLayout's, and
+/// the open group, keepers, and done groups are Grouping's. Tiles scale up
+/// the sort screen's thumbnails rather than loading larger images.
 struct PickScreen: View {
     let grouping: Grouping
     let group: Range<Int>
 
-    /// The focused photo, as an index into the group.
+    /// Where the full-size view is: down, sitting exactly over the focused
+    /// tile (as it starts zooming out or finishes zooming back in), or at
+    /// full size.
+    private enum FullSizeState {
+        case hidden, overTile, zoomed
+    }
+
+    /// The focused photo, as its place in the group.
     @State private var focusedIndex = 0
 
-    /// Whether the full-size view is up, covering the tiles and taking the
-    /// movement keys. True for the whole zoom in and out, not just while
-    /// it's fully zoomed.
-    @State private var isFullSize = false
-
-    /// Whether the full-size view is at full size, rather than sitting
-    /// exactly over the focused tile at the start of zooming in or the end
-    /// of zooming out.
-    @State private var isZoomed = false
+    @State private var fullSizeState = FullSizeState.hidden
 
     /// The tiles' shape, worked out once when the group opens so that
     /// nothing moves while it's open.
@@ -38,31 +36,17 @@ struct PickScreen: View {
     @FocusState private var isFocused: Bool
 
     /// Pairs each tile with the full-size view, so opening and closing it
-    /// zooms between the focused tile and the full size. Tiles always
-    /// supply their frames; the full-size view takes the focused tile's
-    /// frame until zoomed, and its own once zoomed.
+    /// zooms between the focused tile and full size.
     @Namespace private var zoomNamespace
 
-    /// The full-size view's matched id once zoomed: one no tile has, so it
-    /// keeps its own frame.
-    private static let zoomedID = AnyHashable("zoomed")
-
     private static let zoomAnimation = Animation.snappy(duration: 0.2)
-
-    /// With Reduce Motion on, the full-size view fades in and out where it
-    /// is instead of zooming.
-    @Environment(\.accessibilityReduceMotion) private var isReducingMotion
 
     private static let spacing: CGFloat = 12
     private static let minimumTileLength: CGFloat = 200
 
-    /// The focus highlight's line width. It's centred on the tile's edge,
-    /// leaving a little space between it and the photo.
-    fileprivate static let highlightWidth: CGFloat = 3
-
     /// Room around the tiles inside the scroll view, so it doesn't clip
     /// the half of the highlight that falls outside the outer tiles.
-    private static let edgeRoom: CGFloat = highlightWidth
+    private static let edgeRoom: CGFloat = PickTile.highlightWidth
 
     /// Used when none of the group's thumbnails have loaded yet: the shape
     /// of most camera sensors.
@@ -74,14 +58,25 @@ struct PickScreen: View {
         _aspectRatio = State(initialValue: Self.tileAspectRatio(of: grouping.items[group]))
     }
 
-    /// The group's photos. A slice keeps the folder's indices, so index it
-    /// with `group.lowerBound + focusedIndex`, not `focusedIndex` alone.
-    private var photos: ArraySlice<PhotoItem> {
-        grouping.items[group]
+    /// The group's photos, indexed by place in the group.
+    private var photos: [PhotoItem] {
+        Array(grouping.items[group])
     }
 
-    private var focusedPhoto: PhotoItem {
-        grouping.items[group.lowerBound + focusedIndex]
+    /// Whether the full-size view is up, covering the tiles and taking the
+    /// movement keys. True for the whole zoom in and out.
+    private var isFullSize: Bool {
+        fullSizeState != .hidden
+    }
+
+    /// The folder's index for a photo, from its place in the group.
+    private func photoIndex(atPlace place: Int) -> Int {
+        group.lowerBound + place
+    }
+
+    /// Whether the photo at a place in the group is a keeper.
+    private func isKeeper(atPlace place: Int) -> Bool {
+        grouping.keepers.contains(photoIndex(atPlace: place))
     }
 
     var body: some View {
@@ -96,54 +91,32 @@ struct PickScreen: View {
                 tiles(in: proxy.size)
             }
             .padding(Self.spacing - Self.edgeRoom)
-            .opacity(isZoomed ? 0 : 1)
+            .opacity(fullSizeState == .zoomed ? 0 : 1)
             .allowsHitTesting(!isFullSize)
             .overlay {
                 if isFullSize {
                     fullSize
-                        .padding(Self.edgeRoom)
-                        // A click would otherwise leave the tiles without
-                        // focus.
-                        .onTapGesture { isFocused = true }
-                        // It first appears exactly over the focused tile,
-                        // then zooms out from there.
-                        .onAppear {
-                            withAnimation(Self.zoomAnimation) { isZoomed = true }
-                        }
                 }
             }
         }
     }
 
-    /// The focused photo full size, stepping through the group in order,
-    /// with its keeper badge and its place in the group.
+    /// The full-size view, which appears exactly over the focused tile and
+    /// zooms out from there.
     private var fullSize: some View {
-        PhotoDetailSurface(items: Array(photos), selectedIndex: focusedIndex) { _ in
-            ZStack {
-                if grouping.keepers.contains(group.lowerBound + focusedIndex) {
-                    KeeperBadge(size: 40)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                }
-                Text("\(focusedIndex + 1) / \(photos.count)")
-                    .font(.caption)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                    .padding(12)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            }
-            .allowsHitTesting(false)
-        }
-        // The same inset as the tile's thumbnail, so the photo doesn't jump
-        // as it takes over from the tile.
-        .padding(ThumbnailImage.imageInset)
-        .matchedGeometryEffect(
-            id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(focusedPhoto.id),
-            in: zoomNamespace,
-            isSource: false
+        FullSizeView(
+            photos: photos,
+            focusedIndex: focusedIndex,
+            isKeeper: isKeeper(atPlace: focusedIndex),
+            isZoomed: fullSizeState == .zoomed,
+            zoomNamespace: zoomNamespace
         )
-        .opacity(isReducingMotion && !isZoomed ? 0 : 1)
+        .padding(Self.edgeRoom)
+        // A click would otherwise leave the tiles without focus.
+        .onTapGesture { isFocused = true }
+        .onAppear {
+            withAnimation(Self.zoomAnimation) { fullSizeState = .zoomed }
+        }
     }
 
     /// Which group this is among the closed groups, and how many of its
@@ -163,7 +136,7 @@ struct PickScreen: View {
     private func tiles(in size: CGSize) -> some View {
         let tileArea = CGSize(width: size.width - 2 * Self.edgeRoom, height: size.height - 2 * Self.edgeRoom)
         let layout = TileLayout(
-            tileCount: photos.count,
+            tileCount: group.count,
             aspectRatio: aspectRatio,
             availableSize: tileArea,
             spacing: Self.spacing,
@@ -171,8 +144,8 @@ struct PickScreen: View {
         )
         return ScrollView(.vertical) {
             ZStack(alignment: .topLeading) {
-                ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
-                    tile(for: photo, at: index, layout: layout)
+                ForEach(Array(photos.enumerated()), id: \.element.id) { place, photo in
+                    tile(for: photo, atPlace: place, layout: layout)
                 }
             }
             .frame(width: layout.contentSize.width, height: layout.contentSize.height)
@@ -204,13 +177,13 @@ struct PickScreen: View {
     }
 
     /// One tile, placed where the layout puts it.
-    private func tile(for photo: PhotoItem, at index: Int, layout: TileLayout) -> some View {
-        let frame = layout.tileFrames[index]
+    private func tile(for photo: PhotoItem, atPlace place: Int, layout: TileLayout) -> some View {
+        let frame = layout.tileFrames[place]
         return PickTile(
             item: photo,
             size: frame.size,
-            isFocused: index == focusedIndex,
-            isKeeper: grouping.keepers.contains(group.lowerBound + index)
+            isFocused: place == focusedIndex,
+            isKeeper: isKeeper(atPlace: place)
         )
         // Supplies the frame the full-size view zooms out of and back into.
         .matchedGeometryEffect(id: AnyHashable(photo.id), in: zoomNamespace)
@@ -219,10 +192,10 @@ struct PickScreen: View {
         // gesture, which would wait out the double-click time and make
         // focus lag.
         .onTapGesture(count: 2) {
-            setFullSize(true)
+            openFullSize()
         }
         .simultaneousGesture(TapGesture().onEnded {
-            focusedIndex = index
+            focusedIndex = place
             isFocused = true
         })
         .position(x: frame.midX, y: frame.midY)
@@ -233,7 +206,7 @@ struct PickScreen: View {
     private func handleKeyPress(_ press: KeyPress, layout: TileLayout, viewportHeight: CGFloat) -> Bool {
         guard let direction = MoveDirection(press) else { return handleActionKey(press) }
         if isFullSize {
-            focusedIndex = max(0, min(photos.count - 1, focusedIndex + direction.linearStep))
+            focusedIndex = max(0, min(group.count - 1, focusedIndex + direction.linearStep))
         } else {
             focusedIndex = layout.target(from: focusedIndex, moving: direction)
             reveal(focusedIndex, layout: layout, viewportHeight: viewportHeight)
@@ -245,16 +218,18 @@ struct PickScreen: View {
     /// F, Space, Return, and Escape. Returns false for any other key.
     private func handleActionKey(_ press: KeyPress) -> Bool {
         if press.isPlain(letter: "f") {
-            grouping.toggleKeeper(atPhoto: group.lowerBound + focusedIndex)
+            grouping.toggleKeeper(atPhoto: photoIndex(atPlace: focusedIndex))
             return true
         }
         switch press.key {
+        case .space where isFullSize:
+            closeFullSize()
         case .space:
-            setFullSize(!isFullSize)
+            openFullSize()
         case .return:
             grouping.finishOpenGroup()
         case .escape where isFullSize:
-            setFullSize(false)
+            closeFullSize()
         case .escape:
             grouping.closeOpenGroup()
         default:
@@ -263,30 +238,28 @@ struct PickScreen: View {
         return true
     }
 
-    /// Opens or closes the full-size view, zooming the photo between its
-    /// tile and full size while the other tiles fade.
-    /// Opening puts the full-size view up over the focused tile, and it
-    /// zooms out from there as it appears. Closing zooms it back into the
-    /// focused tile, and takes it down only once it's there.
-    private func setFullSize(_ isNowFullSize: Bool) {
-        if isNowFullSize {
-            isFullSize = true
-            return
-        }
+    /// Puts the full-size view up over the focused tile. It zooms out from
+    /// there as it appears.
+    private func openFullSize() {
+        fullSizeState = .overTile
+    }
+
+    /// Zooms the full-size view back into the focused tile while the other
+    /// tiles fade in, and takes it down once it's there.
+    private func closeFullSize() {
         withAnimation(Self.zoomAnimation) {
-            isZoomed = false
+            fullSizeState = .overTile
         } completion: {
-            // Unless it was reopened during the zoom back in.
-            if !isZoomed {
-                isFullSize = false
+            if fullSizeState == .overTile {
+                fullSizeState = .hidden
             }
         }
     }
 
     /// Scrolls just far enough to bring a tile fully into view.
-    private func reveal(_ index: Int, layout: TileLayout, viewportHeight: CGFloat, isAnimated: Bool = true) {
+    private func reveal(_ place: Int, layout: TileLayout, viewportHeight: CGFloat, isAnimated: Bool = true) {
         guard layout.needsScrolling,
-              let offset = layout.scrollOffset(revealing: index, from: scrollOffset, viewportHeight: viewportHeight)
+              let offset = layout.scrollOffset(revealing: place, from: scrollOffset, viewportHeight: viewportHeight)
         else { return }
         if isAnimated {
             withAnimation { scrollPosition.scrollTo(y: offset) }
@@ -305,44 +278,5 @@ struct PickScreen: View {
             return size.width / size.height
         }
         return TileLayout.commonAspectRatio(of: ratios) ?? fallbackAspectRatio
-    }
-}
-
-/// One tile on the pick screen: the photo scaled to fit, a focus highlight,
-/// and a badge when it's a keeper.
-private struct PickTile: View {
-    let item: PhotoItem
-    let size: CGSize
-    let isFocused: Bool
-    let isKeeper: Bool
-
-    @Environment(\.controlActiveState) private var controlActiveState
-
-    var body: some View {
-        ThumbnailImage(item: item, frameSize: size)
-            .overlay {
-                if isFocused, controlActiveState == .key {
-                    Rectangle().stroke(Color.accentColor, lineWidth: PickScreen.highlightWidth)
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                if isKeeper {
-                    KeeperBadge()
-                        .padding(10)
-                }
-            }
-    }
-}
-
-/// A white checkmark on a green circle, marking a keeper.
-private struct KeeperBadge: View {
-    var size: CGFloat = 28
-
-    var body: some View {
-        Image(systemName: "checkmark.circle.fill")
-            .symbolRenderingMode(.palette)
-            .foregroundStyle(.white, .green)
-            .font(.system(size: size))
-            .shadow(radius: 2)
     }
 }
