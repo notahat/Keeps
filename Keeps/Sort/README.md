@@ -13,9 +13,9 @@ selection.
 A collapsed group is drawn as a pile. `Pile` works out, purely, its photo
 order (keepers on top) and which of its photos are faded; a done pile's
 badge shows a checkmark and how many were kept, and its other photos are
-faded.
+faded. Each print in it is tilted by Images' `PileJitter`.
 
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
-slots, scroll offsets, and where the movement keys go, `GridHitTarget` for whether a click landed on a
-photo or a gap, and `PileJitter` for how a collapsed pile is drawn. Uses
-Grouping, Images, Folder, and Keys, and never Pick.
+slots, scroll offsets, and where the movement keys go, and `GridHitTarget`
+for whether a click landed on a photo or a gap. Uses Grouping, Images,
+Folder, and Keys, and never Pick.

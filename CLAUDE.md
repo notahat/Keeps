@@ -24,7 +24,7 @@ folder needs adding to that exception list.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
 - `Images/` — loading, caching, and showing images (`ImagePipeline`,
-  `ThumbnailImage`, load progress).
+  `ThumbnailImage`, load progress, `PileJitter`).
 - `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
   selection, scroll position, open group, keepers, and done groups, and
   `GroupLayout` derives the cells.

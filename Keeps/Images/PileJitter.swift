@@ -1,7 +1,7 @@
 import Foundation
 
-/// How one photo sits in a collapsed group's messy pile: a small rotation and
-/// offset. Derived from the photo's stem, so a pile looks the same on every
+/// How one photo sits in a messy pile of prints, on either screen: a small
+/// rotation and offset. Derived from the photo's stem, so a pile looks the same on every
 /// render and every launch. (Swift's own string hashing is reseeded each
 /// launch, hence the hand-rolled hash.) Pure.
 nonisolated struct PileJitter: Equatable {

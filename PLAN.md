@@ -541,7 +541,7 @@ and done groups.
 
 Each step builds and passes the tests, then review and commit.
 
-1. **Share the pile jitter.** Move `PileJitter` from `Sort/` to `Images/`,
+1. ✅ **Share the pile jitter.** Move `PileJitter` from `Sort/` to `Images/`,
    so the pick screen's pile can tilt its prints the same way the sort
    screen's do without Pick using Sort.
 2. **Return marks done and stays.** `Grouping.finishOpenGroup()` becomes
