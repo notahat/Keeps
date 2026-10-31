@@ -309,7 +309,8 @@ commit.
 2. ✅ **Narrowing model.** Keepers and done groups in `Grouping`: toggling a
    keeper, marking a group done, opening a group (collapsing up to it),
    and finding the next closed group that isn't done. Tested.
-3. **Even-grid layout.** The pure layout function in `Pick/`: column
+3. ✅ **Even-grid layout.** (`TileLayout`; the minimum applies to a tile's
+   longer side.) The pure layout function in `Pick/`: column
    choice, centred last row, the minimum tile size, and j/k targets.
    Tested.
 4. **Pick screen.** The tiles, aspect ratios from cached thumbnails, and
