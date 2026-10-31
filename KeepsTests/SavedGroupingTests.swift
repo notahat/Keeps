@@ -27,6 +27,26 @@ struct SavedGroupingTests {
         #expect(restored.scrollAnchor == GridScrollAnchor(itemID: grouping.items[6].id, offsetFromRowTop: 42))
     }
 
+    @Test("Keepers and done groups survive a save to keeps.json and a restore")
+    func narrowingRoundTrip() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 6])
+        grouping.open(groupAtCell: 0)
+        grouping.toggleKeeper(atPhoto: 1)
+        grouping.finishOpenGroup()
+        grouping.toggleKeeper(atPhoto: 4)
+        let keepsFile = KeepsFile(folderURL: folder)
+
+        try keepsFile.save(grouping.snapshotState())
+        let restored = Grouping(items: grouping.items)
+        try restored.applyRestored(state: #require(keepsFile.restore()))
+
+        #expect(restored.keepers == [1, 4])
+        #expect(restored.isDone(0 ..< 3))
+        #expect(!restored.isDone(3 ..< 6))
+    }
+
     @Test("A collapse point after the last photo survives a save and restore")
     func collapseToEndRoundTrip() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [4, 10])
@@ -100,7 +120,9 @@ struct SavedGroupingTests {
             boundaries: [.beforePhoto(grouping.items[2].stem), .beforePhoto("IMG_9999")],
             collapsedUpTo: .beforePhoto("IMG_8888"),
             selectedStem: "IMG_7777",
-            scrollAnchor: SavedGrouping.ScrollAnchor(stem: "IMG_6666", offsetFromRowTop: 10)
+            scrollAnchor: SavedGrouping.ScrollAnchor(stem: "IMG_6666", offsetFromRowTop: 10),
+            keeperStems: [grouping.items[1].stem, "IMG_5555"],
+            doneGroupStartStems: [grouping.items[0].stem, "IMG_4444"]
         )
 
         grouping.applyRestored(state: state)
@@ -109,5 +131,7 @@ struct SavedGroupingTests {
         #expect(grouping.collapsedUpTo == 0)
         #expect(grouping.selectedPhotoIndex == nil)
         #expect(grouping.scrollAnchor == nil)
+        #expect(grouping.keepers == [1])
+        #expect(grouping.isDone(0 ..< 2))
     }
 }

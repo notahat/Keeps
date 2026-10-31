@@ -177,8 +177,16 @@ class Grouping {
                 stemByID[anchor.itemID].map {
                     SavedGrouping.ScrollAnchor(stem: $0, offsetFromRowTop: anchor.offsetFromRowTop)
                 }
-            }
+            },
+            keeperStems: stems(ofPhotos: keepers),
+            doneGroupStartStems: stems(ofPhotos: doneGroupStarts)
         )
+    }
+
+    /// The stems of a set of photos in folder order, or nil when there are
+    /// none, so a folder with nothing picked saves no entry.
+    private func stems(ofPhotos photoIndices: Set<Int>) -> [String]? {
+        photoIndices.isEmpty ? nil : photoIndices.sorted().map { items[$0].stem }
     }
 
     /// Replaces the state with restored state, dropping anything that refers
@@ -193,6 +201,8 @@ class Grouping {
                 GridScrollAnchor(itemID: items[$0].id, offsetFromRowTop: anchor.offsetFromRowTop)
             }
         }
+        keepers = Set((state.keeperStems ?? []).compactMap { indexByStem[$0] })
+        doneGroupStarts = Set((state.doneGroupStartStems ?? []).compactMap { indexByStem[$0] })
     }
 
     /// The saved form of the point just before a photo, or after the last

@@ -340,7 +340,9 @@ commit.
 7. ✅ **Done status on collapsed groups.** (`Pile`, in `Sort/`. Keepers go
    on top of any pile, done or not.) Keepers on top of the pile, the checkmark and
    "2 of 7" badge, and dimming for groups with no keepers.
-8. **Persistence.** Keepers and done groups in `SavedGrouping`, with old
+8. ✅ **Persistence.** (`keeperStems` and `doneGroupStartStems`, optional
+   and left out when empty, under the same format name. The open group
+   isn't saved, so a relaunch shows the sort screen.) Keepers and done groups in `SavedGrouping`, with old
    files still loading. Tested like `SavedGroupingTests`.
 
 ---
