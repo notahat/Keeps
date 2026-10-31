@@ -80,6 +80,30 @@ nonisolated struct TileLayout {
         }
     }
 
+    /// Where to scroll so a tile is fully in view, moving only as far as
+    /// needed, or nil when it already is.
+    func scrollOffset(revealing index: Int, from currentOffset: CGFloat, viewportHeight: CGFloat) -> CGFloat? {
+        guard tileFrames.indices.contains(index) else { return nil }
+        let frame = tileFrames[index]
+        if frame.minY < currentOffset {
+            return frame.minY
+        }
+        if frame.maxY > currentOffset + viewportHeight {
+            return frame.maxY - viewportHeight
+        }
+        return nil
+    }
+
+    /// The most common of some width-to-height ratios, rounded to two
+    /// decimal places so that photos of the same shape match despite
+    /// rounding in their pixel sizes. The earliest wins a tie. Nil when
+    /// there are none.
+    static func commonAspectRatio(of ratios: [CGFloat]) -> CGFloat? {
+        let rounded = ratios.map { ($0 * 100).rounded() / 100 }
+        let counts = Dictionary(rounded.map { ($0, 1) }, uniquingKeysWith: +)
+        return rounded.max { counts[$0, default: 0] < counts[$1, default: 0] }
+    }
+
     /// The tile in a row whose centre is horizontally nearest the given
     /// point, the leftmost on a tie, or nil when there is no such row.
     private func nearestTile(inRow row: Int, toMidX midX: CGFloat) -> Int? {

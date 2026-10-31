@@ -9,5 +9,6 @@ menu, and the window that hosts each folder.
 
 `FolderView` is where the parts meet. It owns the folder's `Grouping` and its
 `KeepsFile`, restores the grouping when the window opens, saves it as it
-changes, starts thumbnail prefetching, and shows the sort screen. It uses
+changes, starts thumbnail prefetching, and shows the pick screen while a
+group is open, otherwise the sort screen. It uses
 every other folder; nothing uses it. The document itself never saves.

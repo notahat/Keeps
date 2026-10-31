@@ -143,6 +143,57 @@ struct TileLayoutTests {
         #expect(layout.target(from: 4, moving: .up) == 1)
     }
 
+    @Test("The most common aspect ratio wins, counting near matches as the same")
+    func commonAspectRatio() {
+        let ratios: [CGFloat] = [0.667, 1.5, 1.4999, 1.333]
+
+        #expect(TileLayout.commonAspectRatio(of: ratios) == 1.5)
+    }
+
+    @Test("There is no common aspect ratio without any ratios")
+    func noCommonAspectRatio() {
+        #expect(TileLayout.commonAspectRatio(of: []) == nil)
+    }
+
+    @Test("Revealing a tile below the view scrolls just far enough to show it")
+    func revealBelow() {
+        let layout = makeScrollingLayout()
+
+        let offset = layout.scrollOffset(revealing: 9, from: 0, viewportHeight: 300)
+
+        #expect(offset == 100)
+    }
+
+    @Test("Revealing a tile above the view scrolls up to its top")
+    func revealAbove() {
+        let layout = makeScrollingLayout()
+
+        let offset = layout.scrollOffset(revealing: 0, from: 250, viewportHeight: 300)
+
+        #expect(offset == 0)
+    }
+
+    @Test("Revealing a tile already in view doesn't scroll")
+    func revealInView() {
+        let layout = makeScrollingLayout()
+
+        let offset = layout.scrollOffset(revealing: 3, from: 0, viewportHeight: 300)
+
+        #expect(offset == nil)
+    }
+
+    /// Twenty 100-point square tiles, three across with no spacing, so
+    /// tile 9 starts the fourth row, 300 to 400 points down.
+    private func makeScrollingLayout() -> TileLayout {
+        TileLayout(
+            tileCount: 20,
+            aspectRatio: 1,
+            availableSize: CGSize(width: 300, height: 300),
+            spacing: 0,
+            minimumTileLength: 90
+        )
+    }
+
     @Test("j and k stay put with no row to move to")
     func noRowToMoveTo() {
         let layout = makeThreeOverTwoLayout()

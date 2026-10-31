@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The content of one folder window: the sort screen, or a note that the
-/// folder has no photos. Owns the folder's grouping and its keeps.json, and
+/// The content of one folder window: the sort screen, the pick screen while
+/// a group is open, or a note that the folder has no photos. Owns the folder's grouping and its keeps.json, and
 /// reports save failures with AppKit's standard error alert.
 struct FolderView: View {
     let session: FolderSession
@@ -38,10 +38,16 @@ struct FolderView: View {
         .frame(minWidth: 500, maxWidth: .infinity, minHeight: 300, maxHeight: .infinity)
     }
 
-    /// The sort screen, once start() has made the grouping.
+    /// The pick screen while a group is open, otherwise the sort screen,
+    /// once start() has made the grouping.
     @ViewBuilder
     private var screen: some View {
-        if let grouping {
+        if let grouping, let openGroup = grouping.openGroup {
+            // Identified by the group, so moving on to the next group starts
+            // the screen afresh.
+            PickScreen(grouping: grouping, group: openGroup)
+                .id(openGroup)
+        } else if let grouping {
             SortScreen(grouping: grouping)
         } else {
             // A real (if invisible) view must render before the grouping

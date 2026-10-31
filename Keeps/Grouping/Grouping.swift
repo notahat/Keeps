@@ -157,10 +157,12 @@ class Grouping {
     }
 
     /// Collapses every group up to and including the given one, without
-    /// reopening any collapsed later, then opens it.
+    /// reopening any collapsed later, then opens and selects it. Selecting
+    /// it means the sort screen shows it on return.
     private func open(_ group: Range<Int>) {
         collapsedUpTo = max(collapsedUpTo, group.upperBound)
         openGroup = group
+        selectedPhotoIndex = group.lowerBound
     }
 
     /// A stem-keyed snapshot of everything worth saving. Reading this inside

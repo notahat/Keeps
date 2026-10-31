@@ -313,7 +313,9 @@ commit.
    longer side.) The pure layout function in `Pick/`: column
    choice, centred last row, the minimum tile size, and j/k targets.
    Tested.
-4. **Pick screen.** The tiles, aspect ratios from cached thumbnails, and
+4. ✅ **Pick screen.** (`PickScreen`. Opening a group also selects it, so
+   the sort screen shows it on return. `ThumbnailImage` gained a
+   `frameSize`, still loading the same thumbnail.) The tiles, aspect ratios from cached thumbnails, and
    the pick screen with its header, F, Return, and Escape, opened by
    double-click or Return from the sort screen. Tiles scale up the sort
    screen's existing thumbnails, so there's no new image loading and it's

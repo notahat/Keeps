@@ -18,7 +18,8 @@ folder needs adding to that exception list.
   including after a relaunch, and saving each window's frame. The shell
   adds only what AppKit lacks: the Open panel chooses folders, and shows in
   place of an untitled document. `FolderView` owns the folder's `Grouping`
-  and its `KeepsFile`, and shows the sort screen. The document never saves;
+  and its `KeepsFile`, and shows the pick screen while a group is open,
+  otherwise the sort screen. The document never saves;
   `KeepsFile` writes keeps.json as the grouping changes.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
@@ -32,7 +33,9 @@ folder needs adding to that exception list.
 - `Sort/` — the sort screen. `SortScreen` draws cells and handles input;
   `GridScrolling` does the scrolling; the geometry is in pure, tested
   helpers (`PhotoGridMetrics`, `GridHitTarget`).
-- `Pick/` — the pick screen, being built (see PLAN.md).
+- `Pick/` — the pick screen. `PickScreen` draws the open group's tiles and
+  handles input; the geometry is in `TileLayout`, pure and tested. Still
+  being built (see PLAN.md).
 - `Keys/` — key handling the screens share (`MoveDirection`,
   `isPlainLetter`).
 

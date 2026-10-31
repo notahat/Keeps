@@ -153,6 +153,15 @@ struct GroupingTests {
         #expect(grouping.layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
     }
 
+    @Test("Opening a group selects it, so the sort screen shows it on return")
+    func openingSelectsGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+
+        grouping.open(groupAtCell: 4)
+
+        #expect(grouping.selectedPhotoIndex == 3)
+    }
+
     @Test("Opening an early group leaves later collapsed groups collapsed")
     func openingEarlyGroupKeepsLaterCollapsed() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3, 5])

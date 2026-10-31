@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// A fixed-size square that loads and displays a photo thumbnail, showing a
-/// neutral placeholder while loading. By default requests visible-priority
+/// A fixed-size frame, square unless given a size, that loads and displays a
+/// photo thumbnail, showing a neutral placeholder while loading. By default requests visible-priority
 /// loading on appear and deprioritises on disappear so that currently-visible
 /// cells are always decoded first. Carries no selection or grouping chrome —
 /// cells compose their own overlays on top. Offers an optional border because
@@ -22,6 +22,10 @@ struct ThumbnailImage: View {
 
     /// What to show while the image loads.
     var placeholder: Placeholder = .square
+
+    /// The space the image is fitted into. The same thumbnail is loaded
+    /// whatever this is, so a larger frame scales it up.
+    var frameSize = CGSize(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
 
     /// Receives the image's width-to-height ratio once it has loaded.
     var onAspectRatioKnown: ((CGFloat) -> Void)?
@@ -62,7 +66,7 @@ struct ThumbnailImage: View {
                 placeholderView
             }
         }
-        .frame(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
+        .frame(width: frameSize.width, height: frameSize.height)
         .onAppear {
             if let cached = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize) {
                 show(cached)

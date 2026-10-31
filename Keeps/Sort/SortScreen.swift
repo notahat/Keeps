@@ -5,7 +5,8 @@ import SwiftUI
 /// grid with one cell per photo or collapsed group. Clicking the edge of a
 /// cell toggles the boundary in that gap, and clicking its middle selects it.
 /// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
-/// collapses every group closed so far.
+/// collapses every group closed so far. Double-clicking a closed group, or
+/// pressing Return with it selected, opens it on the pick screen.
 ///
 /// Draws the cells, handles input, and owns the grid geometry (column math)
 /// and keyboard focus. Scrolling is left to GridScrolling, and the grouping
@@ -113,9 +114,15 @@ struct SortScreen: View {
         )
         .padding(.horizontal, Self.spacing / 2)
         .contentShape(Rectangle())
-        .onTapGesture(coordinateSpace: .local) { location in
-            handleTap(at: location, index: index)
+        // The single click is simultaneous rather than a second tap
+        // gesture, which would wait out the double-click time and make
+        // selection lag.
+        .onTapGesture(count: 2, coordinateSpace: .local) { location in
+            handleDoubleClick(at: location, index: index)
         }
+        .simultaneousGesture(SpatialTapGesture(coordinateSpace: .local).onEnded { value in
+            handleTap(at: value.location, index: index)
+        })
         .onContinuousHover { phase in
             updateHoveredGap(for: phase, index: index)
         }
@@ -151,16 +158,33 @@ struct SortScreen: View {
     }
 
     /// Toggles the boundary at a clicked gap, or selects a clicked cell, then
-    /// takes keyboard focus.
+    /// takes keyboard focus. A locked gap, such as beside a collapsed group,
+    /// counts as the cell.
     private func handleTap(at location: CGPoint, index: Int) {
         scrolling.noteClick(onCellAt: index)
-        switch hitTarget(at: location, index: index) {
-        case let .gap(gapIndex):
+        if let gapIndex = editableGap(at: location, index: index) {
             grouping.toggleBoundary(atGap: gapIndex)
-        case .item:
+        } else {
             grouping.selectCell(at: index)
         }
         isFocused = true
+    }
+
+    /// Opens the group of a double-clicked cell. Double-clicking an editable
+    /// gap opens nothing, since its two clicks have already toggled the
+    /// boundary and back.
+    private func handleDoubleClick(at location: CGPoint, index: Int) {
+        guard editableGap(at: location, index: index) == nil else { return }
+        grouping.open(groupAtCell: index)
+    }
+
+    /// The gap a point within the slot at `index` targets, if it's one whose
+    /// boundary can be toggled; nil for the cell itself or a locked gap.
+    private func editableGap(at location: CGPoint, index: Int) -> Int? {
+        guard let gapIndex = hitTarget(at: location, index: index).gapIndex,
+              grouping.layout.isGapEditable(gapIndex)
+        else { return nil }
+        return gapIndex
     }
 
     /// What a point within the slot at `index` targets: the cell, or the gap
@@ -190,11 +214,15 @@ struct SortScreen: View {
     }
 
     /// Handles keys that aren't for moving the selection: Escape clears the
-    /// selection, and C collapses every group closed so far. Returns false
-    /// for any other key.
+    /// selection, Return opens the selected cell's group, and C collapses
+    /// every group closed so far. Returns false for any other key.
     private func handleCommandKey(_ press: KeyPress) -> Bool {
         if press.key == .escape {
             grouping.clearSelection()
+            return true
+        }
+        if press.key == .return, let selectedCellIndex = grouping.selectedCellIndex {
+            grouping.open(groupAtCell: selectedCellIndex)
             return true
         }
         if press.isPlain(letter: "c") {
