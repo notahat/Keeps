@@ -43,16 +43,18 @@ struct FolderPiles: View {
         let keepers = grouping.keepersOfDoneGroups
         let setAside = grouping.setAsideFromDoneGroups
         return VStack(spacing: Self.spacing) {
-            // The keepers pile appears only once it has something to show.
-            // The set-aside pile always shows, even if nothing was set
-            // aside, since it's the way to the done groups.
+            // The keepers and to-go piles appear only while they have
+            // something to show. The set-aside pile always shows, even if
+            // nothing was set aside, since it's the way to the done groups.
             if !keepers.isEmpty {
                 // Green, to match the keeper badge on the pick screen.
                 pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers", color: .green)
                     .padding(Self.highlightPadding)
             }
-            pile(of: toGo, label: "\(toGo.count) to go")
-                .sectionItem(.toGo, selection: $section, padding: Self.highlightPadding)
+            if !toGo.isEmpty {
+                pile(of: toGo, label: "\(toGo.count) to go")
+                    .sectionItem(.toGo, selection: $section, padding: Self.highlightPadding)
+            }
             pile(of: setAside, label: "\(setAside.count) set aside")
                 .sectionItem(.done, selection: $section, padding: Self.highlightPadding)
         }
