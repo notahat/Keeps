@@ -56,9 +56,10 @@ struct SortCell: View {
 
 /// A collapsed group drawn as a messy pile of its photos in pile order (see
 /// Pile), each tilted and nudged a little (see PileJitter), with the photo
-/// count in the corner. Using the real photos keeps every layer the right
-/// shape. Only the first few are drawn, since deeper layers can't be seen
-/// and each one costs a thumbnail load.
+/// count in the corner. Using the real photos keeps the visible layers the
+/// right shape. Drawn like a PrintPile: only the top few prints show their
+/// photos, the few beneath are blank paper, and deeper layers aren't drawn,
+/// since they can't be seen and each photo costs a thumbnail load.
 private struct CollapsedStack: View {
     let pile: Pile
 
@@ -66,39 +67,43 @@ private struct CollapsedStack: View {
         pile.photos
     }
 
-    private static let maximumLayerCount = 8
-    private static let scale: CGFloat = 0.8
+    /// A white border so each photo reads as a print on paper.
+    private static let borderWidth: CGFloat = 7
 
     /// The top photo's shape, once loaded. Photos in a group are nearly
     /// always the same shape, so the prints beneath borrow it for their
-    /// blank paper until their own images arrive.
+    /// blank paper.
     @State private var topAspectRatio: CGFloat?
 
     var body: some View {
         ZStack {
-            ForEach(Array(photos.prefix(Self.maximumLayerCount).enumerated()).reversed(), id: \.element.id) { layer, photo in
-                let jitter = PileJitter(stem: photo.stem)
-                let isTopLayer = layer == 0
-                // A white border so each photo reads as a print on paper.
-                // Only the top print is loaded urgently; the ones beneath
-                // are mostly hidden, so they load in the background, shown
-                // meanwhile as blank paper in the top photo's shape.
-                ThumbnailImage(
-                    item: photo,
-                    borderWidth: 7,
-                    loadsInBackground: !isTopLayer,
-                    placeholder: placeholder(isTopLayer: isTopLayer),
-                    onAspectRatioKnown: isTopLayer ? { topAspectRatio = $0 } : nil
-                )
-                .scaleEffect(Self.scale)
-                .shadow(color: .black.opacity(0.5), radius: 3)
-                .rotationEffect(.degrees(jitter.rotationDegrees))
-                .offset(x: jitter.horizontalOffset, y: jitter.verticalOffset)
+            ForEach(Array(photos.prefix(PrintPile.maximumLayerCount).enumerated()).reversed(), id: \.element.id) { layer, photo in
+                pilePrint(of: photo, layer: layer)
+                    .placedInPile(PileJitter(stem: photo.stem))
             }
         }
         .overlay(alignment: .bottomTrailing) {
             PileBadge(photoCount: photos.count)
                 .padding(10)
+        }
+    }
+
+    /// One print on the pile, untilted: the photo for the top few layers,
+    /// otherwise blank paper in the top photo's shape, or nothing until that
+    /// shape is known. Only the top print loads urgently; the others are
+    /// mostly hidden, so they load in the background.
+    @ViewBuilder private func pilePrint(of photo: PhotoItem, layer: Int) -> some View {
+        if layer < PrintPile.photoLayerCount {
+            ThumbnailImage(
+                item: photo,
+                borderWidth: Self.borderWidth,
+                loadsInBackground: layer > 0,
+                placeholder: placeholder(isTopLayer: layer == 0),
+                onAspectRatioKnown: layer == 0 ? { topAspectRatio = $0 } : nil
+            )
+        } else if let topAspectRatio {
+            BlankPrint(aspectRatio: topAspectRatio, borderWidth: Self.borderWidth)
+                .frame(width: PhotoGridMetrics.cellSize, height: PhotoGridMetrics.cellSize)
         }
     }
 

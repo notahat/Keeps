@@ -98,11 +98,7 @@ struct ThumbnailImage: View {
         case .square:
             Color(nsColor: .quaternaryLabelColor)
         case let .paper(aspectRatio):
-            Color(white: 0.5)
-                .padding(borderWidth)
-                .background(borderFill)
-                .aspectRatio(aspectRatio, contentMode: .fit)
-                .padding(Self.imageInset)
+            BlankPrint(aspectRatio: aspectRatio, borderWidth: borderWidth, borderColor: borderColor)
         case .none:
             EmptyView()
         }
