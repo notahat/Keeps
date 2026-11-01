@@ -12,7 +12,8 @@ selection.
 
 A collapsed group is drawn as Images' `PrintPile`, in Grouping's `Pile`
 order (keepers on top), with its photo count. Done groups have no cell:
-they've left the grid.
+they've left the grid. Once every photo is in a done group,
+`AllDoneMessage` shows in place of the empty grid.
 
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
 slots, scroll offsets, and where the movement keys go, and `GridHitTarget`

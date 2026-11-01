@@ -7,7 +7,7 @@ import SwiftUI
 /// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
 /// collapses every group closed so far. Double-clicking a closed group, or
 /// pressing Return with it selected, opens it on the pick screen. Done groups
-/// leave the grid.
+/// leave the grid, and once they all have, an all-done message replaces it.
 ///
 /// Draws the cells, handles input, and owns the grid geometry (column math)
 /// and keyboard focus. Scrolling is left to GridScrolling, and the grouping
@@ -46,8 +46,17 @@ struct SortScreen: View {
     }
 
     var body: some View {
+        if grouping.isAllDone {
+            AllDoneMessage(keptCount: grouping.keepers.count, photoCount: grouping.items.count)
+        } else {
+            photoGrid
+        }
+    }
+
+    /// The scrolling grid of cells, with its key handling.
+    private var photoGrid: some View {
         let scrollCells = scrollCells
-        ScrollViewReader { scrollProxy in
+        return ScrollViewReader { scrollProxy in
             ScrollView {
                 grid(blankSlotCount: scrolling.blankSlotCount(for: scrollCells))
             }

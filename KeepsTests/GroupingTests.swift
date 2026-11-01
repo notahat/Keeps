@@ -349,6 +349,26 @@ struct GroupingTests {
         #expect(grouping.photosToGo == [3, 4, 5, 6, 7])
     }
 
+    @Test("The folder is all done once every photo is in a done group")
+    func allDone() {
+        let grouping = makeGrouping(photoCount: 5, boundaries: [3, 5])
+
+        finishFirstGroupInGrid(of: grouping)
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(grouping.isAllDone)
+    }
+
+    @Test("The folder isn't all done while some photos are still ungrouped")
+    func notAllDoneWithUngroupedPhotos() {
+        let grouping = makeGrouping(photoCount: 8, boundaries: [3, 5])
+
+        finishFirstGroupInGrid(of: grouping)
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(!grouping.isAllDone)
+    }
+
     @Test("A done group can be opened directly")
     func openingDoneGroupDirectly() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])

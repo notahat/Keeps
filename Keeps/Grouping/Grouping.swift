@@ -194,6 +194,11 @@ class Grouping {
         return items.indices.filter { !done.contains($0) }
     }
 
+    /// Whether every photo is in a done group, so the folder is finished.
+    var isAllDone: Bool {
+        photosToGo.isEmpty
+    }
+
     /// Marks a photo as a keeper, or unmarks it if it already is one.
     func toggleKeeper(atPhoto photoIndex: Int) {
         guard items.indices.contains(photoIndex) else { return }
