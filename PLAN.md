@@ -604,3 +604,63 @@ Each step builds and passes the tests, then review and commit.
 5. ✅ **Draw the kept pile.** A `KeptPile` view in `Sort/`, laid over the
    grid's bottom-right corner while any group is done, labelled like "48
    kept from 12 groups". Check by hand.
+
+---
+
+# Plan: Piles as navigation, and un-marking a done group
+
+## Goal
+
+Three piles beside the sort screen show where every photo in the folder
+is, and their counts add up to the folder:
+
+- **To go**: photos not yet in a done group, the next up on top.
+- **Keepers**: the done groups' keepers.
+- **Set aside**: the done groups' other photos.
+
+Clicking a pile shows its view: to go is the sort screen, and set aside
+shows the done groups, each as a pile, any of which can be opened on the
+pick screen. The pile for the view showing is highlighted; to start, its
+label is drawn in the accent colour, which is easy to change once we've
+seen it. Keepers isn't clickable yet.
+
+On the pick screen, Return on a done group un-marks it, so it goes back
+to being worked on and returns to the sort screen's grid.
+
+Out of scope for now: a keepers view, ⌘Z, animation, and arrow keys on the
+done view (clicks and Return only). No change to the keeps.json format.
+
+## Layout
+
+The piles leave `Sort/`: they now serve more than one screen, so they're
+the shell's navigation, in `App/` as `FolderPiles`, and `FolderView` lays
+them beside whichever screen is showing (not the pick screen) and owns
+which view that is. The done view is a new folder, `Done/`, using
+Grouping, Images, Folder, and Keys, like Sort and Pick, and never them.
+Drawing a group as a pile moves into `Images/` (`PrintPile` learns the top
+photo's shape when not given one) and `Pile`'s ordering into `Grouping/`,
+so Sort and Done can both use them.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **Return toggles done.** `Grouping.markOpenGroupNotDone()`, tested; on
+   the pick screen, Return on a done group calls it, and F works again
+   once it's not done. Focus stays on the focused photo.
+2. **Done groups and what's to go.** `Grouping` gives the done groups,
+   latest first, opens any closed group directly (`open(_:)` becomes
+   public), and gives the photos still to go, next up first. Tested.
+3. **Share drawing a group as a pile.** `Pile` moves to `Grouping/`; the
+   sort cell's collapsed stack becomes a `PrintPile`, which learns the top
+   photo's shape when not given one. Check the sort grid by hand.
+4. **Piles as navigation.** `FolderPiles` in `App/` with the to-go pile
+   added, beside the screen in `FolderView`, which now owns the view
+   showing. Clicking to go or set aside switches view (set aside shows an
+   empty placeholder until step 5), and the current pile's label is
+   highlighted. Check by hand.
+5. **The done view.** `DoneScreen` in `Done/`: the done groups as piles,
+   latest first, each with how many were kept, such as "2 of 7 kept".
+   Click selects; double-click or Return opens on the pick screen, and
+   Escape there comes back here. Check by hand, including un-marking a
+   group and seeing it return to the sort screen.
