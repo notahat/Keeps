@@ -664,3 +664,37 @@ Each step builds and passes the tests, then review and commit.
    Click selects; double-click or Return opens on the pick screen, and
    Escape there comes back here. Check by hand, including un-marking a
    group and seeing it return to the sort screen.
+
+# Plan: Dragging the keepers into Lightroom
+
+## Goal
+
+Get the keepers into Lightroom (the cloud version) without copying them
+anywhere first. Dragging files from Finder onto Lightroom opens its import
+screen with just those photos, from either its Local or Cloud tab, so
+dragging the keepers pile out of Keeps should hand over exactly the same
+thing: the keepers' files.
+
+## Design
+
+- **What's dragged.** The keepers of the done groups, one file each: the
+  RAW where there is one, otherwise the JPEG (`PhotoItem.sourceURL`).
+  Nothing is copied, moved, or written.
+- **Where from.** The keepers pile in the sidebar. It isn't a section, so
+  dragging is all it does. Dropping in Finder copies the files there, as
+  any file drag would.
+- **How.** SwiftUI's drag modifiers hand over one item, so an AppKit view
+  over the pile starts the drag with one item per file, drawn as a pile of
+  their thumbnails, which AppKit badges with the count.
+
+Out of scope: the set-aside photos, JPEGs of RAW+JPEG pairs, and any
+change to keeps.json.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **The keepers' files.** `Grouping.keeperFileURLs`: the keepers of the
+   done groups as files, RAW preferred. Tested.
+2. **Drag the pile.** A drag source in `App/` over the keepers pile in
+   `FolderPiles`. Check by hand: drag onto Lightroom and into Finder.
