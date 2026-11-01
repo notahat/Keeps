@@ -19,7 +19,9 @@ folder needs adding to that exception list.
   adds only what AppKit lacks: the Open panel chooses folders, and shows in
   place of an untitled document. `FolderView` owns the folder's `Grouping`
   and its `KeepsFile`, and shows the pick screen while a group is open,
-  otherwise the sort screen. The document never saves;
+  otherwise the section chosen by `FolderPiles`, the piles beside it: the
+  sort screen for the photos still to go, or the done groups. The document
+  never saves;
   `KeepsFile` writes keeps.json as the grouping changes.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).

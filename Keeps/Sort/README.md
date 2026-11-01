@@ -11,9 +11,8 @@ groups collapse, restoring the saved position, and following keyboard
 selection.
 
 A collapsed group is drawn as Images' `PrintPile`, in Grouping's `Pile`
-order (keepers on top), with its photo count. Done groups have no cell: they've left the grid,
-and their photos gather on `DonePiles` beside the grid, bottom right: a
-pile of keepers above a pile of the photos set aside, each with its count.
+order (keepers on top), with its photo count. Done groups have no cell:
+they've left the grid.
 
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
 slots, scroll offsets, and where the movement keys go, and `GridHitTarget`

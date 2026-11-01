@@ -10,6 +10,10 @@ struct FolderView: View {
     @State private var grouping: Grouping?
     @State private var keepsFile: KeepsFile?
 
+    /// Which section the piles have chosen. Not saved: a folder always opens
+    /// on the photos still to go.
+    @State private var section = FolderSection.toGo
+
     var body: some View {
         Group {
             if session.items.isEmpty {
@@ -38,8 +42,8 @@ struct FolderView: View {
         .frame(minWidth: 500, maxWidth: .infinity, minHeight: 300, maxHeight: .infinity)
     }
 
-    /// The pick screen while a group is open, otherwise the sort screen,
-    /// once start() has made the grouping.
+    /// The pick screen while a group is open, otherwise the section's screen
+    /// with the piles beside it, once start() has made the grouping.
     @ViewBuilder
     private var screen: some View {
         if let grouping, let openGroup = grouping.openGroup {
@@ -48,12 +52,33 @@ struct FolderView: View {
             PickScreen(grouping: grouping, group: openGroup)
                 .id(openGroup)
         } else if let grouping {
-            SortScreen(grouping: grouping)
+            // The piles sit beside the screen rather than over it, so they
+            // hide nothing, and at their own size, so the screen takes all
+            // the rest of the width.
+            HStack(alignment: .bottom, spacing: 0) {
+                sectionScreen(grouping: grouping)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                FolderPiles(grouping: grouping, section: $section)
+                    .fixedSize()
+                    .padding(24)
+            }
         } else {
             // A real (if invisible) view must render before the grouping
             // exists: onAppear never fires for empty content, and start()
             // — which creates the grouping — hangs off onAppear.
             Color.clear
+        }
+    }
+
+    /// The screen for the section the piles have chosen.
+    @ViewBuilder
+    private func sectionScreen(grouping: Grouping) -> some View {
+        switch section {
+        case .toGo:
+            SortScreen(grouping: grouping)
+        case .done:
+            Text("The done groups will show here.")
+                .foregroundStyle(.secondary)
         }
     }
 

@@ -654,7 +654,7 @@ Each step builds and passes the tests, then review and commit.
 3. ✅ **Share drawing a group as a pile.** `Pile` moves to `Grouping/`; the
    sort cell's collapsed stack becomes a `PrintPile`, which learns the top
    photo's shape when not given one. Check the sort grid by hand.
-4. **Piles as navigation.** `FolderPiles` in `App/` with the to-go pile
+4. ✅ **Piles as navigation.** `FolderPiles` in `App/` with the to-go pile
    added, beside the screen in `FolderView`, which now owns the view
    showing. Clicking to go or set aside switches view (set aside shows an
    empty placeholder until step 5), and the current pile's label is

@@ -7,7 +7,7 @@ import SwiftUI
 /// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
 /// collapses every group closed so far. Double-clicking a closed group, or
 /// pressing Return with it selected, opens it on the pick screen. Done groups
-/// leave the grid, and their photos gather on DonePiles in the corner.
+/// leave the grid.
 ///
 /// Draws the cells, handles input, and owns the grid geometry (column math)
 /// and keyboard focus. Scrolling is left to GridScrolling, and the grouping
@@ -47,39 +47,17 @@ struct SortScreen: View {
 
     var body: some View {
         let scrollCells = scrollCells
-        // The piles sit beside the grid rather than over it, so they hide
-        // nothing; the grid loses a column or so to make room.
-        HStack(alignment: .bottom, spacing: 0) {
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    grid(blankSlotCount: scrolling.blankSlotCount(for: scrollCells))
-                }
-                .gridScrolling(
-                    scrolling,
-                    cells: scrollCells,
-                    scrollAnchor: $grouping.scrollAnchor,
-                    scrollProxy: scrollProxy
-                )
-                .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
+        ScrollViewReader { scrollProxy in
+            ScrollView {
+                grid(blankSlotCount: scrolling.blankSlotCount(for: scrollCells))
             }
-            // Without these, the grid and piles sit centred in the window
-            // with space either side, rather than the grid taking all the
-            // room the piles don't need.
-            .frame(maxWidth: .infinity)
-            donePiles
-                .fixedSize()
-        }
-    }
-
-    /// The piles of everything kept and set aside so far, in the
-    /// bottom-right corner beside the grid, once any group is done.
-    @ViewBuilder private var donePiles: some View {
-        if grouping.doneGroupCount > 0 {
-            DonePiles(
-                keepers: grouping.keepersOfDoneGroups.map { grouping.items[$0] },
-                setAside: grouping.setAsideFromDoneGroups.map { grouping.items[$0] }
+            .gridScrolling(
+                scrolling,
+                cells: scrollCells,
+                scrollAnchor: $grouping.scrollAnchor,
+                scrollProxy: scrollProxy
             )
-            .padding(Self.spacing * 2)
+            .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
         }
     }
 

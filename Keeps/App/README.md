@@ -10,5 +10,8 @@ menu, and the window that hosts each folder.
 `FolderView` is where the parts meet. It owns the folder's `Grouping` and its
 `KeepsFile`, restores the grouping when the window opens, saves it as it
 changes, starts thumbnail prefetching, and shows the pick screen while a
-group is open, otherwise the sort screen. It uses
-every other folder; nothing uses it. The document itself never saves.
+group is open. Otherwise it shows the section the piles have chosen, with
+`FolderPiles` beside it: piles of the photos still to go, kept, and set
+aside, whose counts add up to the folder. Clicking the to-go pile shows the
+sort screen, and clicking the set-aside pile the done groups. It uses every
+other folder; nothing uses it. The document itself never saves.
