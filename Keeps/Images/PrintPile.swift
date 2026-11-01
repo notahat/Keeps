@@ -19,7 +19,7 @@ struct PrintPile: View {
     static let photoLayerCount = 5
 
     /// How many prints are drawn in all, counting the blank ones.
-    static let maximumLayerCount = 8
+    static let maximumLayerCount = 20
 
     private static let borderWidth: CGFloat = 6
 
