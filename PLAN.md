@@ -648,7 +648,7 @@ Each step builds and passes the tests, then review and commit.
 1. ✅ **Return toggles done.** `Grouping.markOpenGroupNotDone()`, tested; on
    the pick screen, Return on a done group calls it, and F works again
    once it's not done. Focus stays on the focused photo.
-2. **Done groups and what's to go.** `Grouping` gives the done groups,
+2. ✅ **Done groups and what's to go.** `Grouping` gives the done groups,
    latest first, opens any closed group directly (`open(_:)` becomes
    public), and gives the photos still to go, next up first. Tested.
 3. **Share drawing a group as a pile.** `Pile` moves to `Grouping/`; the

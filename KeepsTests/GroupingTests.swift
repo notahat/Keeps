@@ -330,6 +330,44 @@ struct GroupingTests {
         #expect(grouping.setAsideFromDoneGroups == [3, 5, 0])
     }
 
+    @Test("The done groups come latest first")
+    func doneGroupsLatestFirst() {
+        let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])
+
+        finishFirstGroupInGrid(of: grouping)
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(grouping.doneGroups == [3 ..< 6, 0 ..< 3])
+    }
+
+    @Test("The photos to go are those not in done groups, in folder order")
+    func photosToGo() {
+        let grouping = makeGrouping(photoCount: 8, boundaries: [3, 5])
+
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(grouping.photosToGo == [3, 4, 5, 6, 7])
+    }
+
+    @Test("A done group can be opened directly")
+    func openingDoneGroupDirectly() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
+        finishFirstGroupInGrid(of: grouping)
+
+        grouping.open(0 ..< 3)
+
+        #expect(grouping.openGroup == 0 ..< 3)
+    }
+
+    @Test("Opening something that isn't a group opens nothing")
+    func openingNonGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
+
+        grouping.open(1 ..< 4)
+
+        #expect(grouping.openGroup == nil)
+    }
+
     @Test("Done groups are counted")
     func doneGroupCount() {
         let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])

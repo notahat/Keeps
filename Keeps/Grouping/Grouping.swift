@@ -170,20 +170,28 @@ class Grouping {
         doneGroupStarts.count
     }
 
+    /// The done groups, latest first.
+    var doneGroups: [Range<Int>] {
+        layout.groups.filter(isDone).reversed()
+    }
+
     /// The keepers of the done groups, in pile order: the latest group's
     /// first, and each group's in folder order.
     var keepersOfDoneGroups: [Int] {
-        layout.groups.filter(isDone).reversed().flatMap { group in
-            group.filter(keepers.contains)
-        }
+        doneGroups.flatMap { group in group.filter(keepers.contains) }
     }
 
     /// The photos of the done groups that weren't kept, in the same order
     /// as keepersOfDoneGroups.
     var setAsideFromDoneGroups: [Int] {
-        layout.groups.filter(isDone).reversed().flatMap { group in
-            group.filter { !keepers.contains($0) }
-        }
+        doneGroups.flatMap { group in group.filter { !keepers.contains($0) } }
+    }
+
+    /// The photos not yet in a done group, in folder order, so the next to
+    /// work on comes first.
+    var photosToGo: [Int] {
+        let done = Set(doneGroups.joined())
+        return items.indices.filter { !done.contains($0) }
     }
 
     /// Marks a photo as a keeper, or unmarks it if it already is one.
@@ -196,10 +204,12 @@ class Grouping {
         }
     }
 
-    /// Collapses every group up to and including the given one, without
-    /// reopening any collapsed later, then opens and selects it. Selecting
-    /// it means the sort screen shows it on return.
-    private func open(_ group: Range<Int>) {
+    /// Opens a closed group, done or not: collapses every group up to and
+    /// including it, without reopening any collapsed later, then opens and
+    /// selects it. Selecting it means the sort screen shows it on return.
+    /// Anything that isn't a closed group opens nothing.
+    func open(_ group: Range<Int>) {
+        guard layout.groups.contains(group) else { return }
         collapsedUpTo = max(collapsedUpTo, group.upperBound)
         openGroup = group
         selectedPhotoIndex = group.lowerBound
