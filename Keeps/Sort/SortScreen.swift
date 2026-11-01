@@ -47,24 +47,27 @@ struct SortScreen: View {
 
     var body: some View {
         let scrollCells = scrollCells
-        ScrollViewReader { scrollProxy in
-            ScrollView {
-                grid(blankSlotCount: scrolling.blankSlotCount(for: scrollCells))
+        // The pile sits beside the grid rather than over it, so it hides
+        // nothing; the grid loses a column or so to make room.
+        HStack(alignment: .bottom, spacing: 0) {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    grid(blankSlotCount: scrolling.blankSlotCount(for: scrollCells))
+                }
+                .gridScrolling(
+                    scrolling,
+                    cells: scrollCells,
+                    scrollAnchor: $grouping.scrollAnchor,
+                    scrollProxy: scrollProxy
+                )
+                .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
             }
-            .gridScrolling(
-                scrolling,
-                cells: scrollCells,
-                scrollAnchor: $grouping.scrollAnchor,
-                scrollProxy: scrollProxy
-            )
-            .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
-        }
-        .overlay(alignment: .bottomTrailing) {
             keptPile
         }
     }
 
-    /// The pile of everything kept so far, once any group is done.
+    /// The pile of everything kept so far, in the bottom-right corner beside
+    /// the grid, once any group is done.
     @ViewBuilder private var keptPile: some View {
         if grouping.doneGroupCount > 0 {
             KeptPile(
