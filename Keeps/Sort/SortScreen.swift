@@ -62,7 +62,12 @@ struct SortScreen: View {
                 )
                 .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
             }
+            // Without these, the grid and pile sit centred in the window
+            // with space either side, rather than the grid taking all the
+            // room the pile doesn't need.
+            .frame(maxWidth: .infinity)
             keptPile
+                .fixedSize()
         }
     }
 
