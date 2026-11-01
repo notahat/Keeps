@@ -598,7 +598,7 @@ Each step builds and passes the tests, then review and commit.
 3. ✅ **Share the pile of prints.** (With `PileLabel` for the caption.) The drawing of a messy pile of prints
    moves from `SetAsidePile` into `Images/` as `PrintPile`, so the sort
    screen can draw one too without using Pick.
-4. **What's been kept.** `Grouping` gives the keepers of the done groups
+4. ✅ **What's been kept.** `Grouping` gives the keepers of the done groups
    in pile order (the latest on top) and how many groups are done.
    Tested.
 5. **Draw the kept pile.** A `KeptPile` view in `Sort/`, laid over the

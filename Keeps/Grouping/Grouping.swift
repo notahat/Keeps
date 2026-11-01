@@ -158,6 +158,19 @@ class Grouping {
         doneGroupStarts.contains(group.lowerBound)
     }
 
+    /// How many groups have been marked done.
+    var doneGroupCount: Int {
+        doneGroupStarts.count
+    }
+
+    /// The keepers of the done groups, in pile order: the latest group's
+    /// first, and each group's in folder order.
+    var keepersOfDoneGroups: [Int] {
+        layout.groups.filter(isDone).reversed().flatMap { group in
+            group.filter(keepers.contains)
+        }
+    }
+
     /// Marks a photo as a keeper, or unmarks it if it already is one.
     func toggleKeeper(atPhoto photoIndex: Int) {
         guard items.indices.contains(photoIndex) else { return }

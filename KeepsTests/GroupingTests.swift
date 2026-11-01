@@ -280,4 +280,35 @@ struct GroupingTests {
 
         #expect(grouping.layout.cells.first == .photo(3))
     }
+
+    @Test("The keepers of done groups come latest group first, each in order")
+    func keepersOfDoneGroups() {
+        let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])
+        for keeper in [1, 2, 4, 7] {
+            grouping.toggleKeeper(atPhoto: keeper)
+        }
+
+        finishFirstGroupInGrid(of: grouping)
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(grouping.keepersOfDoneGroups == [4, 1, 2])
+    }
+
+    @Test("Done groups are counted")
+    func doneGroupCount() {
+        let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])
+
+        finishFirstGroupInGrid(of: grouping)
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(grouping.doneGroupCount == 2)
+    }
+
+    /// Opens the group of the grid's first cell, marks it done, and closes
+    /// it, as the screens would.
+    private func finishFirstGroupInGrid(of grouping: Grouping) {
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+        grouping.closeOpenGroup()
+    }
 }
