@@ -294,6 +294,19 @@ struct GroupingTests {
         #expect(grouping.keepersOfDoneGroups == [4, 1, 2])
     }
 
+    @Test("The photos set aside from done groups come latest group first, each in order")
+    func setAsideFromDoneGroups() {
+        let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])
+        for keeper in [1, 2, 4, 7] {
+            grouping.toggleKeeper(atPhoto: keeper)
+        }
+
+        finishFirstGroupInGrid(of: grouping)
+        finishFirstGroupInGrid(of: grouping)
+
+        #expect(grouping.setAsideFromDoneGroups == [3, 5, 0])
+    }
+
     @Test("Done groups are counted")
     func doneGroupCount() {
         let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])

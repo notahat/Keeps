@@ -171,6 +171,14 @@ class Grouping {
         }
     }
 
+    /// The photos of the done groups that weren't kept, in the same order
+    /// as keepersOfDoneGroups.
+    var setAsideFromDoneGroups: [Int] {
+        layout.groups.filter(isDone).reversed().flatMap { group in
+            group.filter { !keepers.contains($0) }
+        }
+    }
+
     /// Marks a photo as a keeper, or unmarks it if it already is one.
     func toggleKeeper(atPhoto photoIndex: Int) {
         guard items.indices.contains(photoIndex) else { return }

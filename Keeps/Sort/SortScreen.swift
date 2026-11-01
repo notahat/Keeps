@@ -7,7 +7,7 @@ import SwiftUI
 /// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
 /// collapses every group closed so far. Double-clicking a closed group, or
 /// pressing Return with it selected, opens it on the pick screen. Done groups
-/// leave the grid, and their keepers gather on a KeptPile in the corner.
+/// leave the grid, and their photos gather on DonePiles in the corner.
 ///
 /// Draws the cells, handles input, and owns the grid geometry (column math)
 /// and keyboard focus. Scrolling is left to GridScrolling, and the grouping
@@ -47,7 +47,7 @@ struct SortScreen: View {
 
     var body: some View {
         let scrollCells = scrollCells
-        // The pile sits beside the grid rather than over it, so it hides
+        // The piles sit beside the grid rather than over it, so they hide
         // nothing; the grid loses a column or so to make room.
         HStack(alignment: .bottom, spacing: 0) {
             ScrollViewReader { scrollProxy in
@@ -62,22 +62,22 @@ struct SortScreen: View {
                 )
                 .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
             }
-            // Without these, the grid and pile sit centred in the window
+            // Without these, the grid and piles sit centred in the window
             // with space either side, rather than the grid taking all the
-            // room the pile doesn't need.
+            // room the piles don't need.
             .frame(maxWidth: .infinity)
-            keptPile
+            donePiles
                 .fixedSize()
         }
     }
 
-    /// The pile of everything kept so far, in the bottom-right corner beside
-    /// the grid, once any group is done.
-    @ViewBuilder private var keptPile: some View {
+    /// The piles of everything kept and set aside so far, in the
+    /// bottom-right corner beside the grid, once any group is done.
+    @ViewBuilder private var donePiles: some View {
         if grouping.doneGroupCount > 0 {
-            KeptPile(
-                photos: grouping.keepersOfDoneGroups.map { grouping.items[$0] },
-                doneGroupCount: grouping.doneGroupCount
+            DonePiles(
+                keepers: grouping.keepersOfDoneGroups.map { grouping.items[$0] },
+                setAside: grouping.setAsideFromDoneGroups.map { grouping.items[$0] }
             )
             .padding(Self.spacing * 2)
         }
