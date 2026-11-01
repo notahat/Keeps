@@ -595,7 +595,7 @@ Each step builds and passes the tests, then review and commit.
    Tested, including that the gaps either side stay locked. `Pile` loses
    its done state and fading, which nothing draws any more. Check by hand
    that the grid doesn't jump on returning from a done group.
-3. **Share the pile of prints.** The drawing of a messy pile of prints
+3. ✅ **Share the pile of prints.** (With `PileLabel` for the caption.) The drawing of a messy pile of prints
    moves from `SetAsidePile` into `Images/` as `PrintPile`, so the sort
    screen can draw one too without using Pick.
 4. **What's been kept.** `Grouping` gives the keepers of the done groups
