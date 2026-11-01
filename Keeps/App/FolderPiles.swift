@@ -32,10 +32,10 @@ struct FolderPiles: View {
         let keepers = grouping.keepersOfDoneGroups
         let setAside = grouping.setAsideFromDoneGroups
         return VStack(spacing: Self.spacing) {
-            pile(of: toGo, label: "\(toGo.count) to go", color: color(for: .toGo))
-                .onTapGesture { section = .toGo }
             // Green, to match the keeper badge on the pick screen.
             pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers", color: .green)
+            pile(of: toGo, label: "\(toGo.count) to go", color: color(for: .toGo))
+                .onTapGesture { section = .toGo }
             pile(of: setAside, label: "\(setAside.count) set aside", color: color(for: .done))
                 .onTapGesture { section = .done }
         }
