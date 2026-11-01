@@ -225,6 +225,52 @@ struct GroupingTests {
         #expect(!grouping.isDone(0 ..< 3))
     }
 
+    @Test("Closing a group that isn't done leaves it selected")
+    func closingUnfinishedGroupKeepsSelection() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
+        grouping.open(groupAtCell: 0)
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.selectedPhotoIndex == 0)
+    }
+
+    @Test("Closing a done group selects the next group that isn't done")
+    func closingDoneGroupSelectsNext() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+        grouping.open(groupAtCell: 3)
+        grouping.markOpenGroupDone()
+        grouping.closeOpenGroup()
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.selectedPhotoIndex == 5)
+    }
+
+    @Test("Closing the last done group selects the working point")
+    func closingLastDoneGroupSelectsWorkingPoint() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.selectedPhotoIndex == 3)
+    }
+
+    @Test("Closing a done group with nothing left to group selects nothing")
+    func closingDoneGroupWithNothingLeft() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [10])
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.selectedPhotoIndex == nil)
+    }
+
     @Test("A done group can be reopened, and stays done with its keepers")
     func reopeningDoneGroup() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])

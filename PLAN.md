@@ -585,7 +585,7 @@ locked, so hiding one unlocks nothing.
 
 Each step builds and passes the tests, then review and commit.
 
-1. **Select the next group on leaving a done one.** When
+1. ✅ **Select the next group on leaving a done one.** When
    `closeOpenGroup()` closes a done group, the selection moves to the first
    photo of the next closed group that isn't done, or the working point if
    there is none. Tested.

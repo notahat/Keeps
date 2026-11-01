@@ -133,9 +133,16 @@ class Grouping {
         doneGroupStarts.insert(openGroup.lowerBound)
     }
 
-    /// Closes the open group, leaving whether it is done unchanged.
+    /// Closes the open group, leaving whether it is done unchanged. A done
+    /// group is finished with, so the selection moves on to the next group
+    /// that isn't done, or the working point when there is none, ready to
+    /// open with Return.
     func closeOpenGroup() {
+        guard let closed = openGroup else { return }
         openGroup = nil
+        guard isDone(closed) else { return }
+        let next = layout.groups.first { $0.lowerBound >= closed.upperBound && !isDone($0) }
+        selectedPhotoIndex = next?.lowerBound ?? workingPointPhotoIndex
     }
 
     /// Whether a closed group has been marked done.
