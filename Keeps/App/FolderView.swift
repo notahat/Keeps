@@ -1,11 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// The content of one folder window: the sort screen, the pick screen while
-/// a group is open, or a note that the folder has no photos. Owns the folder's grouping and its keeps.json, and
-/// reports save failures with AppKit's standard error alert.
+/// The content of one folder window: the pick screen while a group is
+/// open, otherwise the sidebar of piles beside the section they've chosen,
+/// or a note that the folder has no photos. Owns the folder's grouping and
+/// its keeps.json, reports save failures with AppKit's standard error
+/// alert, and tells the window which section is showing, for its title.
 struct FolderView: View {
     let session: FolderSession
+
+    /// Told the section showing, when the view appears and as it changes.
+    let onSectionChange: (FolderSection) -> Void
 
     @State private var grouping: Grouping?
     @State private var keepsFile: KeepsFile?
@@ -40,6 +45,9 @@ struct FolderView: View {
             }
         }
         .frame(minWidth: 500, maxWidth: .infinity, minHeight: 300, maxHeight: .infinity)
+        .onChange(of: section, initial: true) { _, newSection in
+            onSectionChange(newSection)
+        }
     }
 
     /// The pick screen while a group is open, otherwise the section's screen
@@ -52,15 +60,15 @@ struct FolderView: View {
             PickScreen(grouping: grouping, group: openGroup)
                 .id(openGroup)
         } else if let grouping {
-            // The piles sit beside the screen rather than over it, so they
-            // hide nothing, and at their own size, so the screen takes all
-            // the rest of the width.
-            HStack(alignment: .bottom, spacing: 0) {
-                sectionScreen(grouping: grouping)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The piles are a sidebar on the left, from the top, where Mac
+            // apps keep their navigation. They take only their own size, so
+            // the screen gets all the rest of the width.
+            HStack(alignment: .top, spacing: 0) {
                 FolderPiles(grouping: grouping, section: $section)
                     .fixedSize()
-                    .padding(24)
+                    .padding(16)
+                sectionScreen(grouping: grouping)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
             // A real (if invisible) view must render before the grouping

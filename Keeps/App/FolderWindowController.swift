@@ -2,17 +2,22 @@ import AppKit
 import SwiftUI
 
 /// Makes one folder's window, which hosts FolderView. The document gives the
-/// window its title and its title-bar folder icon; this adds the folder's
-/// path as the subtitle. AppKit saves the window's frame in the app's
-/// preferences under the folder's path, so a folder reopens where its window
-/// was last left.
+/// window its title and its title-bar folder icon; this adds the section
+/// showing to the title, such as "Holiday — To go", so the window always
+/// says where you are, and the folder's path as the subtitle. AppKit saves
+/// the window's frame in the app's preferences under the folder's path, so a
+/// folder reopens where its window was last left.
 final class FolderWindowController: NSWindowController {
     private static let defaultContentSize = NSSize(width: 1000, height: 700)
+
+    /// The section FolderView last reported showing, for the title.
+    private var section: FolderSection?
 
     /// Makes the window for an open folder session, at the folder's saved
     /// frame if it has one.
     init(session: FolderSession) {
-        super.init(window: Self.makeWindow(session: session))
+        super.init(window: nil)
+        window = makeWindow(session: session)
         windowFrameAutosaveName = session.folderURL.path
     }
 
@@ -21,9 +26,24 @@ final class FolderWindowController: NSWindowController {
         fatalError("init(coder:) is not used")
     }
 
+    /// The document's name, followed by the section showing once known.
+    override func windowTitle(forDocumentDisplayName displayName: String) -> String {
+        guard let section else { return displayName }
+        return "\(displayName) — \(section.title)"
+    }
+
+    /// Records the section showing and retitles the window to match.
+    private func show(_ newSection: FolderSection) {
+        section = newSection
+        synchronizeWindowTitleWithDocumentName()
+    }
+
     /// Makes the window hosting the folder's view, at the default size.
-    private static func makeWindow(session: FolderSession) -> NSWindow {
-        let hostingController = NSHostingController(rootView: FolderView(session: session))
+    private func makeWindow(session: FolderSession) -> NSWindow {
+        let folderView = FolderView(session: session) { [weak self] section in
+            self?.show(section)
+        }
+        let hostingController = NSHostingController(rootView: folderView)
         // Lets the folder view's SwiftUI toolbar items show in the window's
         // toolbar.
         hostingController.sceneBridgingOptions = [.toolbars]
@@ -32,9 +52,9 @@ final class FolderWindowController: NSWindowController {
         // in SwiftUI's own windows. SwiftUI keeps the content's resting
         // position below the toolbar.
         window.styleMask.insert(.fullSizeContentView)
-        window.toolbar = makePlaceholderToolbar()
+        window.toolbar = Self.makePlaceholderToolbar()
         window.toolbarStyle = .unified
-        window.setContentSize(defaultContentSize)
+        window.setContentSize(Self.defaultContentSize)
         window.subtitle = session.folderURL.path
         window.appearance = NSAppearance(named: .darkAqua)
         return window
