@@ -70,6 +70,14 @@ struct FolderView: View {
                 sectionScreen(grouping: grouping)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            // With no done groups, the set-aside pile that leads to them is
+            // gone, so their section can't stay showing. Checked on appear
+            // too, for coming back from un-marking the last one.
+            .onChange(of: grouping.doneGroupCount, initial: true) { _, count in
+                if count == 0, section == .done {
+                    section = .toGo
+                }
+            }
         } else {
             // A real (if invisible) view must render before the grouping
             // exists: onAppear never fires for empty content, and start()
