@@ -20,16 +20,17 @@ struct DonePiles: View {
 
     var body: some View {
         VStack(spacing: Self.spacing) {
-            pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers")
+            // Green, to match the keeper badge on the pick screen.
+            pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers", color: .green)
             pile(of: setAside, label: "\(setAside.count) set aside")
         }
     }
 
-    /// One labelled pile.
-    private func pile(of photos: [PhotoItem], label: String) -> some View {
+    /// One labelled pile, its label in a colour if given one.
+    private func pile(of photos: [PhotoItem], label: String, color: Color? = nil) -> some View {
         PrintPile(photos: photos, length: Self.length, aspectRatio: Self.paperAspectRatio)
             .overlay(alignment: .bottom) {
-                PileLabel(text: label)
+                PileLabel(text: label, color: color)
             }
     }
 }
