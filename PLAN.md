@@ -556,3 +556,51 @@ Each step builds and passes the tests, then review and commit.
    on it. Movement keys and the full-size view cover only the tiles, and F
    does nothing on a done group. Check by hand: finish a group with some
    keepers, none, and all; reopen a done group from the sort screen.
+
+---
+
+# Plan: Done groups leave the sort screen
+
+## Goal
+
+Finished work gets out of the way. A done group's cell leaves the sort
+screen's grid, and its keepers go onto a pile of everything kept so far,
+labelled with how many were kept from how many groups. The grid shrinks as
+the pile grows. Leaving a done group selects the next group that isn't
+done, so Return opens it.
+
+The pile starts in the bottom-right corner, but that may take too much
+room, so it's its own view placed in one spot in `SortScreen`, easy to
+move.
+
+Out of scope for now: reopening a done group (the pile only shows),
+animation, and undo. No change to the keeps.json format.
+
+Scrolling should need no new code: the blank slots before the first cell
+already keep open photos in their columns when cells go, and the working
+point is already held still. Gaps beside collapsed groups are already
+locked, so hiding one unlocks nothing.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **Select the next group on leaving a done one.** When
+   `closeOpenGroup()` closes a done group, the selection moves to the first
+   photo of the next closed group that isn't done, or the working point if
+   there is none. Tested.
+2. **Leave done groups out of the grid.** `GroupLayout` takes the done
+   groups and leaves their cells out, still counting their photos as
+   hidden; `Grouping` passes them in and re-lays out when they change.
+   Tested, including that the gaps either side stay locked. `Pile` loses
+   its done state and fading, which nothing draws any more. Check by hand
+   that the grid doesn't jump on returning from a done group.
+3. **Share the pile of prints.** The drawing of a messy pile of prints
+   moves from `SetAsidePile` into `Images/` as `PrintPile`, so the sort
+   screen can draw one too without using Pick.
+4. **What's been kept.** `Grouping` gives the keepers of the done groups
+   in pile order (the latest on top) and how many groups are done.
+   Tested.
+5. **Draw the kept pile.** A `KeptPile` view in `Sort/`, laid over the
+   grid's bottom-right corner while any group is done, labelled like "48
+   kept from 12 groups". Check by hand.
