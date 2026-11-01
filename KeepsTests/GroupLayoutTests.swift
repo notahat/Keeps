@@ -132,4 +132,38 @@ struct GroupLayoutTests {
         #expect(layout.cellIndex(containing: 1) == 0)
         #expect(layout.cellIndex(containing: 4) == 2)
     }
+
+    @Test("Done groups leave the grid, but are still groups")
+    func doneGroupsLeaveGrid() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0])
+
+        #expect(layout.cells.prefix(2) == [.collapsedGroup(3 ..< 5), .photo(5)])
+        #expect(layout.groups == [0 ..< 3, 3 ..< 5, 5 ..< 8])
+    }
+
+    @Test("A done group's photos all count as hidden")
+    func doneGroupPhotosHidden() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0])
+
+        // All 3 photos of the done group, and 1 of the collapsed 3..<5.
+        #expect(layout.hiddenPhotoCount == 4)
+    }
+
+    @Test("The gaps where done groups were stay locked")
+    func gapsWhereDoneGroupsWereStayLocked() {
+        let afterCollapsed = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [3])
+        let atStart = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0, 3])
+
+        // Cells: [collapsed 0..<3], 5, 6, ... and then 5, 6, ...
+        #expect(!afterCollapsed.isGapEditable(1))
+        #expect(!atStart.isGapEditable(0))
+        #expect(atStart.isGapEditable(1))
+    }
+
+    @Test("A done group that isn't collapsed stays in the grid")
+    func uncollapsedDoneGroupStays() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5], collapsedUpTo: 0, doneGroupStarts: [0])
+
+        #expect(layout.cells.first == .photo(0))
+    }
 }

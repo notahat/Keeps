@@ -10,10 +10,9 @@ pick screen.
 groups collapse, restoring the saved position, and following keyboard
 selection.
 
-A collapsed group is drawn as a pile. `Pile` works out, purely, its photo
-order (keepers on top) and which of its photos are faded; a done pile's
-badge shows a checkmark and how many were kept, and its other photos are
-faded. Each print in it is tilted by Images' `PileJitter`.
+A collapsed group is drawn as a pile, with its photo count. `Pile` works
+out, purely, its photo order (keepers on top). Each print in it is tilted
+by Images' `PileJitter`. Done groups have no cell: they've left the grid.
 
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
 slots, scroll offsets, and where the movement keys go, and `GridHitTarget`

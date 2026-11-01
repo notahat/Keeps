@@ -1,7 +1,7 @@
 import Foundation
 
 /// Works out, from a folder's group boundaries, which groups exist, which are
-/// collapsed, and which cells the grid should show. Pure: it holds no state
+/// collapsed, and which cells the grid should show, leaving out done groups. Pure: it holds no state
 /// beyond its inputs and does no drawing.
 ///
 /// A boundary is the index of the first photo after it, so a boundary equal
@@ -39,11 +39,18 @@ nonisolated struct GroupLayout {
 
     /// `collapsedUpTo` is the photo index at which collapsing stops: groups
     /// ending at or before it are collapsed, later ones are open.
-    init(photoCount: Int, boundaries: Set<Int>, collapsedUpTo: Int = 0) {
+    /// `doneGroupStarts` names the done groups by their first photos; once
+    /// collapsed, they're finished with, so they have no cell.
+    init(photoCount: Int, boundaries: Set<Int>, collapsedUpTo: Int = 0, doneGroupStarts: Set<Int> = []) {
         self.photoCount = photoCount
         self.boundaries = boundaries
         groups = Self.groups(photoCount: photoCount, boundaries: boundaries)
-        cells = Self.cells(photoCount: photoCount, groups: groups, collapsedUpTo: collapsedUpTo)
+        cells = Self.cells(
+            photoCount: photoCount,
+            groups: groups,
+            collapsedUpTo: collapsedUpTo,
+            doneGroupStarts: doneGroupStarts
+        )
     }
 
     /// The photo index that a gap between cells corresponds to: the first
@@ -53,8 +60,9 @@ nonisolated struct GroupLayout {
         cells.indices.contains(gapIndex) ? cells[gapIndex].photoRange.lowerBound : photoCount
     }
 
-    /// How many photos are folded away inside collapsed groups, not counting
-    /// each group's first photo, which its cell shows.
+    /// How many photos have no cell of their own: those folded away inside
+    /// collapsed groups, apart from each one's first photo, which its cell
+    /// shows, and every photo of a done group.
     var hiddenPhotoCount: Int {
         photoCount - cells.count
     }
@@ -86,13 +94,20 @@ nonisolated struct GroupLayout {
         return zip(starts, ends).map { start, end in start ..< end }
     }
 
-    /// The grid cells: groups up to the collapse point collapsed, everything
-    /// else as individual photos.
-    private static func cells(photoCount: Int, groups: [Range<Int>], collapsedUpTo: Int) -> [Cell] {
+    /// The grid cells: groups up to the collapse point collapsed, except done
+    /// ones, which are left out, and everything else as individual photos.
+    private static func cells(
+        photoCount: Int,
+        groups: [Range<Int>],
+        collapsedUpTo: Int,
+        doneGroupStarts: Set<Int>
+    ) -> [Cell] {
         var cells: [Cell] = []
         for group in groups {
             if group.upperBound <= collapsedUpTo {
-                cells.append(.collapsedGroup(group))
+                if !doneGroupStarts.contains(group.lowerBound) {
+                    cells.append(.collapsedGroup(group))
+                }
             } else {
                 cells += group.map { .photo($0) }
             }

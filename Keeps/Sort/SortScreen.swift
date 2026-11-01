@@ -117,12 +117,7 @@ struct SortScreen: View {
     private func pile(ofCell cellIndex: Int, in layout: GroupLayout) -> Pile? {
         let cell = layout.cells[cellIndex]
         guard cell.isCollapsed else { return nil }
-        return Pile(
-            group: cell.photoRange,
-            items: grouping.items,
-            keepers: grouping.keepers,
-            isDone: grouping.isDone(cell.photoRange)
-        )
+        return Pile(group: cell.photoRange, items: grouping.items, keepers: grouping.keepers)
     }
 
     /// How to draw the bar at a gap: nothing at a locked gap, placed if

@@ -38,10 +38,12 @@ class Grouping {
 
     /// The groups marked done, by the index of each one's first photo. Done
     /// groups are always collapsed, so their first photos never move.
-    private var doneGroupStarts: Set<Int> = []
+    private var doneGroupStarts: Set<Int> = [] {
+        didSet { updateLayout() }
+    }
 
-    /// The current groups and grid cells, derived from the boundaries and
-    /// the collapse point. Kept rather than computed on demand because the
+    /// The current groups and grid cells, derived from the boundaries, the
+    /// collapse point, and the done groups. Kept rather than computed on demand because the
     /// grid reads it several times per render, and each derivation walks the
     /// whole folder.
     private(set) var layout: GroupLayout
@@ -55,9 +57,15 @@ class Grouping {
         layout = GroupLayout(photoCount: items.count, boundaries: [])
     }
 
-    /// Rederives the layout after the boundaries or collapse point change.
+    /// Rederives the layout after the boundaries, collapse point, or done
+    /// groups change.
     private func updateLayout() {
-        layout = GroupLayout(photoCount: items.count, boundaries: boundaries, collapsedUpTo: collapsedUpTo)
+        layout = GroupLayout(
+            photoCount: items.count,
+            boundaries: boundaries,
+            collapsedUpTo: collapsedUpTo,
+            doneGroupStarts: doneGroupStarts
+        )
     }
 
     /// The photo each cell shows: its own photo, or a collapsed group's

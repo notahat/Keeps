@@ -589,7 +589,7 @@ Each step builds and passes the tests, then review and commit.
    `closeOpenGroup()` closes a done group, the selection moves to the first
    photo of the next closed group that isn't done, or the working point if
    there is none. Tested.
-2. **Leave done groups out of the grid.** `GroupLayout` takes the done
+2. ✅ **Leave done groups out of the grid.** `GroupLayout` takes the done
    groups and leaves their cells out, still counting their photos as
    hidden; `Grouping` passes them in and re-lays out when they change.
    Tested, including that the gaps either side stay locked. `Pile` loses

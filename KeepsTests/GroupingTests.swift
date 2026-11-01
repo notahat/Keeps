@@ -271,17 +271,13 @@ struct GroupingTests {
         #expect(grouping.selectedPhotoIndex == nil)
     }
 
-    @Test("A done group can be reopened, and stays done with its keepers")
-    func reopeningDoneGroup() {
-        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+    @Test("A done group leaves the grid")
+    func doneGroupLeavesGrid() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
         grouping.open(groupAtCell: 0)
-        grouping.toggleKeeper(atPhoto: 1)
+
         grouping.markOpenGroupDone()
 
-        grouping.open(groupAtCell: 0)
-
-        #expect(grouping.openGroup == 0 ..< 3)
-        #expect(grouping.isDone(0 ..< 3))
-        #expect(grouping.keepers == [1])
+        #expect(grouping.layout.cells.first == .photo(3))
     }
 }
