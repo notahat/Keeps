@@ -38,14 +38,16 @@ folder needs adding to that exception list.
 - `Pick/` — the pick screen. `PickScreen` draws the open group's tiles and
   handles input; the geometry is in `TileLayout`, pure and tested. Still
   being built (see PLAN.md).
+- `Done/` — the done screen. `DoneScreen` shows the done groups as piles,
+  any of which can be opened on the pick screen.
 - `Keys/` — key handling the screens share (`MoveDirection`,
   `isPlainLetter`, and the `handlesKeys` modifier).
 
 **Layering.** The folders use each other only like this, with no cycles:
 
 - App uses everything.
-- Sort and Pick use Grouping, Images, Folder, and Keys, and never each
-  other.
+- Sort, Pick, and Done use Grouping, Images, Folder, and Keys, and never
+  each other.
 - Grouping uses Saving and Folder, converting itself to and from
   `SavedGrouping`.
 - Images uses Folder.

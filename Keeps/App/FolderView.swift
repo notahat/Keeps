@@ -77,8 +77,7 @@ struct FolderView: View {
         case .toGo:
             SortScreen(grouping: grouping)
         case .done:
-            Text("The done groups will show here.")
-                .foregroundStyle(.secondary)
+            DoneScreen(grouping: grouping)
         }
     }
 

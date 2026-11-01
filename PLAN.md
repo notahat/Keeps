@@ -659,7 +659,7 @@ Each step builds and passes the tests, then review and commit.
    showing. Clicking to go or set aside switches view (set aside shows an
    empty placeholder until step 5), and the current pile's label is
    highlighted. Check by hand.
-5. **The done view.** `DoneScreen` in `Done/`: the done groups as piles,
+5. ✅ **The done view.** `DoneScreen` in `Done/`: the done groups as piles,
    latest first, each with how many were kept, such as "2 of 7 kept".
    Click selects; double-click or Return opens on the pick screen, and
    Escape there comes back here. Check by hand, including un-marking a

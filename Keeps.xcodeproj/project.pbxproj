@@ -28,6 +28,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/README.md,
+				Done/README.md,
 				Folder/README.md,
 				Grouping/README.md,
 				Images/README.md,
