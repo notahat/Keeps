@@ -64,9 +64,13 @@ struct FolderView: View {
             // apps keep their navigation. They take only their own size, so
             // the screen gets all the rest of the width.
             HStack(alignment: .top, spacing: 0) {
-                FolderPiles(grouping: grouping, section: $section)
-                    .fixedSize()
-                    .padding(16)
+                // Only once a group is done: until then, every photo is to
+                // go and there's nowhere else to navigate to.
+                if grouping.doneGroupCount > 0 {
+                    FolderPiles(grouping: grouping, section: $section)
+                        .fixedSize()
+                        .padding(16)
+                }
                 sectionScreen(grouping: grouping)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }

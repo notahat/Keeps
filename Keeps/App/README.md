@@ -11,7 +11,7 @@ menu, and the window that hosts each folder.
 `KeepsFile`, restores the grouping when the window opens, saves it as it
 changes, starts thumbnail prefetching, and shows the pick screen while a
 group is open. Otherwise it shows the section the piles have chosen, with
-`FolderPiles` as a sidebar on the left: piles of the photos kept, still to
+`FolderPiles` as a sidebar on the left once a group is done: piles of the photos kept, still to
 go, and set aside, whose counts add up to the folder. Clicking the to-go
 pile shows the sort screen, and clicking the set-aside pile the done
 groups; the current one sits on a highlight. `FolderWindowController` adds

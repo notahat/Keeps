@@ -21,8 +21,8 @@ enum FolderSection {
 /// for the section showing sits on a highlight, like a selected sidebar
 /// item. The keepers pile only shows, for now.
 ///
-/// Draws and takes clicks only; FolderView decides where the piles go and
-/// what each section shows.
+/// Draws and takes clicks only; FolderView decides where the piles go, shows
+/// them only once a group is done, and decides what each section shows.
 struct FolderPiles: View {
     let grouping: Grouping
     @Binding var section: FolderSection
@@ -43,9 +43,9 @@ struct FolderPiles: View {
         let keepers = grouping.keepersOfDoneGroups
         let setAside = grouping.setAsideFromDoneGroups
         return VStack(spacing: Self.spacing) {
-            // Each pile appears only once it has something to show. The
-            // set-aside pile is also the way to the done groups, so it
-            // appears with the first of them, even if nothing was set aside.
+            // The keepers pile appears only once it has something to show.
+            // The set-aside pile always shows, even if nothing was set
+            // aside, since it's the way to the done groups.
             if !keepers.isEmpty {
                 // Green, to match the keeper badge on the pick screen.
                 pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers", color: .green)
@@ -53,10 +53,8 @@ struct FolderPiles: View {
             }
             pile(of: toGo, label: "\(toGo.count) to go")
                 .sectionItem(.toGo, selection: $section, padding: Self.highlightPadding)
-            if grouping.doneGroupCount > 0 {
-                pile(of: setAside, label: "\(setAside.count) set aside")
-                    .sectionItem(.done, selection: $section, padding: Self.highlightPadding)
-            }
+            pile(of: setAside, label: "\(setAside.count) set aside")
+                .sectionItem(.done, selection: $section, padding: Self.highlightPadding)
         }
     }
 
