@@ -205,6 +205,29 @@ struct GroupingTests {
         #expect(grouping.openGroup == 0 ..< 3)
     }
 
+    @Test("Un-marking the open group leaves it open and not done")
+    func unmarkingDone() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.markOpenGroupNotDone()
+
+        #expect(!grouping.isDone(0 ..< 3))
+        #expect(grouping.openGroup == 0 ..< 3)
+    }
+
+    @Test("An un-marked group comes back to the grid")
+    func unmarkedGroupReturnsToGrid() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.markOpenGroupNotDone()
+
+        #expect(grouping.layout.cells.first == .collapsedGroup(0 ..< 3))
+    }
+
     @Test("Marking done with no group open marks nothing")
     func markingDoneWithNothingOpen() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])

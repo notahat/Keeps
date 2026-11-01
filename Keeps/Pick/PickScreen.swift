@@ -3,13 +3,13 @@ import SwiftUI
 /// The pick screen: one group's photos as an even grid of tiles under a
 /// quiet header, where the group's keepers are picked. Arrow and h/j/k/l
 /// keys move focus, F toggles keep on the focused photo, Space or a
-/// double-click toggles a full-size view of it, Return marks the group done,
-/// and Escape leaves the full-size view or goes back to the sort screen.
-/// Clicking a tile focuses it.
+/// double-click toggles a full-size view of it, Return marks the group done
+/// or not done, and Escape leaves the full-size view or goes back to the
+/// sort screen. Clicking a tile focuses it.
 ///
 /// Once the group is done, only its keepers are tiles, and the photos that
 /// weren't kept sit on a pile (SetAsidePile) in the bottom-right corner.
-/// Then F and Return do nothing.
+/// Then F does nothing.
 ///
 /// Places the tiles (PickTile) and the pile, shows FullSizeView over them,
 /// and handles input, including the full-size view's. The layout is
@@ -258,7 +258,7 @@ struct PickScreen: View {
         case .space:
             openFullSize()
         case .return:
-            markDone()
+            toggleDone()
         case .escape where isFullSize:
             closeFullSize()
         case .escape:
@@ -278,15 +278,19 @@ struct PickScreen: View {
         grouping.toggleKeeper(atPhoto: group.lowerBound + focusedIndex)
     }
 
-    /// Marks the group done, which piles up the photos that weren't kept.
-    /// Focus stays on the focused photo if it's a keeper, and otherwise
-    /// goes to the nearest keeper before it.
-    private func markDone() {
-        guard !grouping.isDone(group) else { return }
-        // Until now every photo was a tile, so the index is the place.
-        let focusedPlace = focusedIndex
+    /// Marks the group done, which piles up the photos that weren't kept, or
+    /// marks a done group not done, which brings them back. Focus stays on
+    /// the focused photo, or if it goes onto the pile, moves to the nearest
+    /// keeper before it.
+    private func toggleDone() {
+        let tilePlaces = arrangement.tilePlaces
+        let focusedPlace = tilePlaces.indices.contains(focusedIndex) ? tilePlaces[focusedIndex] : 0
         fullSizeState = .hidden
-        grouping.markOpenGroupDone()
+        if grouping.isDone(group) {
+            grouping.markOpenGroupNotDone()
+        } else {
+            grouping.markOpenGroupDone()
+        }
         focusedIndex = arrangement.tileIndex(nearestPlace: focusedPlace) ?? 0
     }
 

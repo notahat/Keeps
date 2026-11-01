@@ -141,6 +141,13 @@ class Grouping {
         doneGroupStarts.insert(openGroup.lowerBound)
     }
 
+    /// Marks the open group not done, leaving it open, so it's worked on
+    /// again and comes back to the sort screen's grid.
+    func markOpenGroupNotDone() {
+        guard let openGroup else { return }
+        doneGroupStarts.remove(openGroup.lowerBound)
+    }
+
     /// Closes the open group, leaving whether it is done unchanged. A done
     /// group is finished with, so the selection moves on to the next group
     /// that isn't done, or the working point when there is none, ready to

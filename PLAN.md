@@ -645,7 +645,7 @@ so Sort and Done can both use them.
 
 Each step builds and passes the tests, then review and commit.
 
-1. **Return toggles done.** `Grouping.markOpenGroupNotDone()`, tested; on
+1. ✅ **Return toggles done.** `Grouping.markOpenGroupNotDone()`, tested; on
    the pick screen, Return on a done group calls it, and F works again
    once it's not done. Focus stays on the focused photo.
 2. **Done groups and what's to go.** `Grouping` gives the done groups,
