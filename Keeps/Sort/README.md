@@ -12,7 +12,9 @@ selection.
 
 A collapsed group is drawn as a pile, with its photo count. `Pile` works
 out, purely, its photo order (keepers on top). Each print in it is tilted
-by Images' `PileJitter`. Done groups have no cell: they've left the grid.
+by Images' `PileJitter`. Done groups have no cell: they've left the grid,
+and their keepers gather on a `KeptPile` laid over the bottom-right corner,
+labelled with how many were kept from how many groups.
 
 The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
 slots, scroll offsets, and where the movement keys go, and `GridHitTarget`

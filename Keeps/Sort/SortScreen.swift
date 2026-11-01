@@ -6,7 +6,8 @@ import SwiftUI
 /// cell toggles the boundary in that gap, and clicking its middle selects it.
 /// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
 /// collapses every group closed so far. Double-clicking a closed group, or
-/// pressing Return with it selected, opens it on the pick screen.
+/// pressing Return with it selected, opens it on the pick screen. Done groups
+/// leave the grid, and their keepers gather on a KeptPile in the corner.
 ///
 /// Draws the cells, handles input, and owns the grid geometry (column math)
 /// and keyboard focus. Scrolling is left to GridScrolling, and the grouping
@@ -57,6 +58,20 @@ struct SortScreen: View {
                 scrollProxy: scrollProxy
             )
             .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            keptPile
+        }
+    }
+
+    /// The pile of everything kept so far, once any group is done.
+    @ViewBuilder private var keptPile: some View {
+        if grouping.doneGroupCount > 0 {
+            KeptPile(
+                photos: grouping.keepersOfDoneGroups.map { grouping.items[$0] },
+                doneGroupCount: grouping.doneGroupCount
+            )
+            .padding(Self.spacing * 2)
         }
     }
 

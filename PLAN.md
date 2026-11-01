@@ -601,6 +601,6 @@ Each step builds and passes the tests, then review and commit.
 4. ✅ **What's been kept.** `Grouping` gives the keepers of the done groups
    in pile order (the latest on top) and how many groups are done.
    Tested.
-5. **Draw the kept pile.** A `KeptPile` view in `Sort/`, laid over the
+5. ✅ **Draw the kept pile.** A `KeptPile` view in `Sort/`, laid over the
    grid's bottom-right corner while any group is done, labelled like "48
    kept from 12 groups". Check by hand.
