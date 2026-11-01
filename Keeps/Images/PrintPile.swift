@@ -4,24 +4,29 @@ import SwiftUI
 /// each tilted and nudged by its PileJitter. Only the top few prints show
 /// their photos; the few beneath are blank paper, since they're mostly
 /// hidden and each photo costs a thumbnail load, and deeper layers aren't
-/// drawn at all. Draws only, with no label; the screens add their own.
+/// drawn at all. Draws only, with no label or badge; callers add their own.
 struct PrintPile: View {
     let photos: [PhotoItem]
 
     /// The width and height of the square the pile fills.
     let length: CGFloat
 
-    /// The photos' usual shape, for the blank paper.
-    let aspectRatio: CGFloat
+    /// The photos' usual shape, for the blank paper. When nil, the top
+    /// photo's shape is used once it has loaded, which suits a group, whose
+    /// photos are nearly always the same shape.
+    var aspectRatio: CGFloat?
 
-    /// How many prints, from the top, show their photos. Shared with the
-    /// sort screen's collapsed groups, so every pile is drawn alike.
+    /// A white border so each photo reads as a print on paper.
+    var borderWidth: CGFloat = 6
+
+    /// How many prints, from the top, show their photos.
     static let photoLayerCount = 5
 
     /// How many prints are drawn in all, counting the blank ones.
     static let maximumLayerCount = 20
 
-    private static let borderWidth: CGFloat = 6
+    /// The top photo's shape, once loaded (see aspectRatio).
+    @State private var topAspectRatio: CGFloat?
 
     var body: some View {
         ZStack {
@@ -33,22 +38,39 @@ struct PrintPile: View {
         .frame(width: length, height: length)
     }
 
+    /// The shape for blank paper: the one given, or the top photo's.
+    private var paperAspectRatio: CGFloat? {
+        aspectRatio ?? topAspectRatio
+    }
+
     /// One print on the pile, untilted: the photo for the top few layers,
-    /// otherwise blank paper. Only the top print loads urgently; the others
-    /// are mostly hidden, so they load in the background.
+    /// otherwise blank paper, or nothing until the paper's shape is known.
+    /// Only the top print loads urgently; the others are mostly hidden, so
+    /// they load in the background.
     @ViewBuilder private func pilePrint(of photo: PhotoItem, layer: Int) -> some View {
         if layer < Self.photoLayerCount {
             ThumbnailImage(
                 item: photo,
-                borderWidth: Self.borderWidth,
+                borderWidth: borderWidth,
                 loadsInBackground: layer > 0,
-                placeholder: .paper(aspectRatio: aspectRatio),
-                frameSize: CGSize(width: length, height: length)
+                placeholder: placeholder(isTopLayer: layer == 0),
+                frameSize: CGSize(width: length, height: length),
+                onAspectRatioKnown: layer == 0 ? { topAspectRatio = $0 } : nil
             )
-        } else {
-            BlankPrint(aspectRatio: aspectRatio, borderWidth: Self.borderWidth)
+        } else if let paperAspectRatio {
+            BlankPrint(aspectRatio: paperAspectRatio, borderWidth: borderWidth)
                 .frame(width: length, height: length)
         }
+    }
+
+    /// What a print shows while loading: blank paper once its shape is
+    /// known, otherwise the usual square for the top print and nothing for
+    /// the ones beneath.
+    private func placeholder(isTopLayer: Bool) -> ThumbnailImage.Placeholder {
+        if let paperAspectRatio {
+            return .paper(aspectRatio: paperAspectRatio)
+        }
+        return isTopLayer ? .square : .none
     }
 }
 

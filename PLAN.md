@@ -651,7 +651,7 @@ Each step builds and passes the tests, then review and commit.
 2. ✅ **Done groups and what's to go.** `Grouping` gives the done groups,
    latest first, opens any closed group directly (`open(_:)` becomes
    public), and gives the photos still to go, next up first. Tested.
-3. **Share drawing a group as a pile.** `Pile` moves to `Grouping/`; the
+3. ✅ **Share drawing a group as a pile.** `Pile` moves to `Grouping/`; the
    sort cell's collapsed stack becomes a `PrintPile`, which learns the top
    photo's shape when not given one. Check the sort grid by hand.
 4. **Piles as navigation.** `FolderPiles` in `App/` with the to-go pile

@@ -10,9 +10,8 @@ pick screen.
 groups collapse, restoring the saved position, and following keyboard
 selection.
 
-A collapsed group is drawn as a pile, with its photo count. `Pile` works
-out, purely, its photo order (keepers on top). Each print in it is tilted
-by Images' `PileJitter`. Done groups have no cell: they've left the grid,
+A collapsed group is drawn as Images' `PrintPile`, in Grouping's `Pile`
+order (keepers on top), with its photo count. Done groups have no cell: they've left the grid,
 and their photos gather on `DonePiles` beside the grid, bottom right: a
 pile of keepers above a pile of the photos set aside, each with its count.
 

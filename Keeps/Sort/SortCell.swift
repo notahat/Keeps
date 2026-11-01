@@ -54,67 +54,17 @@ struct SortCell: View {
     }
 }
 
-/// A collapsed group drawn as a messy pile of its photos in pile order (see
-/// Pile), each tilted and nudged a little (see PileJitter), with the photo
-/// count in the corner. Using the real photos keeps the visible layers the
-/// right shape. Drawn like a PrintPile: only the top few prints show their
-/// photos, the few beneath are blank paper, and deeper layers aren't drawn,
-/// since they can't be seen and each photo costs a thumbnail load.
+/// A collapsed group drawn as a PrintPile of its photos in pile order (see
+/// Pile), with the photo count in the corner.
 private struct CollapsedStack: View {
     let pile: Pile
 
-    private var photos: [PhotoItem] {
-        pile.photos
-    }
-
-    /// A white border so each photo reads as a print on paper.
-    private static let borderWidth: CGFloat = 7
-
-    /// The top photo's shape, once loaded. Photos in a group are nearly
-    /// always the same shape, so the prints beneath borrow it for their
-    /// blank paper.
-    @State private var topAspectRatio: CGFloat?
-
     var body: some View {
-        ZStack {
-            ForEach(Array(photos.prefix(PrintPile.maximumLayerCount).enumerated()).reversed(), id: \.element.id) { layer, photo in
-                pilePrint(of: photo, layer: layer)
-                    .placedInPile(PileJitter(stem: photo.stem))
+        PrintPile(photos: pile.photos, length: PhotoGridMetrics.cellSize, borderWidth: 7)
+            .overlay(alignment: .bottomTrailing) {
+                PileBadge(photoCount: pile.photos.count)
+                    .padding(10)
             }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            PileBadge(photoCount: photos.count)
-                .padding(10)
-        }
-    }
-
-    /// One print on the pile, untilted: the photo for the top few layers,
-    /// otherwise blank paper in the top photo's shape, or nothing until that
-    /// shape is known. Only the top print loads urgently; the others are
-    /// mostly hidden, so they load in the background.
-    @ViewBuilder private func pilePrint(of photo: PhotoItem, layer: Int) -> some View {
-        if layer < PrintPile.photoLayerCount {
-            ThumbnailImage(
-                item: photo,
-                borderWidth: Self.borderWidth,
-                loadsInBackground: layer > 0,
-                placeholder: placeholder(isTopLayer: layer == 0),
-                onAspectRatioKnown: layer == 0 ? { topAspectRatio = $0 } : nil
-            )
-        } else if let topAspectRatio {
-            BlankPrint(aspectRatio: topAspectRatio, borderWidth: Self.borderWidth)
-                .frame(width: PhotoGridMetrics.cellSize, height: PhotoGridMetrics.cellSize)
-        }
-    }
-
-    /// What a print shows while loading: the usual square for the top one,
-    /// and blank paper in the top photo's shape for the ones beneath, or
-    /// nothing until that shape is known.
-    private func placeholder(isTopLayer: Bool) -> ThumbnailImage.Placeholder {
-        if isTopLayer {
-            return .square
-        }
-        return topAspectRatio.map { .paper(aspectRatio: $0) } ?? .none
     }
 }
 
