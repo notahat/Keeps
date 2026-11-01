@@ -317,31 +317,6 @@ struct GroupingTests {
         #expect(grouping.keepersOfDoneGroups == [4, 1, 2])
     }
 
-    @Test("The keepers' files are those of done groups' keepers, RAW over JPEG")
-    func keeperFileURLs() {
-        let items = (0 ..< 4).map { index in
-            PhotoItem(
-                id: UUID(),
-                stem: "IMG_\(index)",
-                rawURL: index == 1 ? nil : URL(fileURLWithPath: "/tmp/IMG_\(index).CR3"),
-                jpegURL: URL(fileURLWithPath: "/tmp/IMG_\(index).JPG"),
-                capturedAt: Date(timeIntervalSince1970: TimeInterval(index))
-            )
-        }
-        let grouping = Grouping(items: items)
-        grouping.toggleBoundary(atPhoto: 3)
-        for keeper in [0, 1, 3] {
-            grouping.toggleKeeper(atPhoto: keeper)
-        }
-
-        finishFirstGroupInGrid(of: grouping)
-
-        #expect(grouping.keeperFileURLs == [
-            URL(fileURLWithPath: "/tmp/IMG_0.CR3"),
-            URL(fileURLWithPath: "/tmp/IMG_1.JPG"),
-        ])
-    }
-
     @Test("The photos set aside from done groups come latest group first, each in order")
     func setAsideFromDoneGroups() {
         let grouping = makeGrouping(photoCount: 12, boundaries: [3, 6, 9])

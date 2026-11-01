@@ -19,7 +19,8 @@ enum FolderSection {
 /// folder. They also switch sections: clicking the to-go pile shows the sort
 /// screen, and clicking the set-aside pile shows the done groups. The pile
 /// for the section showing sits on a highlight, like a selected sidebar
-/// item. The keepers pile only shows, for now.
+/// item. The keepers pile isn't a section: it's dragged out of the app
+/// instead, as the keepers' files, for Lightroom or Finder.
 ///
 /// Draws and takes clicks only; FolderView decides where the piles go, shows
 /// them only once a group is done, and decides what each section shows.
@@ -49,6 +50,10 @@ struct FolderPiles: View {
             if !keepers.isEmpty {
                 // Green, to match the keeper badge on the pick screen.
                 pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers", color: .green)
+                    .overlay {
+                        PhotoDragSource(photos: keepers.map { grouping.items[$0] })
+                    }
+                    .help("Drag the keepers into Lightroom or a Finder folder")
                     .padding(Self.highlightPadding)
             }
             if !toGo.isEmpty {

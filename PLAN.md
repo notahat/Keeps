@@ -695,6 +695,8 @@ change to keeps.json.
 Each step builds and passes the tests, then review and commit.
 
 1. ✅ **The keepers' files.** `Grouping.keeperFileURLs`: the keepers of the
-   done groups as files, RAW preferred. Tested.
-2. **Drag the pile.** A drag source in `App/` over the keepers pile in
-   `FolderPiles`. Check by hand: drag onto Lightroom and into Finder.
+   done groups as files, RAW preferred. Tested. (Dropped in step 2: the
+   drag needs the photos, for their thumbnails, and `PhotoItem.sourceURL`
+   already picks the RAW, tested.)
+2. ✅ **Drag the pile.** `PhotoDragSource` in `App/` over the keepers pile
+   in `FolderPiles`. Check by hand: drag onto Lightroom and into Finder.

@@ -194,12 +194,6 @@ class Grouping {
         return items.indices.filter { !done.contains($0) }
     }
 
-    /// The files of the done groups' keepers, in pile order: one each, the
-    /// RAW where there is one, as you'd pick to hand on to an editor.
-    var keeperFileURLs: [URL] {
-        keepersOfDoneGroups.map { items[$0].sourceURL }
-    }
-
     /// Whether every photo is in a done group, so the folder is finished.
     var isAllDone: Bool {
         photosToGo.isEmpty
