@@ -2,11 +2,12 @@ import AppKit
 import SwiftUI
 
 /// A fixed-size frame, square unless given a size, that loads and displays a
-/// photo thumbnail, showing a neutral placeholder while loading. By default requests visible-priority
-/// loading on appear and deprioritises on disappear so that currently-visible
-/// cells are always decoded first. Carries no selection or grouping chrome —
-/// cells compose their own overlays on top. Offers an optional border because
-/// only this view knows the image's real shape.
+/// photo thumbnail, showing a neutral placeholder while loading. By default
+/// requests visible-priority loading on appear and deprioritises on
+/// disappear so that currently-visible cells are always decoded first.
+/// Carries no selection or grouping chrome — cells compose their own
+/// overlays on top. Offers an optional border because only this view knows
+/// the image's real shape.
 struct ThumbnailImage: View {
     let item: PhotoItem
 

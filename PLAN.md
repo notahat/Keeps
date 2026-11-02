@@ -745,5 +745,5 @@ Each step builds and passes the tests, then review and commit.
 8. ✅ **Simplify the folder's session and view.** `FolderSession` isn't
    observable, since its photos never change. `FolderView` hands a
    non-optional grouping to a subview, so it's unwrapped once.
-9. **Comment nits.** Wrap comments at 80 columns, and call `PhotoItem`'s
+9. ✅ **Comment nits.** Wrap comments at 80 columns, and call `PhotoItem`'s
    rule what it is: a struct's, not a class's.

@@ -1,8 +1,8 @@
 import Foundation
 
 /// Works out, from a folder's group boundaries, which groups exist, which are
-/// collapsed, and which cells the grid should show, leaving out done groups. Pure: it holds no state
-/// beyond its inputs and does no drawing.
+/// collapsed, and which cells the grid should show, leaving out done groups.
+/// Pure: it holds no state beyond its inputs and does no drawing.
 ///
 /// A boundary is the index of the first photo after it, so a boundary equal
 /// to the photo count closes the final group. The folder always starts a

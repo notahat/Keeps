@@ -43,7 +43,8 @@ enum FolderScanner {
         return (rawByStem, jpegByStem)
     }
 
-    /// Builds PhotoItems from paired file dictionaries, sorted by creation date.
+    /// Builds PhotoItems from paired file dictionaries, sorted by creation
+    /// date.
     private static func buildSortedItems(
         rawByStem: [String: URL],
         jpegByStem: [String: URL]
@@ -51,7 +52,8 @@ enum FolderScanner {
         let allStems = Set(rawByStem.keys).union(jpegByStem.keys)
         return allStems
             .map { stem -> PhotoItem in
-                // stem is in allStems (the union), so it must be in rawByStem if not jpegByStem.
+                // Every stem came from one dictionary or the other, so it's in
+                // rawByStem whenever it isn't in jpegByStem.
                 // swiftlint:disable:next force_unwrapping
                 let sourceURL = jpegByStem[stem] ?? rawByStem[stem]!
                 return PhotoItem(
