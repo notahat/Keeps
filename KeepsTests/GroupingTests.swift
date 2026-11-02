@@ -194,6 +194,18 @@ struct GroupingTests {
         #expect(grouping.keepers.isEmpty)
     }
 
+    @Test("Counts only the keepers inside a group")
+    func keptCountInGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 6])
+        for photoIndex in [1, 3, 5, 8] {
+            grouping.toggleKeeper(atPhoto: photoIndex)
+        }
+
+        let keptCount = grouping.keptCount(in: 3 ..< 6)
+
+        #expect(keptCount == 2)
+    }
+
     @Test("Marking the open group done leaves it open")
     func markingDoneLeavesGroupOpen() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])

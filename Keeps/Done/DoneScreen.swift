@@ -63,10 +63,9 @@ struct DoneScreen: View {
     /// highlight, with click handling.
     private func cell(for group: Range<Int>) -> some View {
         let pile = Pile(group: group, items: grouping.items, keepers: grouping.keepers)
-        let keptCount = group.count { grouping.keepers.contains($0) }
         return PrintPile(photos: pile.photos, length: Self.cellSize, borderWidth: 7)
             .overlay(alignment: .bottom) {
-                PileLabel(text: "\(keptCount) of \(group.count) kept")
+                PileLabel(text: "\(grouping.keptCount(in: group)) of \(group.count) kept")
             }
             .overlay {
                 if group == selectedGroup {

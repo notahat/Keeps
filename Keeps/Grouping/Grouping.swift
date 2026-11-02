@@ -165,6 +165,11 @@ class Grouping {
         doneGroupStarts.contains(group.lowerBound)
     }
 
+    /// How many of a group's photos are keepers.
+    func keptCount(in group: Range<Int>) -> Int {
+        group.count { keepers.contains($0) }
+    }
+
     /// How many groups have been marked done.
     var doneGroupCount: Int {
         doneGroupStarts.count

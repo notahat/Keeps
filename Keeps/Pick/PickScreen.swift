@@ -128,7 +128,7 @@ struct PickScreen: View {
     private var header: some View {
         let groups = grouping.layout.groups
         let number = (groups.firstIndex(of: group) ?? 0) + 1
-        let keptCount = group.count { grouping.keepers.contains($0) }
+        let keptCount = grouping.keptCount(in: group)
         let done = grouping.isDone(group) ? "Done · " : ""
         return Text("Group \(number) of \(groups.count) · \(done)\(keptCount) of \(group.count) kept")
             .font(.headline)

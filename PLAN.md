@@ -724,7 +724,7 @@ Each step builds and passes the tests, then review and commit.
    indices, so `PickScreen` stops converting to and from places in the
    group, and toggling a keeper no longer relies on every photo being a
    tile. Tested.
-3. **Count a group's keepers in one place.** `Grouping.keptCount(in:)`, used
+3. ✅ **Count a group's keepers in one place.** `Grouping.keptCount(in:)`, used
    by the pick screen's header and the done screen's labels. Tested.
 4. **Tidy Grouping.** Order its members by what they're for, with MARK
    headers; a `Set.toggle` for boundaries and keepers; drop the
