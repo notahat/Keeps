@@ -59,12 +59,17 @@ final class ImagePipeline {
     }()
 
     /// Every read queued or running, at any priority, by item and size.
-    private var readsInFlight: [String: Operation] = [:]
-
-    /// How many reads are queued or running.
-    var queueCount: Int {
-        readsInFlight.count
+    /// Views watch loadProgress rather than this.
+    @ObservationIgnored
+    private var readsInFlight: [String: Operation] = [:] {
+        didSet { loadProgress.record(queueCount: readsInFlight.count) }
     }
+
+    /// How far through the current burst of reads the pipeline is. It's
+    /// updated here as each read starts and finishes, so a view can simply
+    /// read it. A view that reacted to each change itself would run several
+    /// times a frame when reads finish together.
+    private(set) var loadProgress = LoadProgress()
 
     // MARK: - Public interface
 

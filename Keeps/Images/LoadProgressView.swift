@@ -1,16 +1,11 @@
 import SwiftUI
 
-/// A small toolbar progress ring for the current burst of image loading (see
-/// LoadProgress). Hidden while nothing is loading, but it keeps its space so
-/// the toolbar doesn't shift.
+/// A small toolbar progress ring for the image pipeline's current burst of
+/// loading (see LoadProgress). Hidden while nothing is loading, but it keeps
+/// its space so the toolbar doesn't shift.
 struct LoadProgressView: View {
-    @State private var progress = LoadProgress()
-
     var body: some View {
-        LoadProgressRing(fractionComplete: progress.fractionComplete)
-            .onChange(of: ImagePipeline.shared.queueCount, initial: true) { _, count in
-                progress.record(queueCount: count)
-            }
+        LoadProgressRing(fractionComplete: ImagePipeline.shared.loadProgress.fractionComplete)
     }
 }
 
