@@ -747,3 +747,56 @@ Each step builds and passes the tests, then review and commit.
    non-optional grouping to a subview, so it's unwrapped once.
 9. ✅ **Comment nits.** Wrap comments at 80 columns, and call `PhotoItem`'s
    rule what it is: a struct's, not a class's.
+
+# Plan: A keepers screen
+
+## Goal
+
+See the keepers so far, all together, and look at any of them full size,
+without opening their groups one at a time.
+
+## Design
+
+- **A third section.** `FolderSection` gains `keepers`, titled "Keepers".
+  Clicking the keepers pile in the sidebar selects it, and the pile sits on
+  the highlight like the other two. Dragging the pile still hands over the
+  keepers' files: `PhotoDragView` reports a press that ends without a drag
+  as a click.
+- **What it shows.** The keepers of the done groups
+  (`Grouping.keepersOfDoneGroups`), in the same order as the pile: the
+  latest group's first, and each group's in folder order. They're laid out
+  as tiles like the pick screen's, using `TileLayout`, so a few keepers
+  fill the window and many scroll. No keeper badges, since every photo
+  here is a keeper.
+- **Input.** Clicking a tile selects it. Arrow and h/j/k/l keys move the
+  selection, as on the pick screen. Space or a double-click shows the
+  selected photo full size, where left and right (and up and down) step
+  through the keepers, and Space or Escape goes back to the tiles.
+- **Full size.** `FullSizeImage` over the tiles, with the photo's place
+  among the keepers, fading in and out rather than zooming from the tile.
+- **When the keepers run out.** If a group is reopened and its keepers
+  unmarked, so there are none left, the keepers pile disappears, and the
+  window goes back to the sort screen, as it already does for the done
+  screen.
+- **Where it lives.** A new `Keepers/` folder, using Grouping, Images,
+  Folder, and Keys like the other screens, and never Sort, Pick, or Done.
+  So `FullSizeImage` and `TileLayout`, which know nothing about groups,
+  move from `Pick/` to `Images/`, where the screens' shared pieces live.
+
+Out of scope: changing keepers from this screen (that's still the pick
+screen's job), opening a keeper's group from here, and zooming from the
+tile, which would mean sharing PickScreen's zoom machinery.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **Share the full-size image and the tile layout.** Move
+   `FullSizeImage` and `TileLayout` to `Images/`, and update the READMEs.
+   No behaviour changes.
+2. **The keepers screen.** `KeepersScreen` in `Keepers/`, with its README
+   (added to the project's README exceptions), the `keepers` section, the
+   clickable keepers pile, and falling back to the sort screen when the
+   keepers run out. The section's fallback rule is pure and tested. Check
+   by hand: click and drag the pile, move around, and view full size.
+   Update CLAUDE.md's architecture, layering, and glossary.
