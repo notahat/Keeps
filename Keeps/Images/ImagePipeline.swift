@@ -1,31 +1,42 @@
 import AppKit
 import Observation
+import SwiftUI
 
-/// Schedules image reads and caches results. Routes all reads through a
-/// bounded OperationQueue: user-visible requests at high priority, background
-/// prefetch at low. Signals completion via NotificationCenter so that on-screen
-/// views can update without suspending on async/await.
+/// Schedules image reads and caches the results. Every read goes through a
+/// bounded OperationQueue at one of four priorities: the full-size image
+/// being looked at, then the full-size images near it, then thumbnails on
+/// screen, then background prefetching. Views hear that an image has loaded
+/// through `onImageLoaded(for:)`, so they update without suspending on
+/// async/await. Doesn't decode files itself (that's ImageReader's job) or
+/// draw anything.
 @Observable
 @MainActor
 final class ImagePipeline {
     static let shared = ImagePipeline()
 
-    /// Posted on the main thread when any image finishes loading. The userInfo
-    /// dictionary carries the item's UUID under imageLoadedItemIDKey.
-    static let imageLoadedNotification = Notification.Name("com.notahat.Keeps.imageLoaded")
-    static let imageLoadedItemIDKey = "itemID"
+    /// Posted on the main thread when any image finishes loading, with the
+    /// item's id in the userInfo under `loadedItemIDKey`. Heard through
+    /// `onImageLoaded(for:)`.
+    fileprivate static let imageLoadedNotification = Notification.Name("com.notahat.Keeps.imageLoaded")
+    fileprivate static let loadedItemIDKey = "itemID"
+
+    /// The full-size image being looked at, which goes ahead of everything.
+    private static let currentImagePriority: Operation.QueuePriority = .veryHigh
+
+    /// The full-size images either side of it, read ahead.
+    private static let nearbyImagePriority: Operation.QueuePriority = .high
+
+    /// Thumbnails on screen. Low rather than normal so that full-size reads
+    /// always pre-empt them.
+    private static let visibleThumbnailPriority: Operation.QueuePriority = .low
+
+    /// Thumbnails read ahead in the background.
+    private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
 
     private let cache = ImageCache()
 
-    // Priority levels used across the decode queue. Higher tiers pre-empt lower
-    // ones, so the user always sees the image they're looking at load first.
-    private static let currentImagePriority: Operation.QueuePriority = .veryHigh
-    private static let nearbyImagePriority: Operation.QueuePriority = .high
-    private static let visibleThumbnailPriority: Operation.QueuePriority = .low
-    private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
-
-    /// Worker pool. maxConcurrentOperationCount controls read parallelism —
-    /// tune this to balance throughput against memory and responsiveness.
+    /// The worker pool. Its concurrency balances throughput against memory
+    /// and responsiveness.
     private let readQueue: OperationQueue = {
         let queue = OperationQueue()
         queue.name = "com.notahat.Keeps.ImagePipeline"
@@ -33,13 +44,12 @@ final class ImagePipeline {
         return queue
     }()
 
-    /// All in-flight read operations keyed by item identity + size. Includes
-    /// both user-visible (high priority) and background prefetch (low priority) ops.
-    private var imageOps: [String: Operation] = [:]
+    /// Every read queued or running, at any priority, by item and size.
+    private var readsInFlight: [String: Operation] = [:]
 
-    /// The total number of read operations currently queued or running.
+    /// How many reads are queued or running.
     var queueCount: Int {
-        imageOps.count
+        readsInFlight.count
     }
 
     // MARK: - Public interface
@@ -49,35 +59,37 @@ final class ImagePipeline {
         cache.image(for: item, size: size)
     }
 
-    /// Starts loading an image at high priority, or promotes an existing
-    /// operation. Called when a view needs the image as soon as possible.
+    /// Starts reading an image at the priority for what's on screen, or
+    /// raises an existing read to it. Called when a view needs the image as
+    /// soon as possible.
     func requestImage(for item: PhotoItem, size: ImageSize) {
-        let key = imageKey(for: item, size: size)
         guard cache.image(for: item, size: size) == nil else { return }
-        if let op = imageOps[key] {
-            op.queuePriority = requestPriority(for: size)
+        let key = readKey(for: item, size: size)
+        if let read = readsInFlight[key] {
+            read.queuePriority = requestPriority(for: size)
             return
         }
-        enqueueLoad(for: item, size: size, key: key, priority: requestPriority(for: size))
+        enqueueRead(of: item, size: size, key: key, priority: requestPriority(for: size))
     }
 
-    /// Drops an image back to prefetch priority. Called when the view showing
-    /// it leaves the screen.
+    /// Drops a read back to prefetch priority. Called when the view showing
+    /// its image leaves the screen.
     func deprioritizeImage(for item: PhotoItem, size: ImageSize) {
-        imageOps[imageKey(for: item, size: size)]?.queuePriority = prefetchPriority(for: size)
+        readsInFlight[readKey(for: item, size: size)]?.queuePriority = prefetchPriority(for: size)
     }
 
-    /// Starts loading an image at low priority if not already in flight.
+    /// Starts reading an image at prefetch priority, unless it's already
+    /// cached or being read.
     func prefetchImage(for item: PhotoItem, size: ImageSize) {
-        let key = imageKey(for: item, size: size)
-        guard cache.image(for: item, size: size) == nil, imageOps[key] == nil else { return }
-        enqueueLoad(for: item, size: size, key: key, priority: prefetchPriority(for: size))
+        let key = readKey(for: item, size: size)
+        guard cache.image(for: item, size: size) == nil, readsInFlight[key] == nil else { return }
+        enqueueRead(of: item, size: size, key: key, priority: prefetchPriority(for: size))
     }
 
-    /// Queues background loads for all items. Cancels any previous prefetch ops
-    /// that have not been promoted by a user request.
+    /// Queues background reads for all items, first cancelling any earlier
+    /// prefetches that no view has asked for since.
     func prefetchImages(for items: [PhotoItem], size: ImageSize) {
-        cancelIdlePrefetch(size: size)
+        cancelIdlePrefetches(size: size)
         for item in items {
             prefetchImage(for: item, size: size)
         }
@@ -85,7 +97,7 @@ final class ImagePipeline {
 
     /// Reads an image and caches it straight away, blocking until it's
     /// loaded. Only for SwiftUI previews, which are drawn before a background
-    /// load would finish; in the app it would stall the main thread.
+    /// read would finish; in the app it would stall the main thread.
     func loadImageImmediately(for item: PhotoItem, size: ImageSize) {
         guard let cgImage = Self.readImage(from: item.sourceURL, size: size) else { return }
         cache.setImage(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
@@ -93,6 +105,7 @@ final class ImagePipeline {
 
     // MARK: - Private
 
+    /// The priority for an image a view is showing.
     private func requestPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
         case .full: Self.currentImagePriority
@@ -100,6 +113,7 @@ final class ImagePipeline {
         }
     }
 
+    /// The priority for an image read ahead of being shown.
     private func prefetchPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
         case .full: Self.nearbyImagePriority
@@ -107,14 +121,15 @@ final class ImagePipeline {
         }
     }
 
-    private func imageKey(for item: PhotoItem, size: ImageSize) -> String {
+    /// The key a read is tracked by: the item and the size.
+    private func readKey(for item: PhotoItem, size: ImageSize) -> String {
         switch size {
         case let .thumbnail(maxPixelSize): "\(item.id)@\(maxPixelSize)"
         case .full: "\(item.id)@full"
         }
     }
 
-    /// Reads an image of the given size from a file.
+    /// Reads an image of the given size from a file. Safe on any thread.
     private nonisolated static func readImage(from url: URL, size: ImageSize) -> CGImage? {
         switch size {
         case .full: ImageReader.fullImage(from: url)
@@ -122,52 +137,60 @@ final class ImagePipeline {
         }
     }
 
-    private func enqueueLoad(for item: PhotoItem, size: ImageSize, key: String, priority: Operation.QueuePriority) {
+    /// Queues a read of an item's image, which finishes back on the main
+    /// actor (see finishRead).
+    private func enqueueRead(
+        of item: PhotoItem,
+        size: ImageSize,
+        key: String,
+        priority: Operation.QueuePriority
+    ) {
         let url = item.sourceURL
-        imageOps[key] = makeOp(
-            priority: priority,
-            read: { [size] in Self.readImage(from: url, size: size) },
-            store: { [size] image in ImagePipeline.shared.cache.setImage(image, for: item, size: size) },
-            onComplete: { ImagePipeline.shared.completeImageLoad(key: key, itemID: item.id) }
-        )
-    }
-
-    private func cancelIdlePrefetch(size: ImageSize) {
-        let idlePriority = prefetchPriority(for: size)
-        imageOps = imageOps.filter { _, op in
-            if op.queuePriority == idlePriority {
-                op.cancel()
-                return false
-            }
-            return true
-        }
-    }
-
-    private func completeImageLoad(key: String, itemID: UUID) {
-        imageOps.removeValue(forKey: key)
-        NotificationCenter.default.post(
-            name: ImagePipeline.imageLoadedNotification,
-            object: nil,
-            userInfo: [ImagePipeline.imageLoadedItemIDKey: itemID]
-        )
-    }
-
-    private func makeOp(
-        priority: Operation.QueuePriority,
-        read: @escaping @Sendable () -> CGImage?,
-        store: @escaping @MainActor (NSImage) -> Void,
-        onComplete: @escaping @MainActor () -> Void
-    ) -> Operation {
-        let op = BlockOperation {
-            let cgImage = read()
+        let read = BlockOperation {
+            let cgImage = Self.readImage(from: url, size: size)
             Task { @MainActor in
-                let image = cgImage.map { NSImage(cgImage: $0, size: .zero) }
-                if let image { store(image) }
-                onComplete()
+                self.finishRead(of: item, size: size, key: key, cgImage: cgImage)
             }
         }
-        op.queuePriority = priority
-        readQueue.addOperation(op)
-        return op
+        read.queuePriority = priority
+        readsInFlight[key] = read
+        readQueue.addOperation(read)
+    }
+
+    /// Caches a finished read's image, if the file gave one, stops tracking
+    /// the read, and tells views the item's image has loaded.
+    private func finishRead(of item: PhotoItem, size: ImageSize, key: String, cgImage: CGImage?) {
+        if let cgImage {
+            cache.setImage(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+        }
+        readsInFlight.removeValue(forKey: key)
+        NotificationCenter.default.post(
+            name: Self.imageLoadedNotification,
+            object: nil,
+            userInfo: [Self.loadedItemIDKey: item.id]
+        )
+    }
+
+    /// Cancels the reads still at prefetch priority for a size: those no view
+    /// has asked for, or that went back to prefetch priority when their view
+    /// left the screen.
+    private func cancelIdlePrefetches(size: ImageSize) {
+        let idlePriority = prefetchPriority(for: size)
+        readsInFlight = readsInFlight.filter { _, read in
+            guard read.queuePriority == idlePriority else { return true }
+            read.cancel()
+            return false
+        }
+    }
+}
+
+extension View {
+    /// Runs `action` each time an image of `item` finishes loading, at any
+    /// size. The image is then in the pipeline's cache.
+    func onImageLoaded(for item: PhotoItem, perform action: @escaping () -> Void) -> some View {
+        onReceive(NotificationCenter.default.publisher(for: ImagePipeline.imageLoadedNotification)) { notification in
+            guard notification.userInfo?[ImagePipeline.loadedItemIDKey] as? UUID == item.id else { return }
+            action()
+        }
     }
 }

@@ -737,7 +737,7 @@ Each step builds and passes the tests, then review and commit.
    paper and a group with no thumbnails yet; `KeeperBadge` moves to
    `Images/` so the keepers pile can use its colour; the sort screen's
    pile badge becomes a coloured `PileLabel`.
-7. **Bring ImagePipeline up to date.** One helper for hearing that an
+7. ✅ **Bring ImagePipeline up to date.** One helper for hearing that an
    item's image has loaded, used by `ThumbnailImage` and `FullSizeImage`;
    one method to finish a load in place of three closures; comments that
    match the four priority tiers; no abbreviated names; header comments

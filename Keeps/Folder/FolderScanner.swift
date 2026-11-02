@@ -31,11 +31,11 @@ enum FolderScanner {
         var jpegByStem: [String: URL] = [:]
 
         for fileURL in urls {
-            let ext = fileURL.pathExtension.lowercased()
+            let fileExtension = fileURL.pathExtension.lowercased()
             let stem = fileURL.deletingPathExtension().lastPathComponent
-            if rawExtensions.contains(ext) {
+            if rawExtensions.contains(fileExtension) {
                 rawByStem[stem] = fileURL
-            } else if jpegExtensions.contains(ext) {
+            } else if jpegExtensions.contains(fileExtension) {
                 jpegByStem[stem] = fileURL
             }
         }
@@ -65,6 +65,8 @@ enum FolderScanner {
             .sorted { $0.capturedAt < $1.capturedAt }
     }
 
+    /// The file's creation date, or the start of 1970 when it can't be read,
+    /// so such files sort first.
     private static func creationDate(of url: URL) -> Date {
         (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate
             ?? Date(timeIntervalSince1970: 0)

@@ -51,8 +51,7 @@ struct FullSizeImage: View {
             deprioritizeCurrent()
             loadWindow()
         }
-        .onReceive(NotificationCenter.default.publisher(for: ImagePipeline.imageLoadedNotification)) { notification in
-            guard (notification.userInfo?[ImagePipeline.imageLoadedItemIDKey] as? UUID) == item.id else { return }
+        .onImageLoaded(for: item) {
             image = ImagePipeline.shared.cachedImage(for: item, size: .full)
         }
     }

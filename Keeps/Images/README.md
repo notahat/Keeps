@@ -3,8 +3,8 @@
 Loading, caching, and showing photos. `ImageReader` decodes files into
 images; `ImagePipeline` schedules those reads on a bounded queue, with
 on-screen requests ahead of background prefetching, caches the results in
-`ImageCache`, and posts a notification as each image arrives so views can
-update. `ThumbnailImage` is the view that shows a thumbnail, and
+`ImageCache`, and tells views as each image arrives, through
+`onImageLoaded(for:)`. `ThumbnailImage` is the view that shows a thumbnail, and
 `LoadProgressView` the toolbar ring showing how far the current burst of
 loading has got. `PrintPile` draws photos as a messy pile of prints, only
 the top few showing their photos and the rest `BlankPrint`s, with

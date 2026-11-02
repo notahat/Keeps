@@ -81,10 +81,8 @@ struct ThumbnailImage: View {
         .onDisappear {
             ImagePipeline.shared.deprioritizeImage(for: item, size: Self.imageSize)
         }
-        .onReceive(NotificationCenter.default.publisher(for: ImagePipeline.imageLoadedNotification)) { notification in
-            guard (notification.userInfo?[ImagePipeline.imageLoadedItemIDKey] as? UUID) == item.id,
-                  let loaded = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize)
-            else { return }
+        .onImageLoaded(for: item) {
+            guard let loaded = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize) else { return }
             show(loaded)
         }
     }
