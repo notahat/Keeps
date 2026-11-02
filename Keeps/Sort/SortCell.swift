@@ -99,3 +99,34 @@ private struct BoundaryBar: View {
             .allowsHitTesting(false)
     }
 }
+
+#Preview("Single photo") {
+    SortCell(item: PreviewPhotos.landscape)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Selected photo") {
+    SortCell(item: PreviewPhotos.landscape, isSelected: true)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Boundaries placed on both sides") {
+    SortCell(item: PreviewPhotos.portrait, leadingBoundary: .placed, trailingBoundary: .placed)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Boundary previewed under the pointer") {
+    SortCell(item: PreviewPhotos.portrait, trailingBoundary: .preview)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Collapsed group") {
+    let photos = PreviewPhotos.makeItems(count: 7)
+    SortCell(item: photos[0], pile: Pile(group: 0 ..< 7, items: photos, keepers: []))
+        .padding()
+        .background(.black)
+}

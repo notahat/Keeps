@@ -19,3 +19,8 @@ struct AllDoneMessage: View {
         }
     }
 }
+
+#Preview("All done") {
+    AllDoneMessage(keptCount: 42, photoCount: 317)
+        .padding(40)
+}

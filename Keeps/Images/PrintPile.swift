@@ -107,3 +107,27 @@ struct PileLabel: View {
         color.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.regularMaterial)
     }
 }
+
+#Preview("Small pile, all photos") {
+    PrintPile(photos: PreviewPhotos.makeItems(count: 3), length: 260)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Large pile, blank prints beneath") {
+    PrintPile(photos: PreviewPhotos.makeItems(count: 12), length: 260, aspectRatio: 1.5)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Plain pile label") {
+    PileLabel(text: "12 to go")
+        .padding()
+        .background(.black)
+}
+
+#Preview("Coloured pile label") {
+    PileLabel(text: "5 keepers", color: .green)
+        .padding()
+        .background(.black)
+}

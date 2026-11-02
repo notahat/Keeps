@@ -44,3 +44,30 @@ struct KeeperBadge: View {
             .shadow(radius: 2)
     }
 }
+
+/// The size every tile preview uses.
+private let previewTileSize = CGSize(width: 300, height: 300)
+
+#Preview("Plain tile") {
+    PickTile(item: PreviewPhotos.landscape, size: previewTileSize, isFocused: false, isKeeper: false)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Focused tile") {
+    PickTile(item: PreviewPhotos.landscape, size: previewTileSize, isFocused: true, isKeeper: false)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Keeper tile") {
+    PickTile(item: PreviewPhotos.portrait, size: previewTileSize, isFocused: false, isKeeper: true)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Focused keeper tile") {
+    PickTile(item: PreviewPhotos.portrait, size: previewTileSize, isFocused: true, isKeeper: true)
+        .padding()
+        .background(.black)
+}
