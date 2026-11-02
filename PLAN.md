@@ -719,7 +719,7 @@ Each step builds and passes the tests, then review and commit.
    be read, isn't valid, or is in a format it doesn't know. `FolderView`
    shows the error and doesn't autosave that folder, so the file is left
    as it was. Tested.
-2. **Name the open group's photos by photo index.** `PickArrangement` takes
+2. ✅ **Name the open group's photos by photo index.** `PickArrangement` takes
    the group and the keepers and gives tile and pile photos as photo
    indices, so `PickScreen` stops converting to and from places in the
    group, and toggling a keeper no longer relies on every photo being a

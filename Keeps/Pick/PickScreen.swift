@@ -68,17 +68,12 @@ struct PickScreen: View {
 
     /// Which of the group's photos are tiles and which are on the pile.
     private var arrangement: PickArrangement {
-        let keeperPlaces = grouping.keepers.filter(group.contains).map { $0 - group.lowerBound }
-        return PickArrangement(
-            photoCount: group.count,
-            keeperPlaces: Set(keeperPlaces),
-            isDone: grouping.isDone(group)
-        )
+        PickArrangement(group: group, keepers: grouping.keepers, isDone: grouping.isDone(group))
     }
 
-    /// The photos at some places in the group.
-    private func photos(atPlaces places: [Int]) -> [PhotoItem] {
-        places.map { grouping.items[group.lowerBound + $0] }
+    /// The photos with some indices.
+    private func photos(_ photoIndices: [Int]) -> [PhotoItem] {
+        photoIndices.map { grouping.items[$0] }
     }
 
     /// Whether the full-size view is up, covering the tiles and taking the
@@ -112,12 +107,11 @@ struct PickScreen: View {
     /// The full-size view, which appears exactly over the focused tile and
     /// zooms out from there.
     private var fullSize: some View {
-        let arrangement = arrangement
-        let place = arrangement.tilePlaces[focusedIndex]
+        let tilePhotos = arrangement.tilePhotos
         return FullSizeView(
-            photos: photos(atPlaces: arrangement.tilePlaces),
+            photos: photos(tilePhotos),
             focusedIndex: focusedIndex,
-            isKeeper: grouping.keepers.contains(group.lowerBound + place),
+            isKeeper: grouping.keepers.contains(tilePhotos[focusedIndex]),
             isZoomed: fullSizeState == .zoomed,
             zoomNamespace: zoomNamespace
         )
@@ -146,15 +140,15 @@ struct PickScreen: View {
     /// bottom-right corner when there is one.
     private func tilesAndPile(in size: CGSize) -> some View {
         let arrangement = arrangement
-        let hasPile = !arrangement.pilePlaces.isEmpty
+        let hasPile = !arrangement.pilePhotos.isEmpty
         let pileRoom = hasPile ? Self.pileLength + Self.spacing : 0
         let tilesSize = CGSize(width: max(0, size.width - pileRoom), height: size.height)
         return HStack(alignment: .bottom, spacing: Self.spacing - 2 * Self.edgeRoom) {
-            tiles(atPlaces: arrangement.tilePlaces, in: tilesSize)
+            tiles(of: arrangement.tilePhotos, in: tilesSize)
                 .frame(width: tilesSize.width, height: tilesSize.height)
             if hasPile {
                 SetAsidePile(
-                    photos: photos(atPlaces: arrangement.pilePlaces),
+                    photos: photos(arrangement.pilePhotos),
                     length: Self.pileLength,
                     aspectRatio: aspectRatio
                 )
@@ -165,10 +159,10 @@ struct PickScreen: View {
 
     /// The tiles for some of the group's photos, laid out in the given
     /// space, scrolling only when they don't fit.
-    private func tiles(atPlaces places: [Int], in size: CGSize) -> some View {
+    private func tiles(of photoIndices: [Int], in size: CGSize) -> some View {
         let tileArea = CGSize(width: size.width - 2 * Self.edgeRoom, height: size.height - 2 * Self.edgeRoom)
         let layout = TileLayout(
-            tileCount: places.count,
+            tileCount: photoIndices.count,
             aspectRatio: aspectRatio,
             availableSize: tileArea,
             spacing: Self.spacing,
@@ -176,8 +170,8 @@ struct PickScreen: View {
         )
         return ScrollView(.vertical) {
             ZStack(alignment: .topLeading) {
-                ForEach(Array(places.enumerated()), id: \.element) { index, place in
-                    tile(atPlace: place, index: index, layout: layout)
+                ForEach(Array(photoIndices.enumerated()), id: \.element) { index, photoIndex in
+                    tile(ofPhoto: photoIndex, index: index, layout: layout)
                 }
             }
             .frame(width: layout.contentSize.width, height: layout.contentSize.height)
@@ -202,11 +196,10 @@ struct PickScreen: View {
         }
     }
 
-    /// The tile for the photo at a place in the group, placed where the
-    /// layout puts the tile at an index.
-    private func tile(atPlace place: Int, index: Int, layout: TileLayout) -> some View {
+    /// The tile for a photo, placed where the layout puts the tile at an
+    /// index.
+    private func tile(ofPhoto photoIndex: Int, index: Int, layout: TileLayout) -> some View {
         let frame = layout.tileFrames[index]
-        let photoIndex = group.lowerBound + place
         let photo = grouping.items[photoIndex]
         return PickTile(
             item: photo,
@@ -272,10 +265,9 @@ struct PickScreen: View {
     /// Marks the focused photo as a keeper, or unmarks it, unless the group
     /// is done.
     private func toggleFocusedKeeper() {
-        guard !grouping.isDone(group) else { return }
-        // Until the group is done, every photo is a tile, so the focused
-        // tile's index is its place in the group.
-        grouping.toggleKeeper(atPhoto: group.lowerBound + focusedIndex)
+        let tilePhotos = arrangement.tilePhotos
+        guard !grouping.isDone(group), tilePhotos.indices.contains(focusedIndex) else { return }
+        grouping.toggleKeeper(atPhoto: tilePhotos[focusedIndex])
     }
 
     /// Marks the group done, which piles up the photos that weren't kept, or
@@ -283,21 +275,21 @@ struct PickScreen: View {
     /// the focused photo, or if it goes onto the pile, moves to the nearest
     /// keeper before it.
     private func toggleDone() {
-        let tilePlaces = arrangement.tilePlaces
-        let focusedPlace = tilePlaces.indices.contains(focusedIndex) ? tilePlaces[focusedIndex] : 0
+        let tilePhotos = arrangement.tilePhotos
+        let focusedPhoto = tilePhotos.indices.contains(focusedIndex) ? tilePhotos[focusedIndex] : group.lowerBound
         fullSizeState = .hidden
         if grouping.isDone(group) {
             grouping.markOpenGroupNotDone()
         } else {
             grouping.markOpenGroupDone()
         }
-        focusedIndex = arrangement.tileIndex(nearestPlace: focusedPlace) ?? 0
+        focusedIndex = arrangement.tileIndex(nearestPhoto: focusedPhoto) ?? 0
     }
 
     /// Puts the full-size view up over the focused tile, when there is one.
     /// It zooms out from there as it appears.
     private func openFullSize() {
-        guard arrangement.tilePlaces.indices.contains(focusedIndex) else { return }
+        guard arrangement.tilePhotos.indices.contains(focusedIndex) else { return }
         fullSizeState = .overTile
     }
 
