@@ -6,9 +6,17 @@ Loading, caching, and showing photos.
 reads on a bounded queue, with on-screen requests ahead of background
 prefetching, and caches the results in `ImageCache`. A view showing an
 image keeps its `WatchedImage`, which redraws only that view when the
-image arrives. `ThumbnailImage` is the view
-that shows a thumbnail, and `LoadProgressView` is the toolbar ring showing
-how far the current burst of loading has got.
+image arrives.
+
+`ThumbnailImage` shows a photo's thumbnail. `FullSizeImage` shows a photo
+full size, with its thumbnail standing in until it loads and its
+neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
+far the current burst of loading has got.
+
+`TileLayout` lays photos out as an even grid of tiles, for the pick and
+keepers screens. It's the pure, tested part: the column count, tile size,
+and positions, where the movement keys go, how far to scroll to reveal a
+tile, and the photos' common aspect ratio.
 
 `PrintPile` draws photos as a messy pile of prints, with only the top few
 showing their photos and the rest drawn as `BlankPrint`s. `PileLabel` is
@@ -24,6 +32,6 @@ outside a preview may use it.
 photo or pile, and `KeeperBadge` marks a keeper; its colour stands for the
 keepers wherever they're shown.
 
-Images uses only Folder, for `PhotoItem`. It knows nothing about groups:
-the screens track which item is selected and draw the sort screen's
-boundary bars themselves.
+Images uses Folder, for `PhotoItem`, and Keys, for `MoveDirection`. It
+knows nothing about groups: the screens track which item is selected and
+draw the sort screen's boundary bars themselves.

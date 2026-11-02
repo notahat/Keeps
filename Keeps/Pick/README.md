@@ -16,11 +16,9 @@ place of them, and you stay on the pick screen while it's up: the tiles
 keep keyboard focus, and `PickScreen` handles its keys and controls when it
 zooms. It zooms out of the focused tile and back into it (a fade with
 Reduce Motion on), which shows where you are in the grid on the way back.
-`FullSizeImage`, inside it, loads and draws the photo, showing the
-thumbnail while the full image loads and preloading its neighbours.
+`FullSizeImage`, from Images, loads and draws the photo inside it.
 
-`TileLayout` is the pure, tested part: the column count, tile size, and
-positions, where the movement keys go, how far to scroll to reveal a tile,
-and the group's common aspect ratio.
+`TileLayout`, from Images, places the tiles and says where the movement
+keys go.
 
 Uses Grouping, Images, Folder, and Keys, and never Sort.

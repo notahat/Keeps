@@ -791,7 +791,7 @@ tile, which would mean sharing PickScreen's zoom machinery.
 
 Each step builds and passes the tests, then review and commit.
 
-1. **Share the full-size image and the tile layout.** Move
+1. ✅ **Share the full-size image and the tile layout.** Move
    `FullSizeImage` and `TileLayout` to `Images/`, and update the READMEs.
    No behaviour changes.
 2. **The keepers screen.** `KeepersScreen` in `Keepers/`, with its README

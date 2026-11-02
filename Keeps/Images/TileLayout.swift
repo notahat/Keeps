@@ -1,8 +1,8 @@
 import CoreGraphics
 
-/// Lays out a group's photos as an even grid of tiles for the pick screen,
-/// and works out where the movement keys go within it. Pure: it holds no
-/// state beyond its results and does no drawing.
+/// Lays out photos as an even grid of tiles, for the pick and keepers
+/// screens, and works out where the movement keys go within it. Pure: it
+/// holds no state beyond its results and does no drawing.
 ///
 /// The column count is chosen first, as whichever gives the largest tiles,
 /// and the tile size follows. The block of tiles is centred in the space,

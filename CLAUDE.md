@@ -26,7 +26,8 @@ folder needs adding to that exception list.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
 - `Images/` — loading, caching, and showing images (`ImagePipeline`,
-  `ThumbnailImage`, load progress, `PileJitter`).
+  `ThumbnailImage`, `FullSizeImage`, load progress, `PileJitter`), and
+  `TileLayout`, the pure, tested tile grid the screens share.
 - `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
   selection, scroll position, open group, keepers, and done groups, and
   `GroupLayout` derives the cells.
@@ -36,8 +37,8 @@ folder needs adding to that exception list.
   `GridScrolling` does the scrolling; the geometry is in pure, tested
   helpers (`PhotoGridMetrics`, `GridHitTarget`).
 - `Pick/` — the pick screen. `PickScreen` draws the open group's tiles and
-  handles input; the geometry is in `TileLayout`, pure and tested. Still
-  being built (see PLAN.md).
+  handles input, laying them out with `TileLayout`. Still being built (see
+  PLAN.md).
 - `Done/` — the done screen. `DoneScreen` shows the done groups as piles,
   any of which can be opened on the pick screen.
 - `Keys/` — key handling the screens share (`MoveDirection`,
@@ -50,7 +51,7 @@ folder needs adding to that exception list.
   each other.
 - Grouping uses Saving and Folder, converting itself to and from
   `SavedGrouping`.
-- Images uses Folder.
+- Images uses Folder, and Keys for `MoveDirection`.
 - Saving and Keys use nothing.
 
 Grouping, Saving, Folder, and Keys have no views (Keys has only a
