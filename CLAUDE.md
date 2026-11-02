@@ -19,10 +19,10 @@ folder needs adding to that exception list.
   adds only what AppKit lacks: the Open panel chooses folders, and shows in
   place of an untitled document. `FolderView` owns the folder's `Grouping`
   and its `KeepsFile`, and shows the pick screen while a group is open,
-  otherwise the section chosen by `FolderPiles`, the piles beside it: the
-  sort screen for the photos still to go, or the done groups. The document
-  never saves;
-  `KeepsFile` writes keeps.json as the grouping changes.
+  otherwise the section the user has selected by clicking a pile in
+  `FolderSidebar`, beside it: the sort screen for the photos still to go,
+  or the done groups. The document never saves; `KeepsFile`
+  writes keeps.json as the grouping changes.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
 - `Images/` — loading, caching, and showing images (`ImagePipeline`,
@@ -79,7 +79,13 @@ name.
   changed.
 - **Sort screen**: the grid where the folder is split into groups.
 - **Pick screen**: one group at a time, where its **keepers** are picked
-  and the group is marked **done**.
+  and the group is marked **done**. It takes over the whole window
+  whenever a group is open.
+- **Done screen**: the done groups, shown as piles, any of which can be
+  opened on the pick screen.
+- **Section**: which of the sort screen and the done screen a window
+  shows when no group is open (`FolderSection`). The user selects it by
+  clicking a pile in the sidebar.
 
 ## Build & Test
 

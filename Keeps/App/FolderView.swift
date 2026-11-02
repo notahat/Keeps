@@ -1,11 +1,19 @@
 import AppKit
 import SwiftUI
 
-/// The content of one folder window: the pick screen while a group is
-/// open, otherwise the sidebar of piles beside the section they've chosen,
-/// or a note that the folder has no photos. Owns the folder's grouping and
-/// its keeps.json, reports save failures with AppKit's standard error
-/// alert, and tells the window which section is showing, for its title.
+/// The content of one folder window.
+///
+/// The app has three main screens: sort, pick, and done. The pick screen
+/// takes over the whole window whenever a group is open. Otherwise the
+/// window shows either the sort screen or the done screen, and which of
+/// those two it shows is the section (FolderSection). The user selects the
+/// section by clicking a pile in the sidebar (FolderSidebar).
+///
+/// FolderView owns the folder's grouping, its keeps.json, and the section,
+/// and sets up the grouping and keeps.json when the window opens. It shows
+/// the current screen (see CurrentScreen), or a note when the folder has no
+/// photos. It reports keeps.json errors with AppKit's standard error alert,
+/// and tells the window which section is showing, for its title.
 struct FolderView: View {
     let session: FolderSession
 
@@ -15,8 +23,8 @@ struct FolderView: View {
     @State private var grouping: Grouping?
     @State private var keepsFile: KeepsFile?
 
-    /// Which section the piles have chosen. Not saved: a folder always opens
-    /// on the photos still to go.
+    /// The section the user has selected by clicking a pile in the sidebar.
+    /// Not saved: a folder always opens on the photos still to go.
     @State private var section = FolderSection.toGo
 
     var body: some View {
@@ -25,7 +33,7 @@ struct FolderView: View {
                 Text("This folder has no photos")
                     .foregroundStyle(.secondary)
             } else {
-                screen
+                content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .toolbar {
                         // At the trailing edge with no glass bubble:
@@ -50,11 +58,12 @@ struct FolderView: View {
         }
     }
 
-    /// The folder's screens, once start() has made the grouping.
+    /// What the window shows: the current screen once start() has made the
+    /// grouping, and an invisible placeholder until then.
     @ViewBuilder
-    private var screen: some View {
+    private var content: some View {
         if let grouping {
-            FolderScreens(grouping: grouping, section: $section)
+            CurrentScreen(grouping: grouping, section: $section)
         } else {
             // A real (if invisible) view must render before the grouping
             // exists: onAppear never fires for empty content, and start()
@@ -90,35 +99,37 @@ struct FolderView: View {
     }
 }
 
-/// The screen for a folder's grouping: the pick screen while a group is
-/// open, otherwise the section the piles have chosen, with the piles beside
-/// it once there are done groups to navigate to. FolderView owns the
-/// grouping and the section; this only shows them.
-private struct FolderScreens: View {
+/// The one screen the window is on: the pick screen while a group is open,
+/// otherwise the screen for the section the user has selected, with the
+/// sidebar beside it once there are done groups to go to. FolderView owns
+/// the grouping and the section; this only shows them.
+private struct CurrentScreen: View {
     let grouping: Grouping
     @Binding var section: FolderSection
 
     var body: some View {
         if let openGroup = grouping.openGroup {
-            // Identified by the group, so opening a different group starts
-            // the screen afresh.
+            // The id tells SwiftUI to build a new pick screen whenever a
+            // different group opens. Without it, SwiftUI would reuse the
+            // old one, and its state, such as which tile has focus, would
+            // carry over to the new group.
             PickScreen(grouping: grouping, group: openGroup)
                 .id(openGroup)
         } else {
-            sectionWithPiles
+            sectionWithSidebar
         }
     }
 
-    /// The section's screen with the piles beside it.
-    private var sectionWithPiles: some View {
-        // The piles are a sidebar on the left, from the top, where Mac apps
-        // keep their navigation. They take only their own size, so the
-        // screen gets all the rest of the width.
+    /// The section's screen with the sidebar beside it.
+    private var sectionWithSidebar: some View {
+        // The sidebar is on the left, from the top, where Mac apps keep
+        // their navigation. It takes only its own size, so the screen gets
+        // all the rest of the width.
         HStack(alignment: .top, spacing: 0) {
             // Only once a group is done: until then, every photo is to go
             // and there's nowhere else to navigate to.
             if grouping.doneGroupCount > 0 {
-                FolderPiles(grouping: grouping, section: $section)
+                FolderSidebar(grouping: grouping, section: $section)
                     .fixedSize()
                     .padding(16)
             }
@@ -135,7 +146,7 @@ private struct FolderScreens: View {
         }
     }
 
-    /// The screen for the section the piles have chosen.
+    /// The screen for the section the user has selected.
     @ViewBuilder
     private var sectionScreen: some View {
         switch section {

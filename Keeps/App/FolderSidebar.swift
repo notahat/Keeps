@@ -1,30 +1,16 @@
 import SwiftUI
 
-/// The parts of a folder the piles switch between: the photos still to go,
-/// on the sort screen, and the done groups.
-enum FolderSection {
-    case toGo, done
-
-    /// The section's name, as the window title shows it.
-    var title: String {
-        switch self {
-        case .toGo: "To go"
-        case .done: "Done groups"
-        }
-    }
-}
-
-/// The sidebar of piles beside a folder's screen, showing where every photo
-/// is: kept, still to go, or set aside, so their counts add up to the
-/// folder. They also switch sections: clicking the to-go pile shows the sort
-/// screen, and clicking the set-aside pile shows the done groups. The pile
-/// for the section showing sits on a highlight, like a selected sidebar
-/// item. The keepers pile isn't a section: it's dragged out of the app
-/// instead, as the keepers' files, for Lightroom or Finder.
+/// The sidebar beside a folder's screen: a pile each for the photos kept,
+/// still to go, and set aside, showing where every photo is, so their
+/// counts add up to the folder. Clicking a pile also selects a section: the
+/// to-go pile shows the sort screen, and the set-aside pile shows the done
+/// groups. The pile for the section showing sits on a highlight, like a
+/// selected sidebar item. The keepers pile isn't a section: it's dragged out
+/// of the app instead, as the keepers' files, for Lightroom or Finder.
 ///
-/// Draws and takes clicks only; FolderView decides where the piles go, shows
-/// them only once a group is done, and decides what each section shows.
-struct FolderPiles: View {
+/// Draws and takes clicks only. FolderView decides where the sidebar goes,
+/// shows it only once a group is done, and decides what each section shows.
+struct FolderSidebar: View {
     let grouping: Grouping
     @Binding var section: FolderSection
 
@@ -76,7 +62,7 @@ struct FolderPiles: View {
 }
 
 private extension View {
-    /// Makes a pile choose a section when clicked, sitting on a highlight
+    /// Makes a pile select its section when clicked, sitting on a highlight
     /// while that section is showing.
     func sectionItem(_ itemSection: FolderSection, selection: Binding<FolderSection>, padding: CGFloat) -> some View {
         self.padding(padding)
