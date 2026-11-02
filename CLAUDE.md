@@ -109,6 +109,12 @@ Test:
 xcodebuild test -project Keeps.xcodeproj -scheme Keeps -destination 'platform=macOS'
 ```
 
+Decode benchmark, timing `ImageReader` over the photos in the git-ignored
+`Samples/` folder (see `Benchmarks/README.md`):
+```bash
+Benchmarks/run-decode-benchmark
+```
+
 ## Code Style
 
 SwiftFormat runs automatically on every `.swift` edit via a PostToolUse hook — no need to run it manually.

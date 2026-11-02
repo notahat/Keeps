@@ -825,9 +825,9 @@ problem it would fix.
 - **100% zoom** is wanted later, for checking focus. It will need the
   original: the camera JPEG, or the RAW decoded in full. Nothing here
   should stand in its way.
-- **A suspected bug.** For a JPEG with no RAW, `ImageReader.fullImage`
-  probably returns the small thumbnail embedded in the file (about 160
-  pixels), since it asks for no size and doesn't decode the image.
+- **No JPEG full-size bug.** It was suspected that for a JPEG with no
+  RAW, `ImageReader.fullImage` returns the small thumbnail embedded in
+  the file. The benchmark shows it decodes the whole 7728 × 5152 image.
 
 ## Design
 
@@ -898,19 +898,62 @@ the full-size view to the screen's size, changes to preloading, and
 reading the camera JPEG of a RAW+JPEG pair for display. 100% zoom is a
 later plan.
 
+## Decode benchmark results
+
+`Benchmarks/run-decode-benchmark` on the user's Mac, over four X-T5 RAFs
+and two X-T5 JPEGs shot without RAW (there were no RAW+JPEG pairs to
+hand). Medians of five runs, with the files in the disk cache. Read is
+the background work; draw is the first draw into a bitmap of the same
+size.
+
+| Read | RAF: size | RAF: read | RAF: draw | JPEG: size | JPEG: read | JPEG: draw |
+|---|---|---|---|---|---|---|
+| Full size, as the app reads | 4416 × 2944 | 100–145 ms | 20 ms | 7728 × 5152 | 385 ms | 65 ms |
+| Thumbnail, 520 px | 520 px | 40 ms | 0 ms | 520 px | 145 ms | 0 ms |
+| Thumbnail, 2048 px | 2048 px | 75–160 ms | 4 ms | 2048 px | 250 ms | 4 ms |
+| Whole image decoded | 7728 × 5152 | 2 ms | 280 ms | 7728 × 5152 | 265 ms | 95 ms |
+
+What they show:
+
+- **The JPEG full-size bug doesn't exist.** A JPEG's full-size read
+  gives the whole image, so step 2 isn't needed.
+- **A JPEG on its own costs about three or four times as much as a RAF**
+  at every size, since it decodes the 40 MP original rather than the
+  13 MP preview. Its full image also takes about 160 MB decoded, against
+  52 MB. A folder of JPEGs is where loading will strain first.
+- **The app's reads decode in the background.** Their draws are no
+  slower than drawing an image known to be decoded already, so they
+  don't leave decoding for the main thread. Whether showing a full image
+  still stalls the main thread for a frame or two is for the signposts
+  to tell.
+- **Portrait RAFs read more slowly** (145 ms against about 100 ms at full
+  size, and 160 ms against 80 ms at 2048 px), probably from rotating.
+- **A RAW decoded in full takes about 280 ms**, all of it put off until
+  the first draw. That's quick enough for 100% zoom, as long as the zoom
+  decodes in the background.
+- **Tiles at 2048 px** cost 75–160 ms a RAF and 250 ms a JPEG. A group of
+  twenty RAFs is about 2 seconds of decoding, spread over the cores the
+  pipeline uses.
+
 ## Steps
 
 Each step builds and passes the tests, then review and commit.
 
-1. **Decode benchmark.** The script, and a git-ignored folder for
+1. ✅ **Decode benchmark.** The script, and a git-ignored folder for
    sample photos. Run it on samples the user copies in, and record the
-   results here. Confirm or rule out the JPEG full-size bug.
-2. **Fix JPEG full size,** if step 1 confirms the bug: decode a JPEG on
-   its own in full.
+   results here. Confirm or rule out the JPEG full-size bug. (Results
+   above: the bug doesn't exist.)
+2. ~~**Fix JPEG full size,** if step 1 confirms the bug: decode a JPEG on
+   its own in full.~~ Not needed: the benchmark shows a JPEG's full-size
+   read decodes the whole image.
 3. **Signposts** in `ImagePipeline` and `FullSizeImage`. Check by hand
    in Instruments.
-4. **Debug overlay.** The statistics struct, tested, and the overlay
-   showing it with the memory footprint, in debug builds only.
+4. ✅ **Debug overlay.** (Done first. `ImageLoadStats` and the tally in
+   `ImageCache` are tested; Debug ▸ Show Image Stats, ⌥⌘I, shows it.
+   Steps the user moves on from before they turn sharp are counted, so
+   holding an arrow key doesn't flatter the figures.) The statistics
+   struct, tested, and the overlay showing it with the memory footprint,
+   in debug builds only.
 5. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
 6. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
