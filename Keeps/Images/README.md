@@ -4,8 +4,9 @@ Loading, caching, and showing photos.
 
 `ImageReader` decodes files into images. `ImagePipeline` schedules those
 reads on a bounded queue, with on-screen requests ahead of background
-prefetching, and caches the results in `ImageCache`. Views hear as each
-image arrives through `onImageLoaded(for:)`. `ThumbnailImage` is the view
+prefetching, and caches the results in `ImageCache`. A view showing an
+image keeps its `WatchedImage`, which redraws only that view when the
+image arrives. `ThumbnailImage` is the view
 that shows a thumbnail, and `LoadProgressView` is the toolbar ring showing
 how far the current burst of loading has got.
 

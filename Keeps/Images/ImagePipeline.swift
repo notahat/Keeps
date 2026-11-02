@@ -1,24 +1,32 @@
 import AppKit
 import Observation
-import SwiftUI
+
+/// The image of one photo at one size, for a view to show. `image` is nil
+/// until the image has loaded. The view reads `image` in its body, so
+/// SwiftUI redraws the view when the image arrives. Each image has its own
+/// WatchedImage, so a load redraws only the views showing that image, rather
+/// than every view on screen.
+@Observable
+final class WatchedImage {
+    fileprivate(set) var image: NSImage?
+
+    /// Makes a WatchedImage holding the image, if it has already loaded.
+    fileprivate init(image: NSImage?) {
+        self.image = image
+    }
+}
 
 /// Schedules image reads and caches the results. Every read goes through a
 /// bounded OperationQueue at one of four priorities: the full-size image
 /// being looked at, then the full-size images near it, then thumbnails on
-/// screen, then background prefetching. Views hear that an image has loaded
-/// through `onImageLoaded(for:)`, so they update without suspending on
-/// async/await. It doesn't decode files itself (that's ImageReader's job)
-/// or draw anything.
+/// screen, then background prefetching. A view gets a WatchedImage from
+/// `watchedImage(for:size:)` and reads its image in its body, so the view
+/// redraws when the image loads, without suspending on async/await. It
+/// doesn't decode files itself (that's ImageReader's job) or draw anything.
 @Observable
 @MainActor
 final class ImagePipeline {
     static let shared = ImagePipeline()
-
-    /// Posted on the main thread when any image finishes loading, with the
-    /// item's id in the userInfo under `loadedItemIDKey`. Views listen for
-    /// it through `onImageLoaded(for:)`.
-    fileprivate static let imageLoadedNotification = Notification.Name("com.notahat.Keeps.imageLoaded")
-    fileprivate static let loadedItemIDKey = "itemID"
 
     /// The full-size image being looked at, which goes ahead of everything.
     private static let currentImagePriority: Operation.QueuePriority = .veryHigh
@@ -34,6 +42,12 @@ final class ImagePipeline {
     private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
 
     private let cache = ImageCache()
+
+    /// The images views are watching, by read key. Each one is held weakly,
+    /// so it goes once no view holds it. Holding them strongly would keep
+    /// every image ever shown in memory, whatever the cache had evicted.
+    @ObservationIgnored
+    private let watchedImages = NSMapTable<NSString, WatchedImage>.strongToWeakObjects()
 
     /// The worker pool. Its concurrency balances throughput against memory
     /// and responsiveness.
@@ -57,6 +71,21 @@ final class ImagePipeline {
     /// Returns the cached image immediately, or nil if not yet loaded.
     func cachedImage(for item: PhotoItem, size: ImageSize) -> NSImage? {
         cache.image(for: item, size: size)
+    }
+
+    /// Returns the WatchedImage for an item's image at a size. The
+    /// WatchedImage already holds the image if the image is cached. The
+    /// calling view must keep the WatchedImage in its @State, since the
+    /// pipeline holds only a weak reference to it. This doesn't start a
+    /// read; use requestImage or prefetchImage for that.
+    func watchedImage(for item: PhotoItem, size: ImageSize) -> WatchedImage {
+        let key = readKey(for: item, size: size) as NSString
+        if let existing = watchedImages.object(forKey: key) {
+            return existing
+        }
+        let watchedImage = WatchedImage(image: cache.image(for: item, size: size))
+        watchedImages.setObject(watchedImage, forKey: key)
+        return watchedImage
     }
 
     /// Starts reading an image at the priority for what's on screen, or
@@ -100,7 +129,7 @@ final class ImagePipeline {
     /// read would finish; in the app it would stall the main thread.
     func loadImageImmediately(for item: PhotoItem, size: ImageSize) {
         guard let cgImage = Self.readImage(from: item.sourceURL, size: size) else { return }
-        cache.setImage(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+        store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
     }
 
     // MARK: - Private
@@ -157,18 +186,20 @@ final class ImagePipeline {
         readQueue.addOperation(read)
     }
 
-    /// Caches a finished read's image, if the file gave one, stops tracking
-    /// the read, and tells views the item's image has loaded.
+    /// Stores a finished read's image, if the file gave one, and stops
+    /// tracking the read.
     private func finishRead(of item: PhotoItem, size: ImageSize, key: String, cgImage: CGImage?) {
         if let cgImage {
-            cache.setImage(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+            store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
         }
         readsInFlight.removeValue(forKey: key)
-        NotificationCenter.default.post(
-            name: Self.imageLoadedNotification,
-            object: nil,
-            userInfo: [Self.loadedItemIDKey: item.id]
-        )
+    }
+
+    /// Caches a loaded image, and hands it to the WatchedImage for it, if a
+    /// view is watching, which redraws only the views showing it.
+    private func store(_ image: NSImage, for item: PhotoItem, size: ImageSize) {
+        cache.setImage(image, for: item, size: size)
+        watchedImages.object(forKey: readKey(for: item, size: size) as NSString)?.image = image
     }
 
     /// Cancels the reads still at prefetch priority for a size: those no view
@@ -180,17 +211,6 @@ final class ImagePipeline {
             guard read.queuePriority == idlePriority else { return true }
             read.cancel()
             return false
-        }
-    }
-}
-
-extension View {
-    /// Runs `action` each time an image of `item` finishes loading, at any
-    /// size. The image is then in the pipeline's cache.
-    func onImageLoaded(for item: PhotoItem, perform action: @escaping () -> Void) -> some View {
-        onReceive(NotificationCenter.default.publisher(for: ImagePipeline.imageLoadedNotification)) { notification in
-            guard notification.userInfo?[ImagePipeline.loadedItemIDKey] as? UUID == item.id else { return }
-            action()
         }
     }
 }

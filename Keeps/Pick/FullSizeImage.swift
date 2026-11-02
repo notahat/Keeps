@@ -13,7 +13,13 @@ struct FullSizeImage: View {
     let items: [PhotoItem]
     let index: Int
 
-    @State private var image: NSImage?
+    /// The shown photo's full-size image, which redraws this view when it
+    /// loads.
+    @State private var fullImage: WatchedImage?
+
+    /// The shown photo's thumbnail, which stands in until the full-size
+    /// image loads.
+    @State private var thumbnail: WatchedImage?
 
     /// The item being loaded at high priority, tracked so it can be
     /// deprioritised when the user moves on before it finishes.
@@ -27,7 +33,7 @@ struct FullSizeImage: View {
         Group {
             // The sort screen's thumbnail stands in while the full image
             // loads, so there's a photo to see straight away.
-            if let shownImage = image ?? cachedThumbnail {
+            if let shownImage = fullImage?.image ?? thumbnail?.image {
                 Image(nsImage: shownImage)
                     .resizable()
                     .scaledToFit()
@@ -51,21 +57,14 @@ struct FullSizeImage: View {
             deprioritizeHighPriorityLoad()
             loadPhotoAndNeighbours()
         }
-        .onImageLoaded(for: item) {
-            image = ImagePipeline.shared.cachedImage(for: item, size: .full)
-        }
     }
 
-    /// The shown photo's thumbnail, if it's already loaded.
-    private var cachedThumbnail: NSImage? {
-        ImagePipeline.shared.cachedImage(for: item, size: ThumbnailImage.imageSize)
-    }
-
-    /// Loads the shown photo at high priority and prefetches the photos
-    /// around it.
+    /// Watches the shown photo's images, loads its full-size image at high
+    /// priority, and prefetches the photos around it.
     private func loadPhotoAndNeighbours() {
         highPriorityItem = item
-        image = ImagePipeline.shared.cachedImage(for: item, size: .full)
+        fullImage = ImagePipeline.shared.watchedImage(for: item, size: .full)
+        thumbnail = ImagePipeline.shared.watchedImage(for: item, size: ThumbnailImage.imageSize)
         ImagePipeline.shared.requestImage(for: item, size: .full)
         for preloadIndex in preloadIndices() {
             ImagePipeline.shared.prefetchImage(for: items[preloadIndex], size: .full)

@@ -70,38 +70,46 @@ struct ThumbnailImage: View {
     /// up.
     static let imageInset: CGFloat = 3
 
-    @State private var image: NSImage?
+    /// The thumbnail, which redraws this view when it loads. It's nil until
+    /// the view first appears.
+    @State private var thumbnail: WatchedImage?
 
     var body: some View {
         ThumbnailFrame(
-            image: image,
+            image: thumbnail?.image,
             borderWidth: borderWidth,
             borderColor: borderColor,
             placeholder: placeholder,
             frameSize: frameSize
         )
         .onAppear {
-            if let cached = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize) {
-                show(cached)
-            } else if loadsInBackground {
-                ImagePipeline.shared.prefetchImage(for: item, size: Self.imageSize)
-            } else {
-                ImagePipeline.shared.requestImage(for: item, size: Self.imageSize)
-            }
+            loadThumbnail()
         }
         .onDisappear {
             ImagePipeline.shared.deprioritizeImage(for: item, size: Self.imageSize)
         }
-        .onImageLoaded(for: item) {
-            guard let loaded = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize) else { return }
-            show(loaded)
+        .onChange(of: thumbnail?.image) { _, loaded in
+            reportAspectRatio(of: loaded)
         }
     }
 
-    /// Displays a loaded image and reports its shape.
-    private func show(_ loaded: NSImage) {
-        image = loaded
-        guard loaded.size.height > 0 else { return }
+    /// Starts watching the thumbnail, and asks for it to be read if it isn't
+    /// cached.
+    private func loadThumbnail() {
+        let watched = ImagePipeline.shared.watchedImage(for: item, size: Self.imageSize)
+        thumbnail = watched
+        guard watched.image == nil else { return }
+        if loadsInBackground {
+            ImagePipeline.shared.prefetchImage(for: item, size: Self.imageSize)
+        } else {
+            ImagePipeline.shared.requestImage(for: item, size: Self.imageSize)
+        }
+    }
+
+    /// Passes a loaded thumbnail's width-to-height ratio to
+    /// onAspectRatioKnown.
+    private func reportAspectRatio(of loaded: NSImage?) {
+        guard let loaded, loaded.size.height > 0 else { return }
         onAspectRatioKnown?(loaded.size.width / loaded.size.height)
     }
 }
