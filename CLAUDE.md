@@ -83,6 +83,10 @@ name.
 
 ## Build & Test
 
+Inside Xcode, build and test with the xcode-tools `BuildProject` and
+`RunAllTests` tools (as `/verify` does). Elsewhere, or for things they
+can't do, such as a Release build or an archive, use `xcodebuild`:
+
 Build:
 ```bash
 xcodebuild -project Keeps.xcodeproj -scheme Keeps -destination 'platform=macOS' build
