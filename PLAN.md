@@ -726,7 +726,7 @@ Each step builds and passes the tests, then review and commit.
    tile. Tested.
 3. ✅ **Count a group's keepers in one place.** `Grouping.keptCount(in:)`, used
    by the pick screen's header and the done screen's labels. Tested.
-4. **Tidy Grouping.** Order its members by what they're for, with MARK
+4. ✅ **Tidy Grouping.** Order its members by what they're for, with MARK
    headers; a `Set.toggle` for boundaries and keepers; drop the
    unexplained local copies of `layout`; say "picking" rather than
    "narrowing", which isn't in the glossary.

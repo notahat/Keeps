@@ -69,7 +69,7 @@ nonisolated struct SavedGrouping: Codable, Equatable {
     var scrollAnchor: ScrollAnchor?
 
     /// The photos picked to keep, in folder order. Optional, like
-    /// `doneGroupStartStems`, because files saved before narrowing existed
+    /// `doneGroupStartStems`, because files saved before picking existed
     /// don't have it, and so that a folder with nothing picked saves no
     /// entry.
     var keeperStems: [String]? = nil

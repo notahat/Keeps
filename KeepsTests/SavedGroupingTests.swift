@@ -28,7 +28,7 @@ struct SavedGroupingTests {
     }
 
     @Test("Keepers and done groups survive a save to keeps.json and a restore")
-    func narrowingRoundTrip() throws {
+    func pickingRoundTrip() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 6])
