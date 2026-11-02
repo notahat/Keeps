@@ -9,20 +9,9 @@ struct PickTile: View {
     let isFocused: Bool
     let isKeeper: Bool
 
-    /// The focus highlight's line width. It's centred on the tile's edge,
-    /// leaving a little space between it and the photo, so half of it falls
-    /// outside the tile.
-    static let highlightWidth: CGFloat = 3
-
-    @Environment(\.controlActiveState) private var controlActiveState
-
     var body: some View {
         ThumbnailImage(item: item, frameSize: size)
-            .overlay {
-                if isFocused, controlActiveState == .key {
-                    Rectangle().stroke(Color.accentColor, lineWidth: Self.highlightWidth)
-                }
-            }
+            .selectionHighlight(isSelected: isFocused)
             .overlay(alignment: .topTrailing) {
                 if isKeeper {
                     KeeperBadge()

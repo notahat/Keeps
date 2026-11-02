@@ -730,7 +730,7 @@ Each step builds and passes the tests, then review and commit.
    headers; a `Set.toggle` for boundaries and keepers; drop the
    unexplained local copies of `layout`; say "picking" rather than
    "narrowing", which isn't in the glossary.
-5. **One selection highlight.** A shared modifier in `Images/` draws the
+5. ✅ **One selection highlight.** A shared modifier in `Images/` draws the
    highlight on the sort, pick, and done screens, hidden while the window
    isn't key. The done screen didn't hide it before. Check by hand.
 6. **Share the duplicated constants.** One typical photo shape for blank

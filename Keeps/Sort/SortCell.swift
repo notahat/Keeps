@@ -20,16 +20,10 @@ struct SortCell: View {
         case placed, preview
     }
 
-    @Environment(\.controlActiveState) private var controlActiveState
-
     var body: some View {
         content
             .frame(width: PhotoGridMetrics.cellSize, height: PhotoGridMetrics.cellSize)
-            .overlay {
-                if isSelected, controlActiveState == .key {
-                    Rectangle().stroke(Color.accentColor, lineWidth: 3)
-                }
-            }
+            .selectionHighlight(isSelected: isSelected)
             .overlay(alignment: .leading) {
                 if let leadingBoundary {
                     BoundaryBar(style: leadingBoundary)

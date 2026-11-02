@@ -54,7 +54,7 @@ struct PickScreen: View {
 
     /// Room around the tiles inside the scroll view, so it doesn't clip
     /// the half of the highlight that falls outside the outer tiles.
-    private static let edgeRoom: CGFloat = PickTile.highlightWidth
+    private static let edgeRoom: CGFloat = SelectionHighlight.lineWidth
 
     /// Used when none of the group's thumbnails have loaded yet: the shape
     /// of most camera sensors.

@@ -19,9 +19,6 @@ struct DoneScreen: View {
     private static let cellSize = CGFloat(ThumbnailImage.displaySize)
     private static let spacing: CGFloat = 12
 
-    /// The selection highlight's line width.
-    private static let highlightWidth: CGFloat = 3
-
     init(grouping: Grouping) {
         self.grouping = grouping
         let lastOpened = grouping.selectedPhotoIndex
@@ -67,11 +64,7 @@ struct DoneScreen: View {
             .overlay(alignment: .bottom) {
                 PileLabel(text: "\(grouping.keptCount(in: group)) of \(group.count) kept")
             }
-            .overlay {
-                if group == selectedGroup {
-                    Rectangle().stroke(Color.accentColor, lineWidth: Self.highlightWidth)
-                }
-            }
+            .selectionHighlight(isSelected: group == selectedGroup)
             .contentShape(Rectangle())
             // The single click is simultaneous rather than a second tap
             // gesture, which would wait out the double-click time and make

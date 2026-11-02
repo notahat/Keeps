@@ -14,6 +14,8 @@ alike. `PreviewPhotos` gives SwiftUI previews photos from the JPEGs in
 Preview Content, already cached; release builds leave those files out, so
 nothing else may use it.
 
-Uses only Folder, for `PhotoItem`. Knows nothing about groups: selection
-highlights and boundary bars are drawn by the screens on top of
-`ThumbnailImage`.
+`SelectionHighlight` is the outline every screen draws round a selected
+photo or pile.
+
+Uses only Folder, for `PhotoItem`. Knows nothing about groups: which item
+is selected, and the sort screen's boundary bars, are the screens' own.
