@@ -50,54 +50,16 @@ struct FolderView: View {
         }
     }
 
-    /// The pick screen while a group is open, otherwise the section's screen
-    /// with the piles beside it, once start() has made the grouping.
+    /// The folder's screens, once start() has made the grouping.
     @ViewBuilder
     private var screen: some View {
-        if let grouping, let openGroup = grouping.openGroup {
-            // Identified by the group, so opening a different group starts
-            // the screen afresh.
-            PickScreen(grouping: grouping, group: openGroup)
-                .id(openGroup)
-        } else if let grouping {
-            // The piles are a sidebar on the left, from the top, where Mac
-            // apps keep their navigation. They take only their own size, so
-            // the screen gets all the rest of the width.
-            HStack(alignment: .top, spacing: 0) {
-                // Only once a group is done: until then, every photo is to
-                // go and there's nowhere else to navigate to.
-                if grouping.doneGroupCount > 0 {
-                    FolderPiles(grouping: grouping, section: $section)
-                        .fixedSize()
-                        .padding(16)
-                }
-                sectionScreen(grouping: grouping)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            // With no done groups, the set-aside pile that leads to them is
-            // gone, so their section can't stay showing. Checked on appear
-            // too, for coming back from un-marking the last one.
-            .onChange(of: grouping.doneGroupCount, initial: true) { _, count in
-                if count == 0, section == .done {
-                    section = .toGo
-                }
-            }
+        if let grouping {
+            FolderScreens(grouping: grouping, section: $section)
         } else {
             // A real (if invisible) view must render before the grouping
             // exists: onAppear never fires for empty content, and start()
             // — which creates the grouping — hangs off onAppear.
             Color.clear
-        }
-    }
-
-    /// The screen for the section the piles have chosen.
-    @ViewBuilder
-    private func sectionScreen(grouping: Grouping) -> some View {
-        switch section {
-        case .toGo:
-            SortScreen(grouping: grouping)
-        case .done:
-            DoneScreen(grouping: grouping)
         }
     }
 
@@ -125,5 +87,62 @@ struct FolderView: View {
         grouping = newGrouping
         keepsFile = newKeepsFile
         ImagePipeline.shared.prefetchImages(for: session.items, size: ThumbnailImage.imageSize)
+    }
+}
+
+/// The screen for a folder's grouping: the pick screen while a group is
+/// open, otherwise the section the piles have chosen, with the piles beside
+/// it once there are done groups to navigate to. FolderView owns the
+/// grouping and the section; this only shows them.
+private struct FolderScreens: View {
+    let grouping: Grouping
+    @Binding var section: FolderSection
+
+    var body: some View {
+        if let openGroup = grouping.openGroup {
+            // Identified by the group, so opening a different group starts
+            // the screen afresh.
+            PickScreen(grouping: grouping, group: openGroup)
+                .id(openGroup)
+        } else {
+            sectionWithPiles
+        }
+    }
+
+    /// The section's screen with the piles beside it.
+    private var sectionWithPiles: some View {
+        // The piles are a sidebar on the left, from the top, where Mac apps
+        // keep their navigation. They take only their own size, so the
+        // screen gets all the rest of the width.
+        HStack(alignment: .top, spacing: 0) {
+            // Only once a group is done: until then, every photo is to go
+            // and there's nowhere else to navigate to.
+            if grouping.doneGroupCount > 0 {
+                FolderPiles(grouping: grouping, section: $section)
+                    .fixedSize()
+                    .padding(16)
+            }
+            sectionScreen
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        // With no done groups, the set-aside pile that leads to them is
+        // gone, so their section can't stay showing. Checked on appear too,
+        // for coming back from un-marking the last one.
+        .onChange(of: grouping.doneGroupCount, initial: true) { _, count in
+            if count == 0, section == .done {
+                section = .toGo
+            }
+        }
+    }
+
+    /// The screen for the section the piles have chosen.
+    @ViewBuilder
+    private var sectionScreen: some View {
+        switch section {
+        case .toGo:
+            SortScreen(grouping: grouping)
+        case .done:
+            DoneScreen(grouping: grouping)
+        }
     }
 }

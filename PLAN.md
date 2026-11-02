@@ -742,7 +742,7 @@ Each step builds and passes the tests, then review and commit.
    one method to finish a load in place of three closures; comments that
    match the four priority tiers; no abbreviated names; header comments
    on the helpers here, in `ImageCache`, and in `FolderScanner`.
-8. **Simplify the folder's session and view.** `FolderSession` isn't
+8. ✅ **Simplify the folder's session and view.** `FolderSession` isn't
    observable, since its photos never change. `FolderView` hands a
    non-optional grouping to a subview, so it's unwrapped once.
 9. **Comment nits.** Wrap comments at 80 columns, and call `PhotoItem`'s
