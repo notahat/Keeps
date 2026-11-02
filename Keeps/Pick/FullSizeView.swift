@@ -30,11 +30,7 @@ struct FullSizeView: View {
                 }
             }
             .overlay(alignment: .bottomTrailing) {
-                Text("\(focusedIndex + 1) / \(photos.count)")
-                    .font(.caption)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                PhotoPositionLabel(index: focusedIndex, count: photos.count)
                     .padding(12)
             }
             // The same inset as the tile's thumbnail, so the photo doesn't jump

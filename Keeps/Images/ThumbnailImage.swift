@@ -70,6 +70,20 @@ struct ThumbnailImage: View {
     /// up.
     static let imageInset: CGFloat = 3
 
+    /// The most common shape among the photos' cached thumbnails, width over
+    /// height, or the typical shape when none are cached. Tiles laid out
+    /// before the thumbnails load take this shape, so most photos fill
+    /// their tiles.
+    static func commonAspectRatio(of photos: some Sequence<PhotoItem>) -> CGFloat {
+        let ratios = photos.compactMap { photo -> CGFloat? in
+            guard let size = ImagePipeline.shared.cachedImage(for: photo, size: imageSize)?.size,
+                  size.height > 0
+            else { return nil }
+            return size.width / size.height
+        }
+        return TileLayout.commonAspectRatio(of: ratios) ?? typicalAspectRatio
+    }
+
     /// The thumbnail, which redraws this view when it loads. It's nil until
     /// the view first appears.
     @State private var thumbnail: WatchedImage?

@@ -32,6 +32,7 @@
 				Folder/README.md,
 				Grouping/README.md,
 				Images/README.md,
+				Keepers/README.md,
 				Keys/README.md,
 				Pick/README.md,
 				Saving/README.md,

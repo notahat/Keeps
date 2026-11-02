@@ -794,7 +794,7 @@ Each step builds and passes the tests, then review and commit.
 1. ✅ **Share the full-size image and the tile layout.** Move
    `FullSizeImage` and `TileLayout` to `Images/`, and update the READMEs.
    No behaviour changes.
-2. **The keepers screen.** `KeepersScreen` in `Keepers/`, with its README
+2. ✅ **The keepers screen.** `KeepersScreen` in `Keepers/`, with its README
    (added to the project's README exceptions), the `keepers` section, the
    clickable keepers pile, and falling back to the sort screen when the
    keepers run out. The section's fallback rule is pure and tested. Check

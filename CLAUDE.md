@@ -21,7 +21,7 @@ folder needs adding to that exception list.
   and its `KeepsFile`, and shows the pick screen while a group is open,
   otherwise the section the user has selected by clicking a pile in
   `FolderSidebar`, beside it: the sort screen for the photos still to go,
-  or the done groups. The document never saves; `KeepsFile`
+  the done groups, or the keepers. The document never saves; `KeepsFile`
   writes keeps.json as the grouping changes.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
@@ -41,14 +41,16 @@ folder needs adding to that exception list.
   PLAN.md).
 - `Done/` — the done screen. `DoneScreen` shows the done groups as piles,
   any of which can be opened on the pick screen.
+- `Keepers/` — the keepers screen. `KeepersScreen` shows the keepers of
+  the done groups as tiles, any of which can be shown full size.
 - `Keys/` — key handling the screens share (`MoveDirection`,
   `isPlainLetter`, and the `handlesKeys` modifier).
 
 **Layering.** The folders use each other only like this, with no cycles:
 
 - App uses everything.
-- Sort, Pick, and Done use Grouping, Images, Folder, and Keys, and never
-  each other.
+- Sort, Pick, Done, and Keepers use Grouping, Images, Folder, and Keys,
+  and never each other.
 - Grouping uses Saving and Folder, converting itself to and from
   `SavedGrouping`.
 - Images uses Folder, and Keys for `MoveDirection`.
@@ -85,7 +87,9 @@ name.
   whenever a group is open.
 - **Done screen**: the done groups, shown as piles, any of which can be
   opened on the pick screen.
-- **Section**: which of the sort screen and the done screen a window
+- **Keepers screen**: the keepers of the done groups, any of which can be
+  shown full size.
+- **Section**: which of the sort, done, and keepers screens a window
   shows when no group is open (`FolderSection`). The user selects it by
   clicking a pile in the sidebar.
 

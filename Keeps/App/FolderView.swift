@@ -3,10 +3,10 @@ import SwiftUI
 
 /// The content of one folder window.
 ///
-/// The app has three main screens: sort, pick, and done. The pick screen
-/// takes over the whole window whenever a group is open. Otherwise the
-/// window shows either the sort screen or the done screen, and which of
-/// those two it shows is the section (FolderSection). The user selects the
+/// The app has four main screens: sort, pick, done, and keepers. The pick
+/// screen takes over the whole window whenever a group is open. Otherwise
+/// the window shows one of the other three, and which one it shows is the
+/// section (FolderSection). The user selects the
 /// section by clicking a pile in the sidebar (FolderSidebar).
 ///
 /// FolderView owns the folder's grouping, its keeps.json, and the section,
@@ -140,16 +140,22 @@ private struct CurrentScreen: View {
             sectionScreen
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        // When there are no done groups, the sidebar is hidden, so the user
-        // couldn't leave the done screen. This switches back to the sort
-        // screen instead. It also runs when this view appears, for when the
-        // user opens the last done group, un-marks it, and closes it: the
-        // pick screen goes away with the section still set to done.
-        .onChange(of: grouping.doneGroupCount, initial: true) { _, count in
-            if count == 0, section == .done {
-                section = .toGo
-            }
+        // Switches back to the sort screen when the section showing has
+        // nothing left in it, since its pile is gone from the sidebar. This
+        // happens when the user opens a done group, un-marks it or its
+        // keepers, and closes it, so it runs when this view appears.
+        .onChange(of: availableSection, initial: true) { _, available in
+            section = available
         }
+    }
+
+    /// The section to show: the one the user selected, unless it has
+    /// nothing left in it.
+    private var availableSection: FolderSection {
+        section.availableSection(
+            hasDoneGroups: grouping.doneGroupCount > 0,
+            hasKeepers: !grouping.keepersOfDoneGroups.isEmpty
+        )
     }
 
     /// The screen for the section the user has selected.
@@ -160,6 +166,8 @@ private struct CurrentScreen: View {
             SortScreen(grouping: grouping)
         case .done:
             DoneScreen(grouping: grouping)
+        case .keepers:
+            KeepersScreen(grouping: grouping)
         }
     }
 }

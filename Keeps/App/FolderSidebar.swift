@@ -3,11 +3,11 @@ import SwiftUI
 /// The sidebar beside a folder's screen: a pile each for the photos kept,
 /// still to go, and set aside, showing where every photo is, so their
 /// counts add up to the folder. Clicking a pile also selects a section: the
-/// to-go pile shows the sort screen, and the set-aside pile shows the done
-/// groups. The pile for the section showing sits on a highlight, like a
-/// selected sidebar item. The keepers pile isn't a section: the user drags
-/// it out of the app instead, as the keepers' files, into Lightroom or
-/// Finder.
+/// keepers pile shows the keepers screen, the to-go pile the sort screen,
+/// and the set-aside pile the done groups. The pile for the section showing
+/// sits on a highlight, like a selected sidebar item. The user can also
+/// drag the keepers pile out of the app, as the keepers' files, into
+/// Lightroom or Finder.
 ///
 /// It only draws the piles and takes clicks. FolderView places the sidebar,
 /// shows it only once a group is done, and shows each section's screen.
@@ -32,12 +32,16 @@ struct FolderSidebar: View {
             // nothing was set aside, since it's the way to the done groups.
             if !keepers.isEmpty {
                 let keepersLabel = keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers"
+                // The drag source takes the clicks as well as the drags, so
+                // it selects the section itself.
                 pile(of: keepers, label: keepersLabel, color: KeeperBadge.color)
+                    .sectionHighlight(.keepers, selection: section, padding: Self.highlightPadding)
                     .overlay {
-                        PhotoDragSource(photos: keepers.map { grouping.items[$0] })
+                        PhotoDragSource(photos: keepers.map { grouping.items[$0] }) {
+                            section = .keepers
+                        }
                     }
-                    .help("Drag the keepers into Lightroom or a Finder folder")
-                    .padding(Self.highlightPadding)
+                    .help("Click to see the keepers, or drag them into Lightroom or a Finder folder")
             }
             if !toGo.isEmpty {
                 pile(of: toGo, label: "\(toGo.count) to go")
@@ -66,14 +70,19 @@ private extension View {
     /// Makes a pile select its section when clicked, sitting on a highlight
     /// while that section is showing.
     func sectionItem(_ itemSection: FolderSection, selection: Binding<FolderSection>, padding: CGFloat) -> some View {
+        sectionHighlight(itemSection, selection: selection.wrappedValue, padding: padding)
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .onTapGesture { selection.wrappedValue = itemSection }
+    }
+
+    /// Pads a pile and sits it on a highlight while its section is showing.
+    func sectionHighlight(_ itemSection: FolderSection, selection: FolderSection, padding: CGFloat) -> some View {
         self.padding(padding)
             .background {
-                if selection.wrappedValue == itemSection {
+                if selection == itemSection {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.accentColor.opacity(0.25))
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12))
-            .onTapGesture { selection.wrappedValue = itemSection }
     }
 }

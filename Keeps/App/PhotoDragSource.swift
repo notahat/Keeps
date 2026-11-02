@@ -4,21 +4,27 @@ import SwiftUI
 /// Lets the view it overlays be dragged out of the app as photos' files, the
 /// same as dragging those files from Finder, so they can be dropped into
 /// Lightroom, a Finder folder, or anything else that takes files. The drag
-/// is drawn as a pile of the photos' thumbnails.
+/// is drawn as a pile of the photos' thumbnails. A press that ends without
+/// a drag is a click, which it reports to `onClick`. The AppKit view takes
+/// every press, so a click would never reach the view underneath.
 ///
-/// It only starts drags. Its owner supplies the photos to drag and draws
-/// the view underneath. Dragging within the app does nothing.
+/// It only starts drags and reports clicks. Its owner supplies the photos
+/// to drag, decides what a click does, and draws the view underneath.
+/// Dragging within the app does nothing.
 struct PhotoDragSource: NSViewRepresentable {
     let photos: [PhotoItem]
+    let onClick: () -> Void
 
     /// Makes the AppKit view that starts the drags.
     func makeNSView(context _: Context) -> PhotoDragView {
         PhotoDragView()
     }
 
-    /// Gives the AppKit view the current photos to drag.
+    /// Gives the AppKit view the current photos to drag, and what to do on
+    /// a click.
     func updateNSView(_ view: PhotoDragView, context _: Context) {
         view.photos = photos
+        view.onClick = onClick
     }
 }
 
@@ -26,10 +32,19 @@ struct PhotoDragSource: NSViewRepresentable {
 /// per photo, since SwiftUI's drag modifiers hand over only one.
 final class PhotoDragView: NSView, NSDraggingSource {
     var photos: [PhotoItem] = []
+    var onClick: () -> Void = {}
 
     /// Whether this press has already started a drag, since mouseDragged
     /// arrives for every move.
     private var hasStartedDrag = false
+
+    /// Where the press began, in this view's coordinates.
+    private var pressLocation = NSPoint.zero
+
+    /// How far, in points, the pointer must move before a press becomes a
+    /// drag. Without it, the slightest wobble during a click would start a
+    /// drag, and the click would be lost.
+    private static let dragThreshold: CGFloat = 4
 
     /// The longest side of each photo in the drag image.
     private static let dragImageLength: CGFloat = 96
@@ -40,21 +55,29 @@ final class PhotoDragView: NSView, NSDraggingSource {
         false
     }
 
-    /// Gets ready for a new drag. Overriding this also keeps the press here,
-    /// rather than passing it on to the next responder as NSView does by
-    /// default.
-    override func mouseDown(with _: NSEvent) {
+    /// Gets ready for a new drag, noting where the press began. Overriding
+    /// this also keeps the press here, rather than passing it on to the next
+    /// responder as NSView does by default.
+    override func mouseDown(with event: NSEvent) {
         hasStartedDrag = false
+        pressLocation = convert(event.locationInWindow, from: nil)
     }
 
-    /// Starts the drag on the first move of a press.
+    /// Starts the drag once the pointer has moved past the drag threshold.
     override func mouseDragged(with event: NSEvent) {
-        guard !hasStartedDrag, !photos.isEmpty else { return }
-        hasStartedDrag = true
         let location = convert(event.locationInWindow, from: nil)
+        let distance = hypot(location.x - pressLocation.x, location.y - pressLocation.y)
+        guard !hasStartedDrag, !photos.isEmpty, distance >= Self.dragThreshold else { return }
+        hasStartedDrag = true
         let items = photos.map { makeDraggingItem(for: $0, at: location) }
         let session = beginDraggingSession(with: items, event: event, source: self)
         session.draggingFormation = .pile
+    }
+
+    /// Reports a click when the press ends without having started a drag.
+    override func mouseUp(with _: NSEvent) {
+        guard !hasStartedDrag else { return }
+        onClick()
     }
 
     /// Copies outside the app, and refuses drops inside it.

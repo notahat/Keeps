@@ -67,7 +67,7 @@ struct PickScreen: View {
     init(grouping: Grouping, group: Range<Int>) {
         self.grouping = grouping
         self.group = group
-        _aspectRatio = State(initialValue: Self.tileAspectRatio(of: grouping.items[group]))
+        _aspectRatio = State(initialValue: ThumbnailImage.commonAspectRatio(of: grouping.items[group]))
     }
 
     /// Which of the group's photos are tiles and which are on the pile.
@@ -322,17 +322,5 @@ struct PickScreen: View {
         } else {
             scrollPosition.scrollTo(y: offset)
         }
-    }
-
-    /// The most common shape among the photos' cached thumbnails, or the
-    /// typical shape when none are cached.
-    private static func tileAspectRatio(of photos: ArraySlice<PhotoItem>) -> CGFloat {
-        let ratios = photos.compactMap { photo -> CGFloat? in
-            guard let size = ImagePipeline.shared.cachedImage(for: photo, size: ThumbnailImage.imageSize)?.size,
-                  size.height > 0
-            else { return nil }
-            return size.width / size.height
-        }
-        return TileLayout.commonAspectRatio(of: ratios) ?? ThumbnailImage.typicalAspectRatio
     }
 }
