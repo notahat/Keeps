@@ -103,18 +103,25 @@ struct FolderView: View {
 
     /// Creates the grouping, restores it from keeps.json, starts auto-save,
     /// and prefetches thumbnails. Runs once, since a window keeps the same
-    /// folder for its whole life.
+    /// folder for its whole life. When keeps.json can't be read, says so and
+    /// doesn't auto-save, so the work in it isn't written over.
     private func start() {
         guard grouping == nil else { return }
         let newGrouping = Grouping(items: session.items)
         let newKeepsFile = KeepsFile(folderURL: session.folderURL)
-        if let savedGrouping = newKeepsFile.restore() {
-            newGrouping.applyRestored(state: savedGrouping)
+        do {
+            if let savedGrouping = try newKeepsFile.restore() {
+                newGrouping.applyRestored(state: savedGrouping)
+            }
+            newKeepsFile.startObserving(
+                snapshot: { newGrouping.snapshotState() },
+                onSaveError: { NSApp.presentError($0) }
+            )
+        } catch {
+            // Shown once the window is up, rather than from inside a view
+            // update.
+            Task { NSApp.presentError(error) }
         }
-        newKeepsFile.startObserving(
-            snapshot: { newGrouping.snapshotState() },
-            onSaveError: { NSApp.presentError($0) }
-        )
         grouping = newGrouping
         keepsFile = newKeepsFile
         ImagePipeline.shared.prefetchImages(for: session.items, size: ThumbnailImage.imageSize)

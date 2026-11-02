@@ -29,7 +29,7 @@ struct KeepsFileTests {
         )
 
         try keepsFile.save(saved)
-        let restored = keepsFile.restore()
+        let restored = try keepsFile.restore()
 
         #expect(restored == saved)
     }
@@ -57,7 +57,7 @@ struct KeepsFileTests {
         try Data(json.utf8).write(to: folder.appendingPathComponent("keeps.json"))
         let keepsFile = KeepsFile(folderURL: folder)
 
-        let restored = keepsFile.restore()
+        let restored = try keepsFile.restore()
 
         #expect(restored == makeSavedGrouping(selectedStem: "IMG_0001"))
     }
@@ -69,10 +69,10 @@ struct KeepsFileTests {
 
         let keepsFile = KeepsFile(folderURL: folder)
 
-        #expect(keepsFile.restore() == nil)
+        #expect(try keepsFile.restore() == nil)
     }
 
-    @Test("Restores nothing from a keeps.json in a format it doesn't know")
+    @Test("Refuses to restore a keeps.json in a format it doesn't know")
     func restoreWithUnknownFormat() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
@@ -83,10 +83,12 @@ struct KeepsFileTests {
 
         let keepsFile = KeepsFile(folderURL: folder)
 
-        #expect(keepsFile.restore() == nil)
+        #expect(throws: KeepsFile.UnreadableFileError.self) {
+            try keepsFile.restore()
+        }
     }
 
-    @Test("Restores nothing from a keeps.json that isn't JSON")
+    @Test("Refuses to restore a keeps.json that isn't JSON")
     func restoreWithInvalidJSON() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
@@ -94,7 +96,22 @@ struct KeepsFileTests {
 
         let keepsFile = KeepsFile(folderURL: folder)
 
-        #expect(keepsFile.restore() == nil)
+        #expect(throws: KeepsFile.UnreadableFileError.self) {
+            try keepsFile.restore()
+        }
+    }
+
+    @Test("Refuses to restore a keeps.json that is missing its grouping")
+    func restoreWithMissingGrouping() throws {
+        let folder = try makeTemporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try Data(#"{"workflow": "group-cull"}"#.utf8).write(to: folder.appendingPathComponent("keeps.json"))
+
+        let keepsFile = KeepsFile(folderURL: folder)
+
+        #expect(throws: KeepsFile.UnreadableFileError.self) {
+            try keepsFile.restore()
+        }
     }
 
     @Test("Saving throws when keeps.json can't be written")
@@ -126,11 +143,11 @@ struct KeepsFileTests {
 
         // The save runs on the next main-actor turn; yield until it has.
         model.selectedStem = "IMG_0001"
-        for _ in 0 ..< 10 where keepsFile.restore() == nil {
+        for _ in 0 ..< 10 where try keepsFile.restore() == nil {
             await Task.yield()
         }
 
-        #expect(keepsFile.restore() == makeSavedGrouping(selectedStem: "IMG_0001"))
+        #expect(try keepsFile.restore() == makeSavedGrouping(selectedStem: "IMG_0001"))
     }
 
     @Test("A failed observed save reports the error")
@@ -174,7 +191,7 @@ struct KeepsFileTests {
             await Task.yield()
         }
 
-        #expect(keepsFile.restore() == nil)
+        #expect(try keepsFile.restore() == nil)
     }
 }
 

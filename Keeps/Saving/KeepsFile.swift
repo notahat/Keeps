@@ -3,14 +3,41 @@ import Observation
 
 /// Saves and restores a folder's grouping to keeps.json in the photo folder.
 /// The file holds the saved grouping and the name of its format, so a file
-/// in a format this doesn't know is ignored rather than mis-decoded. Saving
+/// in a format this doesn't know is refused rather than mis-decoded. Saving
 /// replaces the whole file. Does not manage sandbox access to the folder,
 /// and does not convert between the saved form and the live grouping.
 ///
 /// Call restore() before showing the grouping, then startObserving to begin
-/// auto-saving on changes. Call stop() to halt auto-saving when the folder's
-/// view goes away, such as when its window closes.
+/// auto-saving on changes. If restore() throws, don't auto-save: the file
+/// holds work that would be lost by writing over it. Call stop() to halt
+/// auto-saving when the folder's view goes away, such as when its window
+/// closes.
 final class KeepsFile {
+    /// Thrown when keeps.json is there but can't be restored, with a
+    /// message saying so to the user.
+    nonisolated struct UnreadableFileError: LocalizedError {
+        let folderName: String
+        let underlyingError: Error
+
+        var errorDescription: String? {
+            "Keeps couldn't read the keeps.json file in “\(folderName)”."
+        }
+
+        var recoverySuggestion: String? {
+            "\(underlyingError.localizedDescription) Changes to this folder won't be saved, so the file is left as it is."
+        }
+    }
+
+    /// Thrown inside UnreadableFileError when keeps.json names a format this
+    /// version doesn't know, such as one written by a later version.
+    nonisolated struct UnknownFormatError: LocalizedError {
+        let formatName: String
+
+        var errorDescription: String? {
+            "It's in a format this version of Keeps doesn't know (“\(formatName)”)."
+        }
+    }
+
     /// What keeps.json holds: the saved grouping, and the name of its
     /// format. The format name's key is "workflow", the name it was first
     /// written under, so existing files keep loading.
@@ -31,14 +58,28 @@ final class KeepsFile {
         fileURL = folderURL.appendingPathComponent("keeps.json")
     }
 
-    /// Returns the saved grouping, or nil when the file is missing,
-    /// unreadable, or in a format this doesn't know.
-    func restore() -> SavedGrouping? {
+    /// Returns the saved grouping, or nil when there's no keeps.json. Throws
+    /// UnreadableFileError when there is one but it can't be read, isn't
+    /// valid, or is in a format this doesn't know.
+    func restore() throws -> SavedGrouping? {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
+        do {
+            return try Self.decodeGrouping(from: Data(contentsOf: fileURL))
+        } catch {
+            let folderName = fileURL.deletingLastPathComponent().lastPathComponent
+            throw UnreadableFileError(folderName: folderName, underlyingError: error)
+        }
+    }
+
+    /// Decodes the saved grouping from the file's contents, checking the
+    /// format name first.
+    private static func decodeGrouping(from data: Data) throws -> SavedGrouping {
         let decoder = JSONDecoder()
-        guard let data = try? Data(contentsOf: fileURL),
-              (try? decoder.decode(Header.self, from: data))?.workflow == SavedGrouping.originalFormatName
-        else { return nil }
-        return try? decoder.decode(Contents.self, from: data).state
+        let formatName = try decoder.decode(Header.self, from: data).workflow
+        guard formatName == SavedGrouping.originalFormatName else {
+            throw UnknownFormatError(formatName: formatName)
+        }
+        return try decoder.decode(Contents.self, from: data).state
     }
 
     /// Writes the grouping to keeps.json. Throws if it cannot be encoded or

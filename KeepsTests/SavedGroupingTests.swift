@@ -40,7 +40,7 @@ struct SavedGroupingTests {
 
         try keepsFile.save(grouping.snapshotState())
         let restored = Grouping(items: grouping.items)
-        try restored.applyRestored(state: #require(keepsFile.restore()))
+        try restored.applyRestored(state: #require(try keepsFile.restore()))
 
         #expect(restored.keepers == [1, 4])
         #expect(restored.isDone(0 ..< 3))
@@ -104,7 +104,7 @@ struct SavedGroupingTests {
         let grouping = makeGrouping(photoCount: 10)
         let keepsFile = KeepsFile(folderURL: folder)
 
-        let state = try #require(keepsFile.restore())
+        let state = try #require(try keepsFile.restore())
         grouping.applyRestored(state: state)
 
         #expect(grouping.boundaries == [3, 5, 10])

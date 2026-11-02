@@ -714,7 +714,7 @@ head.
 
 Each step builds and passes the tests, then review and commit.
 
-1. **Never overwrite a keeps.json that can't be read.** `KeepsFile.restore()`
+1. ✅ **Never overwrite a keeps.json that can't be read.** `KeepsFile.restore()`
    returns nil only when there's no file, and throws when the file can't
    be read, isn't valid, or is in a format it doesn't know. `FolderView`
    shows the error and doesn't autosave that folder, so the file is left
