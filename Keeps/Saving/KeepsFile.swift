@@ -3,18 +3,19 @@ import Observation
 
 /// Saves and restores a folder's grouping to keeps.json in the photo folder.
 /// The file holds the saved grouping and the name of its format, so a file
-/// in a format this doesn't know is refused rather than mis-decoded. Saving
-/// replaces the whole file. Does not manage sandbox access to the folder,
-/// and does not convert between the saved form and the live grouping.
+/// in a format this version of Keeps doesn't know is refused rather than
+/// mis-decoded. Saving replaces the whole file.
 ///
-/// Call restore() before showing the grouping, then startObserving to begin
-/// auto-saving on changes. If restore() throws, don't auto-save: the file
-/// holds work that would be lost by writing over it. Call stop() to halt
-/// auto-saving when the folder's view goes away, such as when its window
-/// closes.
+/// Call restore() before showing the grouping, then startAutoSaving to save
+/// on every change. If restore() throws, don't auto-save: the file holds
+/// work that would be lost by writing over it. Call stopAutoSaving() when
+/// the folder's view goes away, such as when its window closes.
+///
+/// It doesn't manage sandbox access to the folder, and it doesn't convert
+/// between the saved form and the live grouping; Grouping does that.
 final class KeepsFile {
-    /// Thrown when keeps.json is there but can't be restored, with a
-    /// message saying so to the user.
+    /// Thrown when keeps.json is there but can't be restored. Its message
+    /// tells the user what went wrong and that changes won't be saved.
     nonisolated struct UnreadableFileError: LocalizedError {
         let folderName: String
         let underlyingError: Error
@@ -52,15 +53,17 @@ final class KeepsFile {
     }
 
     private let fileURL: URL
-    private var isActive = true
+    private var isAutoSaving = true
 
+    /// Makes a KeepsFile for the keeps.json in a photo folder, without
+    /// reading or writing it.
     init(folderURL: URL) {
         fileURL = folderURL.appendingPathComponent("keeps.json")
     }
 
     /// Returns the saved grouping, or nil when there's no keeps.json. Throws
     /// UnreadableFileError when there is one but it can't be read, isn't
-    /// valid, or is in a format this doesn't know.
+    /// valid, or is in a format this version of Keeps doesn't know.
     func restore() throws -> SavedGrouping? {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
         do {
@@ -93,15 +96,20 @@ final class KeepsFile {
     }
 
     /// Stops auto-saving.
-    func stop() {
-        isActive = false
+    func stopAutoSaving() {
+        isAutoSaving = false
     }
 
     /// Begins observing whatever observable state `snapshot` reads, writing
     /// a fresh snapshot to disk whenever it changes. Save failures are passed
     /// to onSaveError so the UI can alert the user.
+    ///
+    /// withObservationTracking reports only the first change, and reports it
+    /// before the new value is stored. So the save waits in a Task until the
+    /// change has landed, or it would save the old value, and then observes
+    /// again, or only the first change would ever be saved.
     @MainActor
-    func startObserving(
+    func startAutoSaving(
         snapshot: @escaping @MainActor () -> SavedGrouping,
         onSaveError: @escaping @MainActor (Error) -> Void
     ) {
@@ -109,13 +117,13 @@ final class KeepsFile {
             _ = snapshot()
         } onChange: {
             Task { @MainActor in
-                guard self.isActive else { return }
+                guard self.isAutoSaving else { return }
                 do {
                     try self.save(snapshot())
                 } catch {
                     onSaveError(error)
                 }
-                self.startObserving(snapshot: snapshot, onSaveError: onSaveError)
+                self.startAutoSaving(snapshot: snapshot, onSaveError: onSaveError)
             }
         }
     }

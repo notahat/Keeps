@@ -13,7 +13,7 @@ part that says which photos are tiles and which are on the pile.
 
 The full-size view (`FullSizeView`) is shown over the tiles rather than in
 place of them, and you stay on the pick screen while it's up: the tiles
-keep keyboard focus, and `PickScreen` handles its keys and decides when it
+keep keyboard focus, and `PickScreen` handles its keys and controls when it
 zooms. It zooms out of the focused tile and back into it (a fade with
 Reduce Motion on), which shows where you are in the grid on the way back.
 `FullSizeImage`, inside it, loads and draws the photo, showing the

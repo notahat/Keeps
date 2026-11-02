@@ -1,9 +1,14 @@
 import Foundation
 
-/// The grid's fixed geometry, exposed so cells can draw chrome that lines up
-/// with the gaps between them. Columns are fixed-width, so gaps never
-/// stretch with the window.
+/// The sort grid's geometry. Each cell sits in a slot: the cell plus half
+/// the gap on either side (see slotWidth). Columns are fixed-width, so gaps
+/// never stretch with the window.
+///
+/// Holds the fixed sizes, which cells use to draw boundary bars that line
+/// up with the gaps, and pure functions over them for rows, slots, scroll
+/// offsets, and where the movement keys go.
 enum PhotoGridMetrics {
+    /// The width and height of a cell, the size thumbnails are shown at.
     static var cellSize: CGFloat {
         CGFloat(ThumbnailImage.displaySize)
     }

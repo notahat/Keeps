@@ -17,8 +17,10 @@ struct PhotoItem: Identifiable {
     let rawURL: URL?
     let jpegURL: URL?
 
-    /// The file's creation date, used for chronological sort order.
-    let capturedAt: Date
+    /// The file's creation date, used for chronological sort order. For
+    /// photos straight off a camera card, this is close to when each was
+    /// taken.
+    let fileCreationDate: Date
 
     /// The URL to use for image loading. Prefers the RAW file so its embedded
     /// JPEG can be extracted; falls back to a standalone JPEG.

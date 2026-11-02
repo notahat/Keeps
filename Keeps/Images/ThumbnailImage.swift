@@ -1,18 +1,22 @@
 import AppKit
 import SwiftUI
 
-/// A fixed-size frame, square unless given a size, that loads and displays a
-/// photo thumbnail, showing a neutral placeholder while loading. By default
-/// requests visible-priority loading on appear and deprioritises on
-/// disappear so that currently-visible cells are always decoded first.
-/// Carries no selection or grouping chrome — cells compose their own
-/// overlays on top. Offers an optional border because only this view knows
-/// the image's real shape.
+/// Shows one photo's thumbnail in a fixed-size frame, square unless given a
+/// size, with a placeholder until the thumbnail loads.
+///
+/// When the view appears, it asks the image pipeline for the thumbnail at
+/// the priority for images on screen. When it disappears, it drops the
+/// request to background priority, so thumbnails on screen load before
+/// ones that have scrolled away. It can draw a border round the image,
+/// because only this view knows the image's real shape.
+///
+/// It draws no selection highlight, badge, or other decoration; the screens
+/// add their own on top.
 struct ThumbnailImage: View {
     let item: PhotoItem
 
     /// A border drawn around the image itself, following its shape rather
-    /// than the square cell. Zero for none.
+    /// than the frame's. Zero for none.
     var borderWidth: CGFloat = 0
     var borderColor: Color = .white
 
@@ -33,7 +37,7 @@ struct ThumbnailImage: View {
 
     /// A stand-in for the image while it loads.
     enum Placeholder {
-        /// A neutral square filling the cell.
+        /// A neutral square filling the frame.
         case square
 
         /// A card of a guessed width-to-height ratio, drawn in the border
@@ -45,9 +49,15 @@ struct ThumbnailImage: View {
         case none
     }
 
-    // Request at 2x the display size for Retina screens.
+    /// The width and height, in points, of the frame thumbnails are usually
+    /// shown in.
     static let displaySize: Int = 260
+
+    /// The longest side of a thumbnail, in pixels: twice the display size,
+    /// so thumbnails are sharp on Retina screens.
     static let pixelSize: Int = displaySize * 2
+
+    /// The size thumbnails are read and cached at.
     static let imageSize: ImageSize = .thumbnail(maxPixelSize: pixelSize)
 
     /// The shape of most camera sensors, width over height, for laying out
@@ -110,7 +120,7 @@ private struct ThumbnailFrame: View {
         Group {
             if let image {
                 // The border's padding shrinks what the image is offered, so
-                // image plus border still fits the square.
+                // the image and its border together still fit the frame.
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()

@@ -7,16 +7,16 @@ import SwiftUI
 /// being looked at, then the full-size images near it, then thumbnails on
 /// screen, then background prefetching. Views hear that an image has loaded
 /// through `onImageLoaded(for:)`, so they update without suspending on
-/// async/await. Doesn't decode files itself (that's ImageReader's job) or
-/// draw anything.
+/// async/await. It doesn't decode files itself (that's ImageReader's job)
+/// or draw anything.
 @Observable
 @MainActor
 final class ImagePipeline {
     static let shared = ImagePipeline()
 
     /// Posted on the main thread when any image finishes loading, with the
-    /// item's id in the userInfo under `loadedItemIDKey`. Heard through
-    /// `onImageLoaded(for:)`.
+    /// item's id in the userInfo under `loadedItemIDKey`. Views listen for
+    /// it through `onImageLoaded(for:)`.
     fileprivate static let imageLoadedNotification = Notification.Name("com.notahat.Keeps.imageLoaded")
     fileprivate static let loadedItemIDKey = "itemID"
 

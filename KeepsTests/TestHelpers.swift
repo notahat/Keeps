@@ -22,7 +22,7 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
             stem: String(format: "IMG_%04d", index),
             rawURL: URL(fileURLWithPath: "/tmp/IMG_\(index).CR3"),
             jpegURL: nil,
-            capturedAt: Date(timeIntervalSince1970: TimeInterval(index))
+            fileCreationDate: Date(timeIntervalSince1970: TimeInterval(index))
         )
     }
 }

@@ -136,7 +136,7 @@ struct KeepsFileTests {
         defer { try? FileManager.default.removeItem(at: folder) }
         let keepsFile = KeepsFile(folderURL: folder)
         let model = StubModel()
-        keepsFile.startObserving(
+        keepsFile.startAutoSaving(
             snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
             onSaveError: { _ in }
         )
@@ -161,7 +161,7 @@ struct KeepsFileTests {
         let keepsFile = KeepsFile(folderURL: folder)
         let model = StubModel()
         let errorBox = ErrorBox()
-        keepsFile.startObserving(
+        keepsFile.startAutoSaving(
             snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
             onSaveError: { errorBox.error = $0 }
         )
@@ -180,12 +180,12 @@ struct KeepsFileTests {
         defer { try? FileManager.default.removeItem(at: folder) }
         let keepsFile = KeepsFile(folderURL: folder)
         let model = StubModel()
-        keepsFile.startObserving(
+        keepsFile.startAutoSaving(
             snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
             onSaveError: { _ in }
         )
 
-        keepsFile.stop()
+        keepsFile.stopAutoSaving()
         model.selectedStem = "IMG_0001"
         for _ in 0 ..< 10 {
             await Task.yield()

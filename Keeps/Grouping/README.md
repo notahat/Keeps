@@ -11,5 +11,5 @@ the order a pile of them is drawn, keepers on top.
 
 `Grouping` converts itself to and from `SavedGrouping`, with `PhotoStems`
 translating between photos and the stems keeps.json names them by, but
-leaves reading and writing the file to Saving. Uses Saving and Folder,
-and has no views, so all of it is covered by unit tests.
+leaves reading and writing the file to Saving. This folder uses Saving and
+Folder, and has no views, so all of it is covered by unit tests.

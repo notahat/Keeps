@@ -6,8 +6,9 @@ struct Pile {
     /// then the rest, each in their original order.
     let photos: [PhotoItem]
 
-    /// `group` is the photos' indices in `items`; `keepers` may include
-    /// photos outside the group, which are ignored.
+    /// Orders a group's photos for its pile. `group` is the photos' indices
+    /// in `items`; `keepers` may include photos outside the group, which
+    /// are ignored.
     init(group: Range<Int>, items: [PhotoItem], keepers: Set<Int>) {
         let kept = group.filter { keepers.contains($0) }
         let rest = group.filter { !keepers.contains($0) }

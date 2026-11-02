@@ -9,9 +9,9 @@ import SwiftUI
 /// pressing Return with it selected, opens it on the pick screen. Done groups
 /// leave the grid, and once they all have, an all-done message replaces it.
 ///
-/// Draws the cells, handles input, and owns the grid geometry (column math)
-/// and keyboard focus. Scrolling is left to GridScrolling, and the grouping
-/// itself lives in Grouping.
+/// SortScreen draws the cells, handles input, and owns keyboard focus.
+/// Scrolling is left to GridScrolling, the geometry to PhotoGridMetrics, and
+/// the grouping itself lives in Grouping.
 struct SortScreen: View {
     @Bindable var grouping: Grouping
 
@@ -19,7 +19,7 @@ struct SortScreen: View {
     @State private var hoveredGap: Int?
 
     @State private var scrolling = GridScrolling()
-    @FocusState private var isFocused: Bool
+    @FocusState private var hasKeyboardFocus: Bool
 
     private static let cellSize = PhotoGridMetrics.cellSize
     private static let spacing = PhotoGridMetrics.spacing
@@ -33,9 +33,9 @@ struct SortScreen: View {
     }
 
     /// The cells as scrolling sees them. Collapsing removes cells ahead of
-    /// the open photos; blank slots for the hidden photos keep those photos
-    /// in their original columns. Where grouping has reached stays put when
-    /// groups collapse.
+    /// the open photos, and blank slots for the hidden photos keep those
+    /// photos in their original columns. The working point is the stable
+    /// item, so it holds still on screen as groups collapse.
     private var scrollCells: GridScrolling.Cells {
         GridScrolling.Cells(
             itemIDs: grouping.cellItems.map(\.id),
@@ -66,7 +66,7 @@ struct SortScreen: View {
                 scrollAnchor: $grouping.scrollAnchor,
                 scrollProxy: scrollProxy
             )
-            .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
+            .handlesKeys(hasKeyboardFocus: $hasKeyboardFocus, perform: handleKeyPress)
         }
     }
 
@@ -114,11 +114,13 @@ struct SortScreen: View {
             handleDoubleClick(at: location, index: index)
         }
         .simultaneousGesture(SpatialTapGesture(coordinateSpace: .local).onEnded { value in
-            handleTap(at: value.location, index: index)
+            handleClick(at: value.location, index: index)
         })
         .onContinuousHover { phase in
             updateHoveredGap(for: phase, index: index)
         }
+        // GridScrolling scrolls to a cell by this id, so without it,
+        // keyboard selection couldn't be followed.
         .id(item.id)
     }
 
@@ -154,14 +156,14 @@ struct SortScreen: View {
     /// Toggles the boundary at a clicked gap, or selects a clicked cell, then
     /// takes keyboard focus. A locked gap, such as beside a collapsed group,
     /// counts as the cell.
-    private func handleTap(at location: CGPoint, index: Int) {
+    private func handleClick(at location: CGPoint, index: Int) {
         scrolling.noteClick(onCellAt: index)
         if let gapIndex = editableGap(at: location, index: index) {
             grouping.toggleBoundary(atGap: gapIndex)
         } else {
             grouping.selectCell(at: index)
         }
-        isFocused = true
+        hasKeyboardFocus = true
     }
 
     /// Opens the group of a double-clicked cell. Double-clicking an editable
@@ -187,15 +189,16 @@ struct SortScreen: View {
         GridHitTarget.resolve(offset: location.x, cellWidth: Self.slotWidth, index: index)
     }
 
-    /// Moves the selection for spatial keys using the current column count,
-    /// and handles the other keys the screen knows.
+    /// Moves the selection for the movement keys, using the current column
+    /// count to move up and down a row. Passes any other key, or any key when
+    /// nothing is selected, to handleCommandKey.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         scrolling.noteKeyPress(cells: scrollCells)
         guard let direction = MoveDirection(press),
-              let current = grouping.selectedCellIndex
+              let selectedCellIndex = grouping.selectedCellIndex
         else { return handleCommandKey(press) }
         grouping.selectCell(at: PhotoGridMetrics.targetCell(
-            from: current,
+            from: selectedCellIndex,
             moving: direction,
             cellCount: grouping.layout.cells.count,
             columnCount: scrolling.columnCount

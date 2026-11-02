@@ -6,7 +6,8 @@ import Foundation
 /// the index of the item that follows them, so the right edge of one cell and
 /// the left edge of the next — even across a row wrap — resolve to the same
 /// gap. The gap after the last item is a valid target; there is none before
-/// the first. Says nothing about what a gap means, such as a boundary.
+/// the first. What a gap is used for, such as placing a boundary, is up to
+/// the caller.
 nonisolated enum GridHitTarget: Equatable {
     case item(Int)
     case gap(beforeIndex: Int)

@@ -5,11 +5,12 @@ import SwiftUI
 /// counts add up to the folder. Clicking a pile also selects a section: the
 /// to-go pile shows the sort screen, and the set-aside pile shows the done
 /// groups. The pile for the section showing sits on a highlight, like a
-/// selected sidebar item. The keepers pile isn't a section: it's dragged out
-/// of the app instead, as the keepers' files, for Lightroom or Finder.
+/// selected sidebar item. The keepers pile isn't a section: the user drags
+/// it out of the app instead, as the keepers' files, into Lightroom or
+/// Finder.
 ///
-/// Draws and takes clicks only. FolderView decides where the sidebar goes,
-/// shows it only once a group is done, and decides what each section shows.
+/// It only draws the piles and takes clicks. FolderView places the sidebar,
+/// shows it only once a group is done, and shows each section's screen.
 struct FolderSidebar: View {
     let grouping: Grouping
     @Binding var section: FolderSection

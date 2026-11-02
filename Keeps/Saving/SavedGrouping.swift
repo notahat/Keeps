@@ -3,11 +3,11 @@ import Foundation
 /// The saved form of a folder's grouping, as written to keeps.json:
 /// everything needed to pick up exactly where the user left off. Photos are
 /// referred to by stem (filename without extension) rather than in-memory
-/// UUIDs so it survives relaunches and folder moves.
+/// UUIDs, so the saved grouping survives relaunches and folder moves.
 ///
-/// keeps.json names its format in its "workflow" field. This format is
-/// named `originalFormatName`, for the name the app had when it was first
-/// saved.
+/// keeps.json names its format in its "workflow" field. This format's name
+/// is `originalFormatName`, which is what the app was called when the
+/// format was first written.
 ///
 /// Declared nonisolated because it is a plain value type with no actor
 /// affinity; otherwise the target's main-actor default would isolate its
@@ -28,6 +28,8 @@ nonisolated struct SavedGrouping: Codable, Equatable {
 
         private static let endMarker = "end"
 
+        /// Reads a position written as the string "end" or as
+        /// {"before": stem}, and throws for any other string.
         init(from decoder: Decoder) throws {
             if let single = try? decoder.singleValueContainer(),
                let marker = try? single.decode(String.self)
@@ -44,6 +46,7 @@ nonisolated struct SavedGrouping: Codable, Equatable {
             self = try .beforePhoto(container.decode(String.self, forKey: .before))
         }
 
+        /// Writes the position as {"before": stem} or the string "end".
         func encode(to encoder: Encoder) throws {
             switch self {
             case let .beforePhoto(stem):

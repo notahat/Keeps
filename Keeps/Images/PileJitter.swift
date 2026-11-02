@@ -3,7 +3,7 @@ import Foundation
 /// How one photo sits in a messy pile of prints, on any screen: a small
 /// rotation and offset. Derived from the photo's stem, so a pile looks the
 /// same on every render and every launch. (Swift's own string hashing is
-/// reseeded each launch, hence the hand-rolled hash.) Pure.
+/// reseeded each launch, hence the hand-rolled hash.) It's a pure value.
 nonisolated struct PileJitter: Equatable {
     static let maximumRotationDegrees: Double = 8
     static let maximumOffset: Double = 10

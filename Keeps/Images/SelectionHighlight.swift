@@ -2,11 +2,12 @@ import SwiftUI
 
 /// The accent-coloured outline round a selected photo or pile, the same on
 /// every screen. It shows only while the window is key, as selections do in
-/// Finder. Draws only; which item is selected is the screen's business.
+/// Finder. It only draws the outline; each screen tracks which item is
+/// selected.
 struct SelectionHighlight: ViewModifier {
-    /// The outline's line width. It's centred on the item's edge, leaving a
-    /// little space between it and the photo, so half of it falls outside
-    /// the item.
+    /// The outline's line width. The line is centred on the item's edge, so
+    /// half of it falls outside the item, and the inner half sits in the
+    /// space ThumbnailImage leaves round the photo (its imageInset).
     static let lineWidth: CGFloat = 3
 
     let isSelected: Bool

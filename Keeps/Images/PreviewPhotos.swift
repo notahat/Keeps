@@ -27,7 +27,7 @@ enum PreviewPhotos {
         guard let url = Bundle.main.url(forResource: fileName, withExtension: "jpg") else {
             fatalError("Missing preview photo \(fileName).jpg")
         }
-        let item = PhotoItem(id: UUID(), stem: stem, rawURL: nil, jpegURL: url, capturedAt: .now)
+        let item = PhotoItem(id: UUID(), stem: stem, rawURL: nil, jpegURL: url, fileCreationDate: .now)
         ImagePipeline.shared.loadImageImmediately(for: item, size: ThumbnailImage.imageSize)
         return item
     }

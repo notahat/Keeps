@@ -6,15 +6,17 @@ import SwiftUI
 /// Lightroom, a Finder folder, or anything else that takes files. The drag
 /// is drawn as a pile of the photos' thumbnails.
 ///
-/// Only starts drags; the photos to drag, and what's drawn under it, are its
-/// owner's. Dragging within the app does nothing.
+/// It only starts drags. Its owner supplies the photos to drag and draws
+/// the view underneath. Dragging within the app does nothing.
 struct PhotoDragSource: NSViewRepresentable {
     let photos: [PhotoItem]
 
+    /// Makes the AppKit view that starts the drags.
     func makeNSView(context _: Context) -> PhotoDragView {
         PhotoDragView()
     }
 
+    /// Gives the AppKit view the current photos to drag.
     func updateNSView(_ view: PhotoDragView, context _: Context) {
         view.photos = photos
     }
@@ -32,11 +34,15 @@ final class PhotoDragView: NSView, NSDraggingSource {
     /// The longest side of each photo in the drag image.
     private static let dragImageLength: CGFloat = 96
 
+    /// Stops a press here from moving the window, so that dragging moves the
+    /// photos instead.
     override var mouseDownCanMoveWindow: Bool {
         false
     }
 
-    /// Takes the press, so the drag that follows comes here.
+    /// Gets ready for a new drag. Overriding this also keeps the press here,
+    /// rather than passing it on to the next responder as NSView does by
+    /// default.
     override func mouseDown(with _: NSEvent) {
         hasStartedDrag = false
     }
@@ -59,8 +65,8 @@ final class PhotoDragView: NSView, NSDraggingSource {
         context == .outsideApplication ? .copy : []
     }
 
-    /// One photo's file in the drag, drawn as its thumbnail (or the file's
-    /// icon if the thumbnail isn't loaded) centred on the pointer.
+    /// Makes the drag item for one photo's file, drawn as its thumbnail (or
+    /// the file's icon if the thumbnail isn't loaded) centred on the pointer.
     private func makeDraggingItem(for photo: PhotoItem, at location: NSPoint) -> NSDraggingItem {
         let item = NSDraggingItem(pasteboardWriter: photo.sourceURL as NSURL)
         let image = ImagePipeline.shared.cachedImage(for: photo, size: ThumbnailImage.imageSize)

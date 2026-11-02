@@ -1,8 +1,8 @@
 import AppKit
 
 /// The app's document controller. It changes two things from AppKit's: the
-/// Open panel chooses folders, since every document is a folder, and only
-/// one Open panel shows at a time.
+/// Open panel lets the user choose folders, since every document is a
+/// folder, and only one Open panel shows at a time.
 final class FolderDocumentController: NSDocumentController {
     private var shownOpenPanel: NSOpenPanel?
 

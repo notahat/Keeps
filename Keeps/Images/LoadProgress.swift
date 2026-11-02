@@ -3,7 +3,7 @@ import Foundation
 /// How far through the current burst of image loading the pipeline is. A
 /// burst runs from when work is first queued until the queue empties; its
 /// total counts every load queued during it, including ones added partway.
-/// Pure.
+/// It's a pure value, with no tie to the pipeline, so it can be tested.
 nonisolated struct LoadProgress {
     private var totalQueued = 0
     private var remaining = 0

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The direction an arrow key or vi key (h/j/k/l) moves in. Shared by the
-/// screens so they agree on which keys move; what a move does is left to
-/// each screen.
+/// The direction an arrow key or vi key (h/j/k/l) moves in. The screens
+/// share it so they agree on which keys move, and each screen defines what
+/// a move does there.
 nonisolated enum MoveDirection: Equatable {
     case left, right, up, down
 

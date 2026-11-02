@@ -1,9 +1,10 @@
 import SwiftUI
 
 /// A print with no image: a card of a given shape in the border colour, with
-/// a grey patch where the image would go. Drawn while a thumbnail loads, and
-/// for the deep layers of a pile, which are mostly hidden and not worth a
-/// thumbnail load. Laid out like ThumbnailImage, so the two line up.
+/// a grey patch where the image would go. It stands in while a thumbnail
+/// loads, and for the deep layers of a pile, which are mostly hidden and not
+/// worth a thumbnail load. It's laid out like ThumbnailImage, so the two
+/// line up.
 struct BlankPrint: View {
     /// The card's width over its height.
     let aspectRatio: CGFloat

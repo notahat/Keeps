@@ -11,18 +11,20 @@ import SwiftUI
 /// weren't kept sit on a pile (SetAsidePile) in the bottom-right corner.
 /// Then F does nothing.
 ///
-/// Places the tiles (PickTile) and the pile, shows FullSizeView over them,
-/// and handles input, including the full-size view's. The layout is
-/// TileLayout's, which photos are tiles is PickArrangement's, and the open
-/// group, keepers, and done groups are Grouping's. Tiles scale up the sort
-/// screen's thumbnails rather than loading larger images.
+/// PickScreen places the tiles (PickTile) and the pile, shows FullSizeView
+/// over them, and handles input, including the full-size view's. TileLayout
+/// works out where the tiles go, PickArrangement says which photos are tiles,
+/// and Grouping holds the open group, its keepers, and the done groups.
+/// Tiles scale up the sort screen's thumbnails rather than loading larger
+/// images.
 struct PickScreen: View {
     let grouping: Grouping
     let group: Range<Int>
 
-    /// Where the full-size view is: down, sitting exactly over the focused
-    /// tile (as it starts zooming out or finishes zooming back in), or at
-    /// full size.
+    /// Where the full-size view is: hidden, sitting exactly over the focused
+    /// tile, or at full size. The view passes through `overTile` on the way
+    /// out and back, because the zoom animates from the tile's frame to full
+    /// size; appearing straight at full size would skip the zoom.
     private enum FullSizeState {
         case hidden, overTile, zoomed
     }
@@ -37,8 +39,14 @@ struct PickScreen: View {
     @State private var aspectRatio: CGFloat
 
     @State private var scrollPosition = ScrollPosition()
+
+    /// How far the tiles are scrolled, tracked so that revealing a tile
+    /// scrolls only as far as needed.
     @State private var scrollOffset: CGFloat = 0
-    @FocusState private var isFocused: Bool
+
+    /// Whether the tiles have keyboard focus. This is separate from which
+    /// tile is focused (`focusedIndex`), which is the one highlighted.
+    @FocusState private var hasKeyboardFocus: Bool
 
     /// Pairs each tile with the full-size view, so opening and closing it
     /// zooms between the focused tile and full size.
@@ -67,7 +75,7 @@ struct PickScreen: View {
         PickArrangement(group: group, keepers: grouping.keepers, isDone: grouping.isDone(group))
     }
 
-    /// The photos with some indices.
+    /// The photos at some indices in the folder.
     private func photos(_ photoIndices: [Int]) -> [PhotoItem] {
         photoIndices.map { grouping.items[$0] }
     }
@@ -82,10 +90,10 @@ struct PickScreen: View {
         VStack(spacing: 0) {
             header
             // The full-size view covers the tiles rather than replacing
-            // them, and the tiles keep keyboard focus throughout, handling
-            // the full-size view's keys too. Moving focus to the full-size
-            // view from code doesn't take: keys then reach nothing until
-            // it's clicked.
+            // them, and the tiles keep keyboard focus throughout, so they
+            // handle the full-size view's keys too. Giving the full-size
+            // view keyboard focus from code doesn't work: SwiftUI ignores
+            // it, and keys reach nothing until the user clicks.
             GeometryReader { proxy in
                 tilesAndPile(in: proxy.size)
             }
@@ -112,21 +120,22 @@ struct PickScreen: View {
             zoomNamespace: zoomNamespace
         )
         .padding(Self.edgeRoom)
-        // A click would otherwise leave the tiles without focus.
-        .onTapGesture { isFocused = true }
+        // Without this, clicking the full-size view would take keyboard
+        // focus away from the tiles, and the keys would stop working.
+        .onTapGesture { hasKeyboardFocus = true }
         .onAppear {
             withAnimation(Self.zoomAnimation) { fullSizeState = .zoomed }
         }
     }
 
-    /// Which group this is among the closed groups, whether it's done, and
-    /// how many of its photos are kept.
+    /// The line above the tiles: which group this is among the closed
+    /// groups, whether it's done, and how many of its photos are kept.
     private var header: some View {
         let groups = grouping.layout.groups
-        let number = (groups.firstIndex(of: group) ?? 0) + 1
+        let groupNumber = (groups.firstIndex(of: group) ?? 0) + 1
         let keptCount = grouping.keptCount(in: group)
-        let done = grouping.isDone(group) ? "Done · " : ""
-        return Text("Group \(number) of \(groups.count) · \(done)\(keptCount) of \(group.count) kept")
+        let doneLabel = grouping.isDone(group) ? "Done · " : ""
+        return Text("Group \(groupNumber) of \(groups.count) · \(doneLabel)\(keptCount) of \(group.count) kept")
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding(.top, Self.spacing)
@@ -178,16 +187,17 @@ struct PickScreen: View {
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
             scrollOffset = offset
         }
-        .handlesKeys(isFocused: $isFocused) { press in
-            // The tile area's height: with the edge room above and below,
-            // a tile revealed within it keeps its highlight in view.
+        .handlesKeys(hasKeyboardFocus: $hasKeyboardFocus) { press in
+            // Tiles are revealed within the tile area rather than the whole
+            // scroll view, which leaves the edge room above and below for
+            // the highlight, so it isn't cut off.
             handleKeyPress(press, layout: layout, viewportHeight: tileArea.height)
         }
         .onChange(of: isFullSize) { _, isNowFullSize in
             guard !isNowFullSize else { return }
-            // Back from full size, where focus may have moved to a photo
-            // that's scrolled out of view.
-            isFocused = true
+            // At full size, focus may have moved to a photo whose tile is
+            // scrolled out of view, so it's scrolled back in.
+            hasKeyboardFocus = true
             reveal(focusedIndex, layout: layout, viewportHeight: tileArea.height, isAnimated: false)
         }
     }
@@ -203,18 +213,19 @@ struct PickScreen: View {
             isFocused: index == focusedIndex,
             isKeeper: grouping.keepers.contains(photoIndex)
         )
-        // Supplies the frame the full-size view zooms out of and back into.
+        // The tile supplies the frame the full-size view zooms out of and
+        // back into.
         .matchedGeometryEffect(id: AnyHashable(photo.id), in: zoomNamespace)
         .contentShape(Rectangle())
-        // The single click is simultaneous rather than a second tap
-        // gesture, which would wait out the double-click time and make
-        // focus lag.
+        // The single click is a simultaneous gesture. As a second
+        // onTapGesture, it would wait until a double-click was ruled out,
+        // and focus would lag behind the click.
         .onTapGesture(count: 2) {
             openFullSize()
         }
         .simultaneousGesture(TapGesture().onEnded {
             focusedIndex = index
-            isFocused = true
+            hasKeyboardFocus = true
         })
         .position(x: frame.midX, y: frame.midY)
     }

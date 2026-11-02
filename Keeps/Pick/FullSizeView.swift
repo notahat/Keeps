@@ -6,7 +6,7 @@ import SwiftUI
 /// until zoomed it takes the focused tile's frame, and once zoomed its own.
 /// With Reduce Motion on, it fades in and out where it is instead.
 ///
-/// Draws only. PickScreen decides when it shows and when it's zoomed, and
+/// Draws only. PickScreen controls when it shows and when it's zoomed, and
 /// handles its keys, since the tiles keep keyboard focus throughout.
 struct FullSizeView: View {
     let photos: [PhotoItem]
@@ -15,8 +15,8 @@ struct FullSizeView: View {
     let isZoomed: Bool
     let zoomNamespace: Namespace.ID
 
-    /// The matched id once zoomed: one no tile has, so the view keeps its
-    /// own frame.
+    /// The id the view matches once zoomed. No tile has this id, so there's
+    /// no tile frame to take on, and the view fills its own space.
     private static let zoomedID = AnyHashable("zoomed")
 
     @Environment(\.accessibilityReduceMotion) private var isReducingMotion

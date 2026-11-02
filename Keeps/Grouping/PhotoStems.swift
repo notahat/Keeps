@@ -1,13 +1,19 @@
 import Foundation
 
-/// Converts between where photos sit in the folder, which is how Grouping
-/// refers to them, and their stems, which is how SavedGrouping does. Pure:
-/// built once from the folder's photos, which don't change while it's open.
+/// Converts between photo indices, which is how Grouping refers to photos,
+/// and stems, which is how SavedGrouping does. A stem is a photo's file name
+/// without its extension. Indices shift when files are added or removed,
+/// and each PhotoItem's id is made afresh every time the folder is scanned,
+/// so only stems still name the same photos when keeps.json is read later.
+///
+/// Pure: built once from the folder's photos, which don't change while the
+/// folder is open.
 struct PhotoStems {
     private let items: [PhotoItem]
     private let indexByStem: [String: Int]
     private let indexByID: [UUID: Int]
 
+    /// Indexes the folder's photos by stem and by id.
     init(items: [PhotoItem]) {
         self.items = items
         indexByStem = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($1.stem, $0) })

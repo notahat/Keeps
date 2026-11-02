@@ -20,6 +20,8 @@ nonisolated struct TileLayout {
     /// tiles scroll.
     let contentSize: CGSize
 
+    /// Whether the tiles are taller than the available space, so they
+    /// scroll.
     let needsScrolling: Bool
 
     /// `aspectRatio` is each tile's width over its height.
@@ -138,9 +140,9 @@ private nonisolated struct Grid {
                         availableSize: availableSize, spacing: spacing)
         }
         // max(by:) keeps the first of equal widths, so fewer columns win ties.
-        let best = fittedWidths.indices.max { fittedWidths[$0] < fittedWidths[$1] } ?? 0
-        let (columnCount, width) = fittedWidths[best] >= minimumWidth
-            ? (best + 1, fittedWidths[best])
+        let bestIndex = fittedWidths.indices.max { fittedWidths[$0] < fittedWidths[$1] } ?? 0
+        let (columnCount, width) = fittedWidths[bestIndex] >= minimumWidth
+            ? (bestIndex + 1, fittedWidths[bestIndex])
             : scrollingColumns(tileCount: tileCount, minimumWidth: minimumWidth,
                                availableWidth: availableSize.width, spacing: spacing)
         return Grid(
@@ -161,9 +163,9 @@ private nonisolated struct Grid {
         spacing: CGFloat
     ) -> CGFloat {
         let rowCount = (tileCount + columnCount - 1) / columnCount
-        let widthFromWidth = (availableSize.width - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
-        let heightFromHeight = (availableSize.height - CGFloat(rowCount - 1) * spacing) / CGFloat(rowCount)
-        return max(0, min(widthFromWidth, heightFromHeight * aspectRatio))
+        let widthThatFitsAcross = (availableSize.width - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
+        let heightThatFitsDown = (availableSize.height - CGFloat(rowCount - 1) * spacing) / CGFloat(rowCount)
+        return max(0, min(widthThatFitsAcross, heightThatFitsDown * aspectRatio))
     }
 
     /// As many minimum-width columns as fit across, and the width that
@@ -174,12 +176,13 @@ private nonisolated struct Grid {
         availableWidth: CGFloat,
         spacing: CGFloat
     ) -> (columnCount: Int, width: CGFloat) {
-        let fitting = Int((availableWidth + spacing) / (minimumWidth + spacing))
-        let columnCount = max(1, min(tileCount, fitting))
-        let stretched = (availableWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
-        return (columnCount, max(minimumWidth, stretched))
+        let fittingColumnCount = Int((availableWidth + spacing) / (minimumWidth + spacing))
+        let columnCount = max(1, min(tileCount, fittingColumnCount))
+        let stretchedWidth = (availableWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
+        return (columnCount, max(minimumWidth, stretchedWidth))
     }
 
+    /// How many rows the tiles take, counting a short last row.
     private var rowCount: Int {
         (tileCount + columnCount - 1) / columnCount
     }

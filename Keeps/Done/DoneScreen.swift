@@ -5,20 +5,24 @@ import SwiftUI
 /// double-clicking it, or pressing Return with it selected, opens it on the
 /// pick screen, where it can be changed or marked not done.
 ///
-/// Draws the groups and handles input. Which groups are done, and opening
-/// them, are Grouping's; how a pile is drawn is Images'.
+/// DoneScreen draws the groups and handles input. Grouping keeps track of
+/// which groups are done and opens them, and Images draws the piles.
 struct DoneScreen: View {
     let grouping: Grouping
 
-    /// The selected group. Starts on the group last opened, so coming back
-    /// from the pick screen keeps your place.
+    /// The group the user has selected on this screen.
     @State private var selectedGroup: Range<Int>?
 
-    @FocusState private var isFocused: Bool
+    /// Whether the screen has keyboard focus, so that Return reaches it.
+    @FocusState private var hasKeyboardFocus: Bool
 
     private static let cellSize = CGFloat(ThumbnailImage.displaySize)
     private static let spacing: CGFloat = 12
 
+    /// Starts with the group last opened selected, if it's done, so coming
+    /// back from the pick screen leaves the selection where it was. Opening
+    /// a group selects its first photo (see Grouping.open(_:)), which is how
+    /// the last opened group is found.
     init(grouping: Grouping) {
         self.grouping = grouping
         let lastOpened = grouping.selectedPhotoIndex
@@ -35,7 +39,7 @@ struct DoneScreen: View {
                 ScrollView {
                     grid(of: groups)
                 }
-                .handlesKeys(isFocused: $isFocused, perform: handleKeyPress)
+                .handlesKeys(hasKeyboardFocus: $hasKeyboardFocus, perform: handleKeyPress)
                 .onAppear {
                     if let selectedGroup {
                         scrollProxy.scrollTo(selectedGroup.lowerBound, anchor: .center)
@@ -66,19 +70,21 @@ struct DoneScreen: View {
             }
             .selectionHighlight(isSelected: group == selectedGroup)
             .contentShape(Rectangle())
-            // The single click is simultaneous rather than a second tap
-            // gesture, which would wait out the double-click time and make
-            // selection lag.
+            // The single click is a simultaneous gesture rather than a
+            // second onTapGesture. SwiftUI would hold back a plain single
+            // tap until the double-click time had passed, to rule out a
+            // double click, so selection would lag behind the click.
             .onTapGesture(count: 2) {
                 grouping.open(group)
             }
             .simultaneousGesture(TapGesture().onEnded {
                 selectedGroup = group
-                isFocused = true
+                hasKeyboardFocus = true
             })
     }
 
-    /// Return opens the selected group on the pick screen.
+    /// Opens the selected group on the pick screen when Return is pressed.
+    /// Returns whether the key press was handled.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         guard press.key == .return, let selectedGroup else { return false }
         grouping.open(selectedGroup)

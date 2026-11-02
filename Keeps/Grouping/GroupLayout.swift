@@ -34,7 +34,11 @@ nonisolated struct GroupLayout {
 
     let photoCount: Int
     let boundaries: Set<Int>
+
+    /// The closed groups, in folder order.
     let groups: [Range<Int>]
+
+    /// The cells the sort screen's grid shows, in order.
     let cells: [Cell]
 
     /// `collapsedUpTo` is the photo index at which collapsing stops: groups
@@ -60,9 +64,9 @@ nonisolated struct GroupLayout {
         cells.indices.contains(gapIndex) ? cells[gapIndex].photoRange.lowerBound : photoCount
     }
 
-    /// How many photos have no cell of their own: those folded away inside
-    /// collapsed groups, apart from each one's first photo, which its cell
-    /// shows, and every photo of a done group.
+    /// How many photos have no cell of their own: every photo of a collapsed
+    /// group except the first, which the group's cell shows, and every photo
+    /// of a done group.
     var hiddenPhotoCount: Int {
         photoCount - cells.count
     }

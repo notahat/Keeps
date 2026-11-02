@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// One cell on the sort screen: the thumbnail plus the selection highlight,
-/// the boundary bars on either side, and, for a collapsed group, a
-/// stacked-cards look with a photo count. Bars are drawn centred in the gap
-/// next to the cell, so a boundary at a row wrap shows at both the end of one
-/// row and the start of the next.
+/// the boundary bars on either side, and, for a collapsed group, a pile of
+/// prints with a photo count. Bars are drawn centred in the gap next to the
+/// cell, so a boundary at a row wrap shows at both the end of one row and
+/// the start of the next.
 struct SortCell: View {
     let item: PhotoItem
     var isSelected: Bool = false
@@ -38,10 +38,10 @@ struct SortCell: View {
             }
     }
 
-    /// The thumbnail, or for a collapsed group a stack with a count badge.
+    /// The thumbnail, or for a collapsed group a pile with its photo count.
     @ViewBuilder private var content: some View {
         if let pile {
-            CollapsedStack(pile: pile)
+            CollapsedGroup(pile: pile)
         } else {
             ThumbnailImage(item: item)
         }
@@ -50,7 +50,7 @@ struct SortCell: View {
 
 /// A collapsed group drawn as a PrintPile of its photos in pile order (see
 /// Pile), with the photo count in the corner.
-private struct CollapsedStack: View {
+private struct CollapsedGroup: View {
     let pile: Pile
 
     var body: some View {

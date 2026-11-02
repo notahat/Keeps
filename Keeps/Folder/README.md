@@ -7,5 +7,7 @@ share a filename stem into one `PhotoItem`, and sorts them by creation date.
 
 A photo has two identities: an in-memory `id`, used everywhere at runtime,
 and its `stem`, used in keeps.json so saved work survives relaunches and
-folder moves. This folder doesn't load image data, hold the grouping, or
-manage sandbox access, and it uses no other folder.
+folder moves.
+
+The code here doesn't load image data, hold the grouping, or manage
+sandbox access, and it uses no other code folder.

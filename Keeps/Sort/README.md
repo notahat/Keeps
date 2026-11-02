@@ -3,12 +3,11 @@
 The sort screen, where the folder is split into groups. `SortScreen` draws
 a grid of `SortCell`s, one per photo or collapsed group, and handles input:
 clicks between photos toggle boundaries, clicks on photos select them, and
-keys move the selection, clear it, or collapse finished groups.
+keys move the selection, clear it, or collapse the groups closed so far.
 Double-clicking a closed group, or pressing Return on it, opens it on the
-pick screen.
-`GridScrolling` does the scrolling: holding the working point still as
-groups collapse, restoring the saved position, and following keyboard
-selection.
+pick screen. `GridScrolling` does the scrolling: holding the working point
+still as groups collapse, restoring the saved position, and following
+keyboard selection.
 
 A collapsed group is drawn as Images' `PrintPile`, in Grouping's `Pile`
 order (keepers on top), with its photo count. Done groups have no cell:

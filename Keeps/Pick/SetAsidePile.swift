@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The pile in a done group's corner on the pick screen: the photos that
-/// weren't kept, as a PrintPile with a count. Draws only; PickScreen decides
-/// which photos are on it and where it goes.
+/// weren't kept, as a PrintPile with a count. Draws only: PickScreen
+/// supplies the photos and places the pile.
 struct SetAsidePile: View {
     let photos: [PhotoItem]
 

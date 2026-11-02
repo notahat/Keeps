@@ -2,13 +2,13 @@ import AppKit
 import SwiftUI
 
 /// One photo's full-size image, fitted to the space, with its neighbours
-/// preloaded: the shown photo loads at high priority, and a window of 4
-/// ahead and 2 behind at low priority. Shows the photo's thumbnail while the
-/// full image loads, or a spinner when there's no thumbnail either.
+/// preloaded: the shown photo loads at high priority, and the 4 photos after
+/// it and the 2 before it at low priority. Shows the photo's thumbnail while
+/// the full image loads, or a spinner when there's no thumbnail either.
 ///
-/// Draws and loads only: keys, focus, and chrome belong to the caller, which
-/// changes `index` to move through `items`. Knows nothing about groups or
-/// keepers.
+/// Draws and loads only. The caller handles keys and focus, draws anything
+/// over the image, and changes `index` to move through `items`. Knows
+/// nothing about groups or keepers.
 struct FullSizeImage: View {
     let items: [PhotoItem]
     let index: Int
@@ -42,14 +42,14 @@ struct FullSizeImage: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            loadWindow()
+            loadPhotoAndNeighbours()
         }
         .onDisappear {
-            deprioritizeCurrent()
+            deprioritizeHighPriorityLoad()
         }
         .onChange(of: index) {
-            deprioritizeCurrent()
-            loadWindow()
+            deprioritizeHighPriorityLoad()
+            loadPhotoAndNeighbours()
         }
         .onImageLoaded(for: item) {
             image = ImagePipeline.shared.cachedImage(for: item, size: .full)
@@ -63,7 +63,7 @@ struct FullSizeImage: View {
 
     /// Loads the shown photo at high priority and prefetches the photos
     /// around it.
-    private func loadWindow() {
+    private func loadPhotoAndNeighbours() {
         highPriorityItem = item
         image = ImagePipeline.shared.cachedImage(for: item, size: .full)
         ImagePipeline.shared.requestImage(for: item, size: .full)
@@ -73,7 +73,7 @@ struct FullSizeImage: View {
     }
 
     /// Drops the in-flight high-priority load back to prefetch priority.
-    private func deprioritizeCurrent() {
+    private func deprioritizeHighPriorityLoad() {
         guard let highPriorityItem else { return }
         ImagePipeline.shared.deprioritizeImage(for: highPriorityItem, size: .full)
         self.highPriorityItem = nil

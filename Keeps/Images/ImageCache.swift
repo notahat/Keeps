@@ -2,7 +2,7 @@ import AppKit
 
 /// Holds decoded images in memory, by photo and size. NSCache evicts them
 /// under memory pressure, so a miss means the image needs reading again.
-/// Doesn't read or schedule anything; that's ImagePipeline's job.
+/// It doesn't read or schedule anything; that's ImagePipeline's job.
 final class ImageCache {
     private let cache = NSCache<NSString, NSImage>()
 

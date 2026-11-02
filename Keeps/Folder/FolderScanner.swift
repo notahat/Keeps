@@ -2,8 +2,8 @@ import Foundation
 
 /// Scans a folder and produces the list of photos found inside, pairing RAW
 /// and JPEG files that share a filename stem and sorting the result by file
-/// creation date. Pure file-system reader: does not load image data, mutate
-/// any state, or know anything about the rest of the app.
+/// creation date. It only reads the file system: it doesn't load image
+/// data, change any state, or know anything about the rest of the app.
 enum FolderScanner {
     private static let rawExtensions: Set<String> = [
         "cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr",
@@ -18,13 +18,13 @@ enum FolderScanner {
             includingPropertiesForKeys: [.isRegularFileKey],
             options: .skipsHiddenFiles
         )
-        let (rawByStem, jpegByStem) = pairFilesByType(urls: urls)
+        let (rawByStem, jpegByStem) = splitFilesByType(urls: urls)
         return buildSortedItems(rawByStem: rawByStem, jpegByStem: jpegByStem)
     }
 
-    /// Groups URLs into RAW and JPEG dictionaries keyed by filename stem.
-    /// Files with unsupported extensions are dropped.
-    private static func pairFilesByType(
+    /// Splits the files into RAW and JPEG dictionaries keyed by filename
+    /// stem. Files with unsupported extensions are dropped.
+    private static func splitFilesByType(
         urls: [URL]
     ) -> (rawByStem: [String: URL], jpegByStem: [String: URL]) {
         var rawByStem: [String: URL] = [:]
@@ -43,8 +43,8 @@ enum FolderScanner {
         return (rawByStem, jpegByStem)
     }
 
-    /// Builds PhotoItems from paired file dictionaries, sorted by creation
-    /// date.
+    /// Builds a PhotoItem for each stem, pairing its RAW and JPEG files when
+    /// it has both, and sorts them by creation date.
     private static func buildSortedItems(
         rawByStem: [String: URL],
         jpegByStem: [String: URL]
@@ -61,10 +61,10 @@ enum FolderScanner {
                     stem: stem,
                     rawURL: rawByStem[stem],
                     jpegURL: jpegByStem[stem],
-                    capturedAt: creationDate(of: sourceURL)
+                    fileCreationDate: creationDate(of: sourceURL)
                 )
             }
-            .sorted { $0.capturedAt < $1.capturedAt }
+            .sorted { $0.fileCreationDate < $1.fileCreationDate }
     }
 
     /// The file's creation date, or the start of 1970 when it can't be read,

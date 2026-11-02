@@ -17,7 +17,9 @@ import SwiftUI
 struct FolderView: View {
     let session: FolderSession
 
-    /// Told the section showing, when the view appears and as it changes.
+    /// Called with the section that's showing when the view appears, and
+    /// again whenever the user selects a different one, so the window can
+    /// show the section's name in its title.
     let onSectionChange: (FolderSection) -> Void
 
     @State private var grouping: Grouping?
@@ -48,7 +50,7 @@ struct FolderView: View {
                         start()
                     }
                     .onDisappear {
-                        keepsFile?.stop()
+                        keepsFile?.stopAutoSaving()
                     }
             }
         }
@@ -65,9 +67,10 @@ struct FolderView: View {
         if let grouping {
             CurrentScreen(grouping: grouping, section: $section)
         } else {
-            // A real (if invisible) view must render before the grouping
-            // exists: onAppear never fires for empty content, and start()
-            // — which creates the grouping — hangs off onAppear.
+            // start() creates the grouping, and runs from onAppear. SwiftUI
+            // never calls onAppear on empty content, so without a view here
+            // start() would never run. Color.clear is a view that shows
+            // nothing.
             Color.clear
         }
     }
@@ -84,13 +87,14 @@ struct FolderView: View {
             if let savedGrouping = try newKeepsFile.restore() {
                 newGrouping.applyRestored(state: savedGrouping)
             }
-            newKeepsFile.startObserving(
+            newKeepsFile.startAutoSaving(
                 snapshot: { newGrouping.snapshotState() },
                 onSaveError: { NSApp.presentError($0) }
             )
         } catch {
-            // Shown once the window is up, rather than from inside a view
-            // update.
+            // presentError runs a modal alert, which waits for the user.
+            // Called directly, it would block SwiftUI partway through
+            // showing the window. The Task presents it once that's done.
             Task { NSApp.presentError(error) }
         }
         grouping = newGrouping
@@ -136,9 +140,11 @@ private struct CurrentScreen: View {
             sectionScreen
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        // With no done groups, the set-aside pile that leads to them is
-        // gone, so their section can't stay showing. Checked on appear too,
-        // for coming back from un-marking the last one.
+        // When there are no done groups, the sidebar is hidden, so the user
+        // couldn't leave the done screen. This switches back to the sort
+        // screen instead. It also runs when this view appears, for when the
+        // user opens the last done group, un-marks it, and closes it: the
+        // pick screen goes away with the section still set to done.
         .onChange(of: grouping.doneGroupCount, initial: true) { _, count in
             if count == 0, section == .done {
                 section = .toGo

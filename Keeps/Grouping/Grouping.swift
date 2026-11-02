@@ -1,21 +1,39 @@
 import Foundation
 import Observation
 
-/// Holds the grouping state for one set of photos: the group boundaries, how
-/// far groups have been collapsed, the selection, the last reported scroll
-/// position, and the picking state (the open group, the keepers, and which
-/// groups are done). The sort screen shows cells, not photos, so this
-/// translates between cell indices (what the screen speaks) and photo indices
-/// (what boundaries are made of). GroupLayout derives the cells from this
-/// state. Translates to and from SavedGrouping for saving, but does not scan
-/// the folder, load images, or write files.
+/// The model of one folder's work: how its photos are split into groups,
+/// and what has been picked from them.
+///
+/// The user splits the folder by placing boundaries between photos. Each
+/// group runs from one boundary to the next, and the folder's start always
+/// begins one. A group is closed once a boundary ends it; the photos after
+/// the last boundary aren't in a group yet. Closed groups are collapsed as
+/// the user moves on, and a collapsed group can't change. On the pick
+/// screen the user opens a group, picks its keepers, and marks it done.
+/// (Closing the open group means leaving the pick screen; the group stays
+/// closed in the sense above.)
+///
+/// Grouping holds the boundaries, the collapse point, the selection, the
+/// sort screen's scroll position, the open group, the keepers, and the done
+/// groups. The sort screen shows cells, not photos, so Grouping translates
+/// between cell indices, which the screen uses, and photo indices, which
+/// boundaries are made of; GroupLayout derives the cells. Grouping converts
+/// itself to and from SavedGrouping for saving, but doesn't scan the
+/// folder, load images, or write files.
 @Observable
 class Grouping {
+    /// The folder's photos, in folder order. Every photo index refers to
+    /// this list.
     let items: [PhotoItem]
+
+    /// The boundaries, each the index of the photo just after it (see
+    /// GroupLayout).
     private(set) var boundaries: Set<Int> = [] {
         didSet { updateLayout() }
     }
 
+    /// The selected photo. A selected collapsed group is held as its first
+    /// photo.
     private(set) var selectedPhotoIndex: Int?
 
     /// The grid's scroll position, bound to the grid, which writes it only
@@ -51,6 +69,8 @@ class Grouping {
     /// Converts photos to and from the stems they're saved by.
     @ObservationIgnored private let stems: PhotoStems
 
+    /// Starts a grouping of the given photos with no boundaries, and nothing
+    /// collapsed, selected, open, kept, or done.
     init(items: [PhotoItem]) {
         self.items = items
         stems = PhotoStems(items: items)
@@ -115,12 +135,14 @@ class Grouping {
         selectedPhotoIndex = nil
     }
 
-    /// Collapses every group closed so far.
+    /// Collapses every closed group, which is every group up to the last
+    /// boundary.
     func collapseClosedGroups() {
         collapsedUpTo = boundaries.max() ?? 0
     }
 
-    /// Opens the closed group a sort-screen cell belongs to (see open(_:)).
+    /// Opens the closed group that a sort screen cell belongs to (see
+    /// open(_:)).
     /// Photos after the working point aren't in a group, so their cells open
     /// nothing.
     func open(groupAtCell cellIndex: Int) {
@@ -132,10 +154,12 @@ class Grouping {
 
     // MARK: - Pick screen
 
-    /// Opens a closed group, done or not: collapses every group up to and
-    /// including it, without reopening any collapsed later, then opens and
-    /// selects it. Selecting it means the sort screen shows it on return.
-    /// Anything that isn't a closed group opens nothing.
+    /// Opens a closed group on the pick screen, whether or not it's done.
+    /// Every group up to and including it is collapsed first, so its photos
+    /// can't change while it's open; later groups that are already collapsed
+    /// stay collapsed. The group is also selected, so the sort screen shows
+    /// it when the user comes back. Anything that isn't a closed group opens
+    /// nothing.
     func open(_ group: Range<Int>) {
         guard layout.groups.contains(group) else { return }
         collapsedUpTo = max(collapsedUpTo, group.upperBound)
@@ -155,17 +179,18 @@ class Grouping {
         doneGroupStarts.insert(openGroup.lowerBound)
     }
 
-    /// Marks the open group not done, leaving it open, so it's worked on
-    /// again and comes back to the sort screen's grid.
+    /// Marks the open group not done, leaving it open. Once closed, it
+    /// shows on the sort screen's grid again, for the user to work on.
     func markOpenGroupNotDone() {
         guard let openGroup else { return }
         doneGroupStarts.remove(openGroup.lowerBound)
     }
 
-    /// Closes the open group, leaving whether it is done unchanged. A done
-    /// group is finished with, so the selection moves on to the next group
-    /// that isn't done, or the working point when there is none, ready to
-    /// open with Return.
+    /// Closes the open group, so the pick screen goes away, leaving whether
+    /// the group is done unchanged. When it's done, the user has finished
+    /// with it, so the selection moves on to the next group that isn't
+    /// done, or to the working point when there is none, ready for the user
+    /// to open with Return.
     func closeOpenGroup() {
         guard let closed = openGroup else { return }
         openGroup = nil
@@ -222,8 +247,11 @@ class Grouping {
 
     // MARK: - Saving
 
-    /// A stem-keyed snapshot of everything worth saving. Reading this inside
-    /// an observation block also subscribes to changes in all of it.
+    /// A snapshot of everything worth saving, with photos named by their
+    /// stems. KeepsFile calls this inside an observation block, and reading
+    /// each saved property here is what subscribes it to that property's
+    /// changes: anything left out of the snapshot would change without
+    /// triggering a save.
     func snapshotState() -> SavedGrouping {
         SavedGrouping(
             boundaries: boundaries.sorted().map(stems.position(beforePhoto:)),

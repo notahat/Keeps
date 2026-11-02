@@ -1,12 +1,17 @@
 import SwiftUI
 
-/// The sort screen's scrolling: holding the working point still as groups
-/// collapse, restoring the saved scroll position, following keyboard
-/// selection, and reporting the scroll position. The screen owns one of
-/// these, attaches it to its scroll view with `gridScrolling`, tells it the
-/// column count once the grid is measured, and tells it about clicks and key
-/// presses before acting on them. Doesn't draw anything or handle input
-/// itself. The geometry it works from is in PhotoGridMetrics.
+/// Controls where the sort screen's grid is scrolled to. Cells disappear
+/// from the grid as groups collapse, and on its own the scroll view would
+/// let the photos below jump up the screen. GridScrolling holds the working
+/// point still instead. It also restores the saved scroll position when the
+/// screen opens, scrolls to follow keyboard selection, and reports the
+/// scroll position so it can be saved.
+///
+/// SortScreen owns one, attaches it to its scroll view with `gridScrolling`,
+/// tells it the column count once the grid is measured, and tells it about
+/// clicks and key presses before acting on them. GridScrolling doesn't draw
+/// anything or handle input itself. The geometry it works from is in
+/// PhotoGridMetrics.
 @Observable
 final class GridScrolling {
     /// What the grid is showing, as far as scrolling cares.
@@ -26,8 +31,9 @@ final class GridScrolling {
         let leadingBlankSlots: Int
     }
 
-    /// The cells, with the blank slots shown before them at the time. Its
-    /// changes are what may call for a scroll.
+    /// What the scroll view watches for changes: the cells, and how many
+    /// blank slots were shown before them. A change to either may need a
+    /// scroll, and respondToChange works out whether it does.
     struct Trigger: Equatable {
         fileprivate let cells: Cells
         fileprivate let blankSlotCount: Int
@@ -49,7 +55,11 @@ final class GridScrolling {
         let isFromClick: Bool
     }
 
+    /// The scroll view's position, bound to it by `gridScrolling`, so that
+    /// GridScrolling can scroll it to an exact offset.
     var position = ScrollPosition()
+
+    /// How many columns the grid has, as last measured.
     private(set) var columnCount = 1
 
     /// Whether the grid's width has been measured, so columnCount is real.

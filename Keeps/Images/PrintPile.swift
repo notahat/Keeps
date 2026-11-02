@@ -1,10 +1,14 @@
 import SwiftUI
 
-/// Some photos drawn as a messy pile of prints in a square, the first on top,
-/// each tilted and nudged by its PileJitter. Only the top few prints show
-/// their photos; the few beneath are blank paper, since they're mostly
-/// hidden and each photo costs a thumbnail load, and deeper layers aren't
-/// drawn at all. Draws only, with no label or badge; callers add their own.
+/// Draws some photos as a messy pile of prints in a square, the first on
+/// top, each tilted and nudged by its PileJitter.
+///
+/// Only the top few prints (photoLayerCount) show their photos. The prints
+/// beneath are mostly hidden, so they're drawn as blank paper rather than
+/// costing a thumbnail load each, and prints beyond maximumLayerCount
+/// aren't drawn at all.
+///
+/// It draws no label or badge; callers add their own.
 struct PrintPile: View {
     let photos: [PhotoItem]
 
