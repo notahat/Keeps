@@ -7,12 +7,34 @@ struct LoadProgressView: View {
     @State private var progress = LoadProgress()
 
     var body: some View {
-        ProgressView(value: progress.fractionComplete ?? 0)
-            .progressViewStyle(.circular)
-            .controlSize(.small)
-            .opacity(progress.fractionComplete == nil ? 0 : 1)
+        LoadProgressRing(fractionComplete: progress.fractionComplete)
             .onChange(of: ImagePipeline.shared.queueCount, initial: true) { _, count in
                 progress.record(queueCount: count)
             }
     }
+}
+
+/// Draws the progress ring for a given fraction, with no tie to the image
+/// pipeline, so it can be previewed. A nil fraction hides the ring but keeps
+/// its space.
+private struct LoadProgressRing: View {
+    let fractionComplete: Double?
+
+    var body: some View {
+        ProgressView(value: fractionComplete ?? 0)
+            .progressViewStyle(.circular)
+            .controlSize(.small)
+            .opacity(fractionComplete == nil ? 0 : 1)
+    }
+}
+
+#Preview("Loading") {
+    HStack(spacing: 16) {
+        LoadProgressRing(fractionComplete: 0)
+        LoadProgressRing(fractionComplete: 0.25)
+        LoadProgressRing(fractionComplete: 0.5)
+        LoadProgressRing(fractionComplete: 0.75)
+        LoadProgressRing(fractionComplete: 1)
+    }
+    .padding()
 }
