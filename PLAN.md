@@ -325,7 +325,8 @@ commit.
    the double-click as `onTapGesture(count: 2)` with the single click as a
    `simultaneousGesture(SpatialTapGesture())`: a plain single-tap gesture
    waits out the double-click timeout, which makes selection lag.
-5. **Image sizes and caching.** Exploratory: `ThumbnailImage` taking its
+5. ~~**Image sizes and caching.**~~ Replaced by "Measuring, then
+   sharpening the tiles" below. Exploratory: `ThumbnailImage` taking its
    size, larger images for tiles, then trying the pick screen and the
    sort screen, profiling memory, and adjusting how sizes are loaded, cached, and
    reused, including the fallback for unknown aspect ratios. Tests are
@@ -800,3 +801,120 @@ Each step builds and passes the tests, then review and commit.
    keepers run out. The section's fallback rule is pure and tested. Check
    by hand: click and drag the pile, move around, and view full size.
    Update CLAUDE.md's architecture, layering, and glossary.
+
+# Plan: Measuring, then sharpening the tiles
+
+## Goal
+
+The pick and keepers screens' tiles look soft, because they scale up the
+sort screen's 520-pixel thumbnails, often by two or three times. That's
+the one problem known for sure. Otherwise image loading feels fast, even
+flicking through full-size views, and memory isn't a concern: the app
+may be memory hungry as long as it stays fast. So the aim is to sharpen
+the tiles, and to add any other complexity (cache budgets, smaller
+full-size images, different preloading) only when a measurement shows a
+problem it would fix.
+
+## What we know
+
+- **The photos.** A Fuji X-T5, 40 MP (7728 × 5152), shooting both RAW
+  and JPEG. A decoded original is about 160 MB.
+- **RAF previews.** Each RAF embeds a 4416 × 2944 JPEG preview (about
+  13 MP, about 52 MB decoded), which is what `ImageReader` reads for
+  RAWs. It's big enough to show full screen, but not for 100% zoom.
+- **100% zoom** is wanted later, for checking focus. It will need the
+  original: the camera JPEG, or the RAW decoded in full. Nothing here
+  should stand in its way.
+- **A suspected bug.** For a JPEG with no RAW, `ImageReader.fullImage`
+  probably returns the small thumbnail embedded in the file (about 160
+  pixels), since it asks for no size and doesn't decode the image.
+
+## Design
+
+### What to measure
+
+- **Time to sharp.** From asking for an image (a step at full size, a
+  group opening) to the good image being on screen, rather than the
+  thumbnail standing in. The main measure.
+- **Sharp straight away.** The share of steps whose image was already
+  cached or preloaded.
+- **Hitches.** Frames where the main thread stalls.
+- **Memory over time.** Mainly to catch macOS squeezing the app, when
+  NSCache would drop everything at once.
+
+### How
+
+- **Signposts.** `os_signpost` intervals in `ImagePipeline` for each
+  read, labelled with the size asked for and the pixel size decoded, and
+  split into time queued and time decoding. Events for cache hits,
+  misses, and evictions (NSCache's delegate reports these). An interval
+  in `FullSizeImage`, and later the tiles, from asking to sharp. They
+  cost next to nothing, so they stay in, and Instruments shows them
+  beside CPU, memory, and hangs.
+- **A debug overlay.** Debug builds only: the app's memory footprint,
+  what's cached at each size (count and megabytes), the hit rate, and
+  the median and slowest time to sharp over the last 50 steps. The
+  statistics are a small pure struct, tested.
+- **A decode benchmark.** A script that runs `ImageReader`'s reads over
+  sample photos and reports how long each takes: a RAF's preview in full
+  and at tile size, a camera JPEG, a JPEG on its own, and a RAW decoded
+  in full. The samples go in a folder that git ignores.
+
+### Scenarios
+
+Run the same way each time, so results compare across changes:
+
+1. **Open a large folder cold.** How long until every thumbnail is
+   cached, and the memory afterwards.
+2. **Open a big group.** How long until every tile is sharp.
+3. **Hold the right arrow at full size.** Key repeat steps at a steady
+   rate. The share of steps sharp straight away, and time to sharp.
+4. **Step at a normal pace,** about one photo a second.
+
+### What good looks like
+
+To be agreed with the baseline in hand, but roughly: normal stepping is
+always sharp straight away, tiles are sharp within a quarter of a
+second, and nothing hitches. A change is worth keeping when it moves one
+of these.
+
+### Sharper tiles
+
+Tiles ask for an image sized to the tile in pixels (points times the
+screen's scale), rounded up to one of a few fixed sizes, such as 1024,
+1536, 2048, or 3072. The fixed sizes mean resizing the window or opening
+another group doesn't start new reads for slightly different sizes, and
+the pick and keepers screens share what's cached. The 520-pixel
+thumbnail stands in until the larger image loads, as it already does at
+full size. `ImageSize.thumbnail(maxPixelSize:)` already takes any size,
+so the pipeline and cache need no new kind of size.
+
+The sandbox stops Claude launching the app or Instruments, so the user
+runs the scenarios and shares the overlay's numbers or a saved trace.
+Claude can run the benchmark.
+
+Out of scope until a measurement calls for it: cache budgets, limiting
+the full-size view to the screen's size, changes to preloading, and
+reading the camera JPEG of a RAW+JPEG pair for display. 100% zoom is a
+later plan.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **Decode benchmark.** The script, and a git-ignored folder for
+   sample photos. Run it on samples the user copies in, and record the
+   results here. Confirm or rule out the JPEG full-size bug.
+2. **Fix JPEG full size,** if step 1 confirms the bug: decode a JPEG on
+   its own in full.
+3. **Signposts** in `ImagePipeline` and `FullSizeImage`. Check by hand
+   in Instruments.
+4. **Debug overlay.** The statistics struct, tested, and the overlay
+   showing it with the memory footprint, in debug builds only.
+5. **Baseline.** The user runs the four scenarios. Record the results
+   here and agree what good looks like.
+6. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
+   the pick and keepers screens load them, with the thumbnail standing
+   in. Run scenario 2 again and compare.
+7. **Review.** Look over the numbers for anything else worth doing, and
+   plan it separately if so.
