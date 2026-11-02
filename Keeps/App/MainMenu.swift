@@ -1,15 +1,20 @@
 import AppKit
 
-/// Builds the app's main menu: the app menu, File, and Window. Each item
-/// sends a standard AppKit action up the responder chain. AppKit adds Open
-/// Recent next to Open… and the full-screen items to Window by itself, so
-/// they aren't built here.
+/// Builds the app's main menu: the app menu, File, and Window, and in debug
+/// builds a Debug menu. Each item in the first three sends a standard
+/// AppKit action up the responder chain. AppKit adds Open Recent next to
+/// Open… and the full-screen items to Window by itself, so they aren't
+/// built here.
 @MainActor
 enum MainMenu {
     /// Makes the whole menu bar.
     static func make() -> NSMenu {
         let menuBar = NSMenu()
-        for menu in [appMenu(), fileMenu(), windowMenu()] {
+        var menus = [appMenu(), fileMenu(), windowMenu()]
+        #if DEBUG
+            menus.append(debugMenu())
+        #endif
+        for menu in menus {
             let barItem = NSMenuItem()
             barItem.submenu = menu
             menuBar.addItem(barItem)
@@ -63,4 +68,42 @@ enum MainMenu {
         NSApplication.shared.windowsMenu = menu
         return menu
     }
+
+    #if DEBUG
+        /// Makes the Debug menu, with tools for developing the app.
+        private static func debugMenu() -> NSMenu {
+            let menu = NSMenu(title: "Debug")
+            let showStats = menu.addItem(withTitle: "Show Image Stats",
+                                         action: #selector(ImageStatsToggle.toggle(_:)), keyEquivalent: "i")
+            showStats.keyEquivalentModifierMask = [.command, .option]
+            showStats.target = ImageStatsToggle.shared
+            return menu
+        }
+    #endif
 }
+
+#if DEBUG
+    /// The target of the Debug menu's Show Image Stats item, which turns the
+    /// image stats overlay on and off, and ticks the item while it's on. The
+    /// setting is a user default, so it lasts across launches, and every
+    /// window's overlay follows it.
+    final class ImageStatsToggle: NSObject, NSMenuItemValidation {
+        static let shared = ImageStatsToggle()
+
+        private var isShown: Bool {
+            get { UserDefaults.standard.bool(forKey: ImageStatsOverlay.isShownKey) }
+            set { UserDefaults.standard.set(newValue, forKey: ImageStatsOverlay.isShownKey) }
+        }
+
+        /// Turns the overlay on or off.
+        @objc func toggle(_: Any?) {
+            isShown.toggle()
+        }
+
+        /// Ticks the item while the overlay is on.
+        func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+            menuItem.state = isShown ? .on : .off
+            return true
+        }
+    }
+#endif

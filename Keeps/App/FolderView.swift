@@ -37,6 +37,10 @@ struct FolderView: View {
             } else {
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .bottomLeading) {
+                        ImageStatsOverlay()
+                            .padding(12)
+                    }
                     .toolbar {
                         // At the trailing edge with no glass bubble:
                         // background loading is secondary information, not a

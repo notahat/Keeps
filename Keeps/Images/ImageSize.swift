@@ -1,5 +1,5 @@
 /// Identifies which size of decoded image is being requested or cached.
-enum ImageSize: Equatable {
+nonisolated enum ImageSize: Hashable {
     case thumbnail(maxPixelSize: Int)
     case full
 }

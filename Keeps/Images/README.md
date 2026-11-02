@@ -18,6 +18,11 @@ keepers screens. It's the pure, tested part: the column count, tile size,
 and positions, where the movement keys go, how far to scroll to reveal a
 tile, and the photos' common aspect ratio.
 
+`ImageStatsOverlay` is a debug panel of figures for tuning loading: the
+app's memory, what `ImageCache` holds at each size, reads in flight, the
+hit rate, and how quickly recent full-size steps turned sharp, which
+`ImageLoadStats` keeps. Debug builds turn it on from the Debug menu.
+
 `PrintPile` draws photos as a messy pile of prints, with only the top few
 showing their photos and the rest drawn as `BlankPrint`s. `PileLabel` is
 its caption. `PileJitter` works out how each print sits in a pile, tilted

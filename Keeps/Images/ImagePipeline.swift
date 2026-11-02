@@ -71,6 +71,12 @@ final class ImagePipeline {
     /// times a frame when reads finish together.
     private(set) var loadProgress = LoadProgress()
 
+    /// How well loading is keeping up, for the debug overlay. Not observed:
+    /// the overlay reads it on a timer, so recording a figure never redraws
+    /// a view, which would disturb what's being measured.
+    @ObservationIgnored
+    private(set) var stats = ImageLoadStats()
+
     // MARK: - Public interface
 
     /// Returns the cached image immediately, or nil if not yet loaded.
@@ -86,9 +92,11 @@ final class ImagePipeline {
     func watchedImage(for item: PhotoItem, size: ImageSize) -> WatchedImage {
         let key = readKey(for: item, size: size) as NSString
         if let existing = watchedImages.object(forKey: key) {
+            stats.recordLookup(isHit: existing.image != nil)
             return existing
         }
         let watchedImage = WatchedImage(image: cache.image(for: item, size: size))
+        stats.recordLookup(isHit: watchedImage.image != nil)
         watchedImages.setObject(watchedImage, forKey: key)
         return watchedImage
     }
@@ -127,6 +135,22 @@ final class ImagePipeline {
         for item in items {
             prefetchImage(for: item, size: size)
         }
+    }
+
+    /// Records how a step to a photo at full size ended, for the debug
+    /// overlay.
+    func recordStep(_ outcome: ImageLoadStats.StepOutcome) {
+        stats.recordStep(outcome)
+    }
+
+    /// What's cached at each size, for the debug overlay.
+    func cacheContents() -> [ImageCache.Contents] {
+        cache.contents()
+    }
+
+    /// How many reads are queued or running, for the debug overlay.
+    var readCount: Int {
+        readsInFlight.count
     }
 
     /// Reads an image and caches it straight away, blocking until it's

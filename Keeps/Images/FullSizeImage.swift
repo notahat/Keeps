@@ -25,6 +25,11 @@ struct FullSizeImage: View {
     /// deprioritised when the user moves on before it finishes.
     @State private var highPriorityItem: PhotoItem?
 
+    /// When the user stepped to the shown photo, while its full image is
+    /// still loading, for timing how long it takes to turn sharp. Nil once
+    /// it has.
+    @State private var stepStart: ContinuousClock.Instant?
+
     private var item: PhotoItem {
         items[index]
     }
@@ -57,6 +62,11 @@ struct FullSizeImage: View {
             deprioritizeHighPriorityLoad()
             loadPhotoAndNeighbours()
         }
+        .onChange(of: fullImage?.image) { _, loaded in
+            if loaded != nil {
+                finishTimingStep()
+            }
+        }
     }
 
     /// Watches the shown photo's images, loads its full-size image at high
@@ -64,11 +74,34 @@ struct FullSizeImage: View {
     private func loadPhotoAndNeighbours() {
         highPriorityItem = item
         fullImage = ImagePipeline.shared.watchedImage(for: item, size: .full)
+        startTimingStep(isSharp: fullImage?.image != nil)
         thumbnail = ImagePipeline.shared.watchedImage(for: item, size: ThumbnailImage.imageSize)
         ImagePipeline.shared.requestImage(for: item, size: .full)
         for preloadIndex in preloadIndices() {
             ImagePipeline.shared.prefetchImage(for: items[preloadIndex], size: .full)
         }
+    }
+
+    /// Starts timing a step to a new photo, recording the step before it as
+    /// moved on if that never turned sharp. A step whose full image is
+    /// already cached is recorded as sharp straight away.
+    private func startTimingStep(isSharp: Bool) {
+        if stepStart != nil {
+            ImagePipeline.shared.recordStep(.movedOn)
+        }
+        if isSharp {
+            ImagePipeline.shared.recordStep(.sharp(after: .zero))
+            stepStart = nil
+        } else {
+            stepStart = .now
+        }
+    }
+
+    /// Records how long the step took to turn sharp, if it's being timed.
+    private func finishTimingStep() {
+        guard let stepStart else { return }
+        ImagePipeline.shared.recordStep(.sharp(after: .now - stepStart))
+        self.stepStart = nil
     }
 
     /// Drops the in-flight high-priority load back to prefetch priority.
