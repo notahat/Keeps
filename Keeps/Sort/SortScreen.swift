@@ -5,9 +5,9 @@ import SwiftUI
 /// grid with one cell per photo or collapsed group. Clicking the edge of a
 /// cell toggles the boundary in that gap, and clicking its middle selects it.
 /// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
-/// collapses every group closed so far. Double-clicking a closed group, or
-/// pressing Return with it selected, opens it on the pick screen. Done groups
-/// leave the grid, and once they all have, an all-done message replaces it.
+/// collapses every group. Double-clicking a group, or pressing Return with
+/// it selected, opens it on the pick screen. Done groups leave the grid,
+/// and once they all have, an all-done message replaces it.
 ///
 /// SortScreen draws the cells, handles input, and owns keyboard focus.
 /// Scrolling is left to GridScrolling, the geometry to PhotoGridMetrics, and
@@ -33,7 +33,7 @@ struct SortScreen: View {
     }
 
     /// The cells as scrolling sees them. Collapsing removes cells ahead of
-    /// the open photos, and blank slots for the hidden photos keep those
+    /// the uncollapsed photos, and blank slots for the hidden photos keep those
     /// photos in their original columns. The working point is the stable
     /// item, so it holds still on screen as groups collapse.
     private var scrollCells: GridScrolling.Cells {
@@ -208,7 +208,7 @@ struct SortScreen: View {
 
     /// Handles keys that aren't for moving the selection: Escape clears the
     /// selection, Return opens the selected cell's group, and C collapses
-    /// every group closed so far. Returns false for any other key.
+    /// every group. Returns false for any other key.
     private func handleCommandKey(_ press: KeyPress) -> Bool {
         if press.key == .escape {
             grouping.clearSelection()
@@ -219,7 +219,7 @@ struct SortScreen: View {
             return true
         }
         if press.isPlain(letter: "c") {
-            grouping.collapseClosedGroups()
+            grouping.collapseGroups()
             return true
         }
         return false

@@ -29,7 +29,7 @@ func makePhotoItems(count: Int) -> [PhotoItem] {
 
 /// Creates a Grouping with the given number of photos. Places
 /// `collapsedBoundaries` and collapses the groups they close, then places
-/// `boundaries`, whose groups stay open.
+/// `boundaries`, whose groups stay uncollapsed.
 func makeGrouping(
     photoCount: Int,
     collapsedBoundaries: Set<Int> = [],
@@ -40,7 +40,7 @@ func makeGrouping(
         grouping.toggleBoundary(atPhoto: boundary)
     }
     if !collapsedBoundaries.isEmpty {
-        grouping.collapseClosedGroups()
+        grouping.collapseGroups()
     }
     for boundary in boundaries.sorted() {
         grouping.toggleBoundary(atPhoto: boundary)

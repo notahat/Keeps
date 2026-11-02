@@ -35,14 +35,14 @@ nonisolated struct GroupLayout {
     let photoCount: Int
     let boundaries: Set<Int>
 
-    /// The closed groups, in folder order.
+    /// The groups, in folder order.
     let groups: [Range<Int>]
 
     /// The cells the sort screen's grid shows, in order.
     let cells: [Cell]
 
     /// `collapsedUpTo` is the photo index at which collapsing stops: groups
-    /// ending at or before it are collapsed, later ones are open.
+    /// ending at or before it are collapsed, and later ones aren't.
     /// `doneGroupStarts` names the done groups by their first photos; once
     /// collapsed, they're finished with, so they have no cell.
     init(photoCount: Int, boundaries: Set<Int>, collapsedUpTo: Int = 0, doneGroupStarts: Set<Int> = []) {
@@ -90,7 +90,7 @@ nonisolated struct GroupLayout {
         cells.firstIndex { $0.photoRange.contains(photoIndex) }
     }
 
-    /// The closed groups, in order. Boundaries outside the folder, or at its
+    /// The groups, in order. Boundaries outside the folder, or at its
     /// very start, are ignored.
     private static func groups(photoCount: Int, boundaries: Set<Int>) -> [Range<Int>] {
         let ends = boundaries.filter { $0 >= 1 && $0 <= photoCount }.sorted()

@@ -68,14 +68,15 @@ name.
 
 ## Glossary
 
-- **Group**: a run of photos between two boundaries. No type is called
-  plain `Group`, which SwiftUI already has; use `PhotoGroup` if one is
-  needed.
+- **Group**: a run of photos between two boundaries, where the folder's
+  start counts as a boundary. The photos after the last boundary aren't a
+  group. No type is called plain `Group`, which SwiftUI already has; use
+  `PhotoGroup` if one is needed.
 - **Boundary**: the split between two groups, placed by clicking between
   photos.
 - **Working point**: where grouping has reached, the first photo after the
   last boundary. It holds still on screen as groups collapse.
-- **Collapsed**: a closed group drawn as a pile, after C. It can't be
+- **Collapsed**: a group drawn as a pile, after C. It can't be
   changed.
 - **Sort screen**: the grid where the folder is split into groups.
 - **Pick screen**: one group at a time, where its **keepers** are picked

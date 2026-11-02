@@ -6,12 +6,10 @@ import Observation
 ///
 /// The user splits the folder by placing boundaries between photos. Each
 /// group runs from one boundary to the next, and the folder's start always
-/// begins one. A group is closed once a boundary ends it; the photos after
-/// the last boundary aren't in a group yet. Closed groups are collapsed as
-/// the user moves on, and a collapsed group can't change. On the pick
-/// screen the user opens a group, picks its keepers, and marks it done.
-/// (Closing the open group means leaving the pick screen; the group stays
-/// closed in the sense above.)
+/// begins one. The photos after the last boundary aren't in a group yet.
+/// The user collapses groups as they move on, and a collapsed group can't
+/// change. On the pick screen the user opens a group, picks its keepers,
+/// and marks it done. Closing the open group means leaving the pick screen.
 ///
 /// Grouping holds the boundaries, the collapse point, the selection, the
 /// sort screen's scroll position, the open group, the keepers, and the done
@@ -135,14 +133,12 @@ class Grouping {
         selectedPhotoIndex = nil
     }
 
-    /// Collapses every closed group, which is every group up to the last
-    /// boundary.
-    func collapseClosedGroups() {
+    /// Collapses every group, which is every photo up to the last boundary.
+    func collapseGroups() {
         collapsedUpTo = boundaries.max() ?? 0
     }
 
-    /// Opens the closed group that a sort screen cell belongs to (see
-    /// open(_:)).
+    /// Opens the group that a sort screen cell belongs to (see open(_:)).
     /// Photos after the working point aren't in a group, so their cells open
     /// nothing.
     func open(groupAtCell cellIndex: Int) {
@@ -154,11 +150,11 @@ class Grouping {
 
     // MARK: - Pick screen
 
-    /// Opens a closed group on the pick screen, whether or not it's done.
+    /// Opens a group on the pick screen, whether or not it's done.
     /// Every group up to and including it is collapsed first, so its photos
     /// can't change while it's open; later groups that are already collapsed
     /// stay collapsed. The group is also selected, so the sort screen shows
-    /// it when the user comes back. Anything that isn't a closed group opens
+    /// it when the user comes back. Anything that isn't a group opens
     /// nothing.
     func open(_ group: Range<Int>) {
         guard layout.groups.contains(group) else { return }
@@ -201,7 +197,7 @@ class Grouping {
 
     // MARK: - Done groups and keepers
 
-    /// Whether a closed group has been marked done.
+    /// Whether a group has been marked done.
     func isDone(_ group: Range<Int>) -> Bool {
         doneGroupStarts.contains(group.lowerBound)
     }

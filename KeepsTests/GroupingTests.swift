@@ -66,17 +66,17 @@ struct GroupingTests {
         #expect(grouping.layout.cells.allSatisfy { !$0.isCollapsed })
     }
 
-    @Test("Collapsing collapses every group closed so far")
-    func collapseClosesAllGroups() {
+    @Test("Collapsing collapses every group")
+    func collapseCollapsesAllGroups() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
 
-        grouping.collapseClosedGroups()
+        grouping.collapseGroups()
 
         #expect(grouping.layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
     }
 
-    @Test("Groups closed after collapsing stay open until the next collapse")
-    func laterGroupsStayOpen() {
+    @Test("Groups made after collapsing stay uncollapsed until the next collapse")
+    func laterGroupsStayUncollapsed() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3])
 
         grouping.toggleBoundary(atPhoto: 6)
@@ -88,7 +88,7 @@ struct GroupingTests {
     func collapseWithNoBoundaries() {
         let grouping = makeGrouping(photoCount: 10)
 
-        grouping.collapseClosedGroups()
+        grouping.collapseGroups()
 
         #expect(grouping.layout.cells == (0 ..< 10).map { .photo($0) })
     }
@@ -130,7 +130,7 @@ struct GroupingTests {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
         grouping.selectCell(at: 1)
 
-        grouping.collapseClosedGroups()
+        grouping.collapseGroups()
 
         #expect(grouping.selectedCellIndex == 0)
     }

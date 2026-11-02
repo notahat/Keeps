@@ -40,8 +40,8 @@ struct GroupLayoutTests {
         #expect(layout.groups == [0 ..< 3, 3 ..< 5, 5 ..< 10])
     }
 
-    @Test("Closed groups stay open until collapsed")
-    func groupsStayOpenUntilCollapsed() {
+    @Test("Groups stay uncollapsed until the user collapses them")
+    func groupsStayUncollapsedUntilCollapsed() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8])
 
         #expect(layout.cells == (0 ..< 10).map { .photo($0) })
@@ -88,8 +88,8 @@ struct GroupLayoutTests {
         #expect(layout.hiddenPhotoCount == 5)
     }
 
-    @Test("With blank slots for the hidden photos, open photos keep their original columns")
-    func openPhotosKeepColumns() {
+    @Test("With blank slots for the hidden photos, uncollapsed photos keep their original columns")
+    func uncollapsedPhotosKeepColumns() {
         let layout = GroupLayout(photoCount: 30, boundaries: [3, 7, 10, 12], collapsedUpTo: 7)
 
         for columnCount in 2 ... 7 {

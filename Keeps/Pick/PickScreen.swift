@@ -128,8 +128,8 @@ struct PickScreen: View {
         }
     }
 
-    /// The line above the tiles: which group this is among the closed
-    /// groups, whether it's done, and how many of its photos are kept.
+    /// The line above the tiles: which group this is among all the groups,
+    /// whether it's done, and how many of its photos are kept.
     private var header: some View {
         let groups = grouping.layout.groups
         let groupNumber = (groups.firstIndex(of: group) ?? 0) + 1

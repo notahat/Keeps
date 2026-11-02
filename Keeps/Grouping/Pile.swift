@@ -1,4 +1,4 @@
-/// A closed group's photos in the order a pile of them is drawn: the
+/// A group's photos in the order a pile of them is drawn: the
 /// keepers already picked on top, then the rest. Pure: worked out from the
 /// group and the keepers, and does no drawing.
 struct Pile {
