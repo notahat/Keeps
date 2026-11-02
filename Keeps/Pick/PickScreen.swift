@@ -56,10 +56,6 @@ struct PickScreen: View {
     /// the half of the highlight that falls outside the outer tiles.
     private static let edgeRoom: CGFloat = SelectionHighlight.lineWidth
 
-    /// Used when none of the group's thumbnails have loaded yet: the shape
-    /// of most camera sensors.
-    private static let fallbackAspectRatio: CGFloat = 1.5
-
     init(grouping: Grouping, group: Range<Int>) {
         self.grouping = grouping
         self.group = group
@@ -318,7 +314,7 @@ struct PickScreen: View {
     }
 
     /// The most common shape among the photos' cached thumbnails, or the
-    /// fallback when none are cached.
+    /// typical shape when none are cached.
     private static func tileAspectRatio(of photos: ArraySlice<PhotoItem>) -> CGFloat {
         let ratios = photos.compactMap { photo -> CGFloat? in
             guard let size = ImagePipeline.shared.cachedImage(for: photo, size: ThumbnailImage.imageSize)?.size,
@@ -326,6 +322,6 @@ struct PickScreen: View {
             else { return nil }
             return size.width / size.height
         }
-        return TileLayout.commonAspectRatio(of: ratios) ?? fallbackAspectRatio
+        return TileLayout.commonAspectRatio(of: ratios) ?? ThumbnailImage.typicalAspectRatio
     }
 }

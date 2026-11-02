@@ -733,7 +733,7 @@ Each step builds and passes the tests, then review and commit.
 5. ✅ **One selection highlight.** A shared modifier in `Images/` draws the
    highlight on the sort, pick, and done screens, hidden while the window
    isn't key. The done screen didn't hide it before. Check by hand.
-6. **Share the duplicated constants.** One typical photo shape for blank
+6. ✅ **Share the duplicated constants.** One typical photo shape for blank
    paper and a group with no thumbnails yet; `KeeperBadge` moves to
    `Images/` so the keepers pile can use its colour; the sort screen's
    pile badge becomes a coloured `PileLabel`.

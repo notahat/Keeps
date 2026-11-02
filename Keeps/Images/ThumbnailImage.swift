@@ -49,6 +49,11 @@ struct ThumbnailImage: View {
     static let pixelSize: Int = displaySize * 2
     static let imageSize: ImageSize = .thumbnail(maxPixelSize: pixelSize)
 
+    /// The shape of most camera sensors, width over height, for laying out
+    /// photos before their thumbnails have loaded, or piles whose photos
+    /// may differ.
+    static let typicalAspectRatio: CGFloat = 1.5
+
     /// How far in from the frame's edges the image is drawn. Views that zoom
     /// out of a thumbnail inset their image by the same amount, so it lines
     /// up.
@@ -177,7 +182,7 @@ private let previewFrameSize = CGSize(
 #Preview("Loading, blank paper placeholder") {
     ThumbnailFrame(
         image: nil, borderWidth: 6, borderColor: .white,
-        placeholder: .paper(aspectRatio: 1.5), frameSize: previewFrameSize
+        placeholder: .paper(aspectRatio: ThumbnailImage.typicalAspectRatio), frameSize: previewFrameSize
     )
     .padding()
     .background(.black)

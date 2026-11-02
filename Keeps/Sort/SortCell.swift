@@ -56,27 +56,11 @@ private struct CollapsedStack: View {
     var body: some View {
         PrintPile(photos: pile.photos, length: PhotoGridMetrics.cellSize, borderWidth: 7)
             .overlay(alignment: .bottomTrailing) {
-                PileBadge(photoCount: pile.photos.count)
+                // Solid colour rather than white, so it stands out from both
+                // the dark window and the white print borders.
+                PileLabel(text: "\(pile.photos.count)", color: .accentColor)
                     .padding(10)
             }
-    }
-}
-
-/// The badge in a pile's corner: how many photos are in it.
-private struct PileBadge: View {
-    let photoCount: Int
-
-    var body: some View {
-        Text("\(photoCount)")
-            .font(.callout.weight(.semibold))
-            .monospacedDigit()
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            // Solid colour rather than white, so it stands out from both
-            // the dark window and the white print borders.
-            .background(Color.accentColor, in: Capsule())
-            .shadow(color: .black.opacity(0.6), radius: 2)
     }
 }
 

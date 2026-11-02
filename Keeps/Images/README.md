@@ -15,7 +15,8 @@ Preview Content, already cached; release builds leave those files out, so
 nothing else may use it.
 
 `SelectionHighlight` is the outline every screen draws round a selected
-photo or pile.
+photo or pile, and `KeeperBadge` marks a keeper; its colour stands for the
+keepers wherever they're shown.
 
 Uses only Folder, for `PhotoItem`. Knows nothing about groups: which item
 is selected, and the sort screen's boundary bars, are the screens' own.

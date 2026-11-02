@@ -115,7 +115,7 @@ struct PileLabel: View {
 }
 
 #Preview("Large pile, blank prints beneath") {
-    PrintPile(photos: PreviewPhotos.makeItems(count: 12), length: 260, aspectRatio: 1.5)
+    PrintPile(photos: PreviewPhotos.makeItems(count: 12), length: 260, aspectRatio: ThumbnailImage.typicalAspectRatio)
         .padding()
         .background(.black)
 }

@@ -34,10 +34,6 @@ struct FolderPiles: View {
     /// Room around each pile, inside its highlight.
     private static let highlightPadding: CGFloat = 8
 
-    /// The shape of most camera sensors, for the blank paper, since a pile's
-    /// photos may come from many groups.
-    private static let paperAspectRatio: CGFloat = 1.5
-
     var body: some View {
         // Each is worked out once per render, since each walks the folder.
         let toGo = grouping.photosToGo
@@ -48,8 +44,8 @@ struct FolderPiles: View {
             // something to show. The set-aside pile always shows, even if
             // nothing was set aside, since it's the way to the done groups.
             if !keepers.isEmpty {
-                // Green, to match the keeper badge on the pick screen.
-                pile(of: keepers, label: keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers", color: .green)
+                let keepersLabel = keepers.count == 1 ? "1 keeper" : "\(keepers.count) keepers"
+                pile(of: keepers, label: keepersLabel, color: KeeperBadge.color)
                     .overlay {
                         PhotoDragSource(photos: keepers.map { grouping.items[$0] })
                     }
@@ -65,12 +61,13 @@ struct FolderPiles: View {
         }
     }
 
-    /// One labelled pile of some of the folder's photos.
+    /// One labelled pile of some of the folder's photos. Its blank paper is
+    /// the typical shape, since its photos may come from many groups.
     private func pile(of photoIndices: [Int], label: String, color: Color? = nil) -> some View {
         PrintPile(
             photos: photoIndices.map { grouping.items[$0] },
             length: Self.length,
-            aspectRatio: Self.paperAspectRatio
+            aspectRatio: ThumbnailImage.typicalAspectRatio
         )
         .overlay(alignment: .bottom) {
             PileLabel(text: label, color: color)
