@@ -83,6 +83,14 @@ final class ImagePipeline {
         }
     }
 
+    /// Reads an image and caches it straight away, blocking until it's
+    /// loaded. Only for SwiftUI previews, which are drawn before a background
+    /// load would finish; in the app it would stall the main thread.
+    func loadImageImmediately(for item: PhotoItem, size: ImageSize) {
+        guard let cgImage = Self.readImage(from: item.sourceURL, size: size) else { return }
+        cache.setImage(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+    }
+
     // MARK: - Private
 
     private func requestPriority(for size: ImageSize) -> Operation.QueuePriority {
@@ -106,16 +114,19 @@ final class ImagePipeline {
         }
     }
 
+    /// Reads an image of the given size from a file.
+    private nonisolated static func readImage(from url: URL, size: ImageSize) -> CGImage? {
+        switch size {
+        case .full: ImageReader.fullImage(from: url)
+        case let .thumbnail(maxPixelSize): ImageReader.thumbnail(from: url, maxPixelSize: maxPixelSize)
+        }
+    }
+
     private func enqueueLoad(for item: PhotoItem, size: ImageSize, key: String, priority: Operation.QueuePriority) {
         let url = item.sourceURL
         imageOps[key] = makeOp(
             priority: priority,
-            read: { [size] in
-                switch size {
-                case .full: ImageReader.fullImage(from: url)
-                case let .thumbnail(maxPixelSize): ImageReader.thumbnail(from: url, maxPixelSize: maxPixelSize)
-                }
-            },
+            read: { [size] in Self.readImage(from: url, size: size) },
             store: { [size] image in ImagePipeline.shared.cache.setImage(image, for: item, size: size) },
             onComplete: { ImagePipeline.shared.completeImageLoad(key: key, itemID: item.id) }
         )

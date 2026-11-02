@@ -145,10 +145,9 @@ private let previewFrameSize = CGSize(
     height: CGFloat(ThumbnailImage.displaySize)
 )
 
-// The photos come from Preview Content, which is left out of release builds.
 #Preview("Landscape photo, no border") {
     ThumbnailFrame(
-        image: NSImage(named: "PreviewLandscapePhoto"),
+        image: NSImage(contentsOf: PreviewPhotos.landscape.sourceURL),
         borderWidth: 0, borderColor: .white,
         placeholder: .square, frameSize: previewFrameSize
     )
@@ -158,7 +157,7 @@ private let previewFrameSize = CGSize(
 
 #Preview("Portrait photo, white border") {
     ThumbnailFrame(
-        image: NSImage(named: "PreviewPortraitPhoto"),
+        image: NSImage(contentsOf: PreviewPhotos.portrait.sourceURL),
         borderWidth: 6, borderColor: .white,
         placeholder: .square, frameSize: previewFrameSize
     )

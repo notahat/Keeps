@@ -403,6 +403,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
+				EXCLUDED_SOURCE_FILE_NAMES = "preview-*.jpg";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Keeps-Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

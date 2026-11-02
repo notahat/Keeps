@@ -10,7 +10,9 @@ loading has got. `PrintPile` draws photos as a messy pile of prints, only
 the top few showing their photos and the rest `BlankPrint`s, with
 `PileLabel` for its caption, and `PileJitter` works out how each print sits
 in a pile, tilted and nudged by its stem, so both screens' piles look
-alike.
+alike. `PreviewPhotos` gives SwiftUI previews photos from the JPEGs in
+Preview Content, already cached; release builds leave those files out, so
+nothing else may use it.
 
 Uses only Folder, for `PhotoItem`. Knows nothing about groups: selection
 highlights and boundary bars are drawn by the screens on top of
