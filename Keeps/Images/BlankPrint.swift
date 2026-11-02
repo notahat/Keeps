@@ -20,3 +20,21 @@ struct BlankPrint: View {
             .padding(ThumbnailImage.imageInset)
     }
 }
+
+/// The space every preview fits its print into, the size thumbnails are
+/// shown at.
+private let previewSize = CGFloat(ThumbnailImage.displaySize)
+
+#Preview("Landscape, white border") {
+    BlankPrint(aspectRatio: ThumbnailImage.typicalAspectRatio, borderWidth: 6)
+        .frame(width: previewSize, height: previewSize)
+        .padding()
+        .background(.black)
+}
+
+#Preview("Portrait, no border") {
+    BlankPrint(aspectRatio: 1 / ThumbnailImage.typicalAspectRatio)
+        .frame(width: previewSize, height: previewSize)
+        .padding()
+        .background(.black)
+}
