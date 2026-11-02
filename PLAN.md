@@ -700,3 +700,50 @@ Each step builds and passes the tests, then review and commit.
    already picks the RAW, tested.)
 2. ✅ **Drag the pile.** `PhotoDragSource` in `App/` over the keepers pile
    in `FolderPiles`. Check by hand: drag onto Lightroom and into Finder.
+
+# Plan: Review fixes for simplicity and clarity
+
+## Goal
+
+Work through a code review: stop an unreadable keeps.json from being
+overwritten, then simplify the places where the same idea is spelled out
+more than once, or where a reader has to hold an unstated rule in their
+head.
+
+## Steps
+
+Each step builds and passes the tests, then review and commit.
+
+1. **Never overwrite a keeps.json that can't be read.** `KeepsFile.restore()`
+   returns nil only when there's no file, and throws when the file can't
+   be read, isn't valid, or is in a format it doesn't know. `FolderView`
+   shows the error and doesn't autosave that folder, so the file is left
+   as it was. Tested.
+2. **Name the open group's photos by photo index.** `PickArrangement` takes
+   the group and the keepers and gives tile and pile photos as photo
+   indices, so `PickScreen` stops converting to and from places in the
+   group, and toggling a keeper no longer relies on every photo being a
+   tile. Tested.
+3. **Count a group's keepers in one place.** `Grouping.keptCount(in:)`, used
+   by the pick screen's header and the done screen's labels. Tested.
+4. **Tidy Grouping.** Order its members by what they're for, with MARK
+   headers; a `Set.toggle` for boundaries and keepers; drop the
+   unexplained local copies of `layout`; say "picking" rather than
+   "narrowing", which isn't in the glossary.
+5. **One selection highlight.** A shared modifier in `Images/` draws the
+   highlight on the sort, pick, and done screens, hidden while the window
+   isn't key. The done screen didn't hide it before. Check by hand.
+6. **Share the duplicated constants.** One typical photo shape for blank
+   paper and a group with no thumbnails yet; `KeeperBadge` moves to
+   `Images/` so the keepers pile can use its colour; the sort screen's
+   pile badge becomes a coloured `PileLabel`.
+7. **Bring ImagePipeline up to date.** One helper for hearing that an
+   item's image has loaded, used by `ThumbnailImage` and `FullSizeImage`;
+   one method to finish a load in place of three closures; comments that
+   match the four priority tiers; no abbreviated names; header comments
+   on the helpers here, in `ImageCache`, and in `FolderScanner`.
+8. **Simplify the folder's session and view.** `FolderSession` isn't
+   observable, since its photos never change. `FolderView` hands a
+   non-optional grouping to a subview, so it's unwrapped once.
+9. **Comment nits.** Wrap comments at 80 columns, and call `PhotoItem`'s
+   rule what it is: a struct's, not a class's.
