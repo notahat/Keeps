@@ -57,21 +57,13 @@ struct ThumbnailImage: View {
     @State private var image: NSImage?
 
     var body: some View {
-        Group {
-            if let image {
-                // The border's padding shrinks what the image is offered, so
-                // image plus border still fits the square.
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .padding(borderWidth)
-                    .background(borderFill)
-                    .padding(Self.imageInset)
-            } else {
-                placeholderView
-            }
-        }
-        .frame(width: frameSize.width, height: frameSize.height)
+        ThumbnailFrame(
+            image: image,
+            borderWidth: borderWidth,
+            borderColor: borderColor,
+            placeholder: placeholder,
+            frameSize: frameSize
+        )
         .onAppear {
             if let cached = ImagePipeline.shared.cachedImage(for: item, size: Self.imageSize) {
                 show(cached)
@@ -92,7 +84,43 @@ struct ThumbnailImage: View {
         }
     }
 
-    /// The stand-in drawn while loading (see Placeholder).
+    /// Displays a loaded image and reports its shape.
+    private func show(_ loaded: NSImage) {
+        image = loaded
+        guard loaded.size.height > 0 else { return }
+        onAspectRatioKnown?(loaded.size.width / loaded.size.height)
+    }
+}
+
+/// Draws a thumbnail, or its placeholder while there's no image yet, with no
+/// tie to the image pipeline, so it can be previewed. Loading is left to
+/// ThumbnailImage.
+private struct ThumbnailFrame: View {
+    let image: NSImage?
+    let borderWidth: CGFloat
+    let borderColor: Color
+    let placeholder: ThumbnailImage.Placeholder
+    let frameSize: CGSize
+
+    var body: some View {
+        Group {
+            if let image {
+                // The border's padding shrinks what the image is offered, so
+                // image plus border still fits the square.
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(borderWidth)
+                    .background(borderFill)
+                    .padding(ThumbnailImage.imageInset)
+            } else {
+                placeholderView
+            }
+        }
+        .frame(width: frameSize.width, height: frameSize.height)
+    }
+
+    /// The stand-in drawn while loading (see ThumbnailImage.Placeholder).
     @ViewBuilder private var placeholderView: some View {
         switch placeholder {
         case .square:
@@ -109,11 +137,49 @@ struct ThumbnailImage: View {
     private var borderFill: Color {
         borderWidth > 0 ? borderColor : .clear
     }
+}
 
-    /// Displays a loaded image and reports its shape.
-    private func show(_ loaded: NSImage) {
-        image = loaded
-        guard loaded.size.height > 0 else { return }
-        onAspectRatioKnown?(loaded.size.width / loaded.size.height)
-    }
+/// The frame every preview uses, the size thumbnails are shown at.
+private let previewFrameSize = CGSize(
+    width: CGFloat(ThumbnailImage.displaySize),
+    height: CGFloat(ThumbnailImage.displaySize)
+)
+
+// The photos come from Preview Content, which is left out of release builds.
+#Preview("Landscape photo, no border") {
+    ThumbnailFrame(
+        image: NSImage(named: "PreviewLandscapePhoto"),
+        borderWidth: 0, borderColor: .white,
+        placeholder: .square, frameSize: previewFrameSize
+    )
+    .padding()
+    .background(.black)
+}
+
+#Preview("Portrait photo, white border") {
+    ThumbnailFrame(
+        image: NSImage(named: "PreviewPortraitPhoto"),
+        borderWidth: 6, borderColor: .white,
+        placeholder: .square, frameSize: previewFrameSize
+    )
+    .padding()
+    .background(.black)
+}
+
+#Preview("Loading, square placeholder") {
+    ThumbnailFrame(
+        image: nil, borderWidth: 0, borderColor: .white,
+        placeholder: .square, frameSize: previewFrameSize
+    )
+    .padding()
+    .background(.black)
+}
+
+#Preview("Loading, blank paper placeholder") {
+    ThumbnailFrame(
+        image: nil, borderWidth: 6, borderColor: .white,
+        placeholder: .paper(aspectRatio: 1.5), frameSize: previewFrameSize
+    )
+    .padding()
+    .background(.black)
 }
