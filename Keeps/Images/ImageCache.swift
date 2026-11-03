@@ -73,15 +73,18 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
         entries.withLock { $0[ObjectIdentifier(image)] = entry }
     }
 
-    /// Stops counting an image that has left the cache.
-    func remove(_ image: NSImage) {
-        entries.withLock { $0[ObjectIdentifier(image)] = nil }
+    /// Stops counting an image that has left the cache, and gives back the
+    /// size it was cached at, or nil if it wasn't being counted.
+    @discardableResult
+    func remove(_ image: NSImage) -> ImageSize? {
+        entries.withLock { $0.removeValue(forKey: ObjectIdentifier(image))?.size }
     }
 
-    /// Hears from NSCache that it's evicting an image.
+    /// Hears from NSCache that it's evicting an image, and marks the
+    /// eviction for Instruments.
     func cache(_: NSCache<AnyObject, AnyObject>, willEvictObject object: Any) {
-        guard let image = object as? NSImage else { return }
-        remove(image)
+        guard let image = object as? NSImage, let size = remove(image) else { return }
+        ImageSignposts.markEviction(of: size)
     }
 
     /// The counts at each size, thumbnails from smallest to largest, then

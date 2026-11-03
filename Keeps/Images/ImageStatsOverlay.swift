@@ -69,7 +69,7 @@ private struct ImageStatsPanel: View {
             row("Memory", snapshot.memoryFootprint.map { Self.megabytes(Int($0)) } ?? "unknown")
             ForEach(snapshot.cacheContents, id: \.size) { contents in
                 row(
-                    "Cached \(Self.name(of: contents.size))",
+                    "Cached \(contents.size)",
                     "\(contents.imageCount) · \(Self.megabytes(contents.byteCount))"
                 )
             }
@@ -98,14 +98,6 @@ private struct ImageStatsPanel: View {
             Text(label)
                 .foregroundStyle(.secondary)
             Text(value)
-        }
-    }
-
-    /// A size's name, such as "520 px" or "full".
-    private static func name(of size: ImageSize) -> String {
-        switch size {
-        case let .thumbnail(maxPixelSize): "\(maxPixelSize) px"
-        case .full: "full"
         }
     }
 

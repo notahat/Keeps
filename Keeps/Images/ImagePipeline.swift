@@ -92,11 +92,11 @@ final class ImagePipeline {
     func watchedImage(for item: PhotoItem, size: ImageSize) -> WatchedImage {
         let key = readKey(for: item, size: size) as NSString
         if let existing = watchedImages.object(forKey: key) {
-            stats.recordLookup(isHit: existing.image != nil)
+            recordLookup(of: size, isHit: existing.image != nil)
             return existing
         }
         let watchedImage = WatchedImage(image: cache.image(for: item, size: size))
-        stats.recordLookup(isHit: watchedImage.image != nil)
+        recordLookup(of: size, isHit: watchedImage.image != nil)
         watchedImages.setObject(watchedImage, forKey: key)
         return watchedImage
     }
@@ -163,6 +163,13 @@ final class ImagePipeline {
 
     // MARK: - Private
 
+    /// Counts a view asking for an image for the debug overlay, and marks it
+    /// for Instruments.
+    private func recordLookup(of size: ImageSize, isHit: Bool) {
+        stats.recordLookup(isHit: isHit)
+        ImageSignposts.markLookup(of: size, isHit: isHit)
+    }
+
     /// The priority for an image a view is showing.
     private func requestPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
@@ -204,8 +211,11 @@ final class ImagePipeline {
         priority: Operation.QueuePriority
     ) {
         let url = item.sourceURL
+        let enqueueTime = ContinuousClock.now
         let read = BlockOperation {
-            let cgImage = Self.readImage(from: url, size: size)
+            let cgImage = ImageSignposts.markRead(of: size, queuedSince: enqueueTime) {
+                Self.readImage(from: url, size: size)
+            }
             Task { @MainActor in
                 self.finishRead(of: item, size: size, key: key, cgImage: cgImage)
             }

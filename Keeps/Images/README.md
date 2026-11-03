@@ -22,6 +22,9 @@ tile, and the photos' common aspect ratio.
 app's memory, what `ImageCache` holds at each size, reads in flight, the
 hit rate, and how quickly recent full-size steps turned sharp, which
 `ImageLoadStats` keeps. Debug builds turn it on from the Debug menu.
+`ImageSignposts` marks the same loading for Instruments: each read, cache
+hits, misses, and evictions, and each full-size step until it turns
+sharp.
 
 `PrintPile` draws photos as a messy pile of prints, with only the top few
 showing their photos and the rest drawn as `BlankPrint`s. `PileLabel` is

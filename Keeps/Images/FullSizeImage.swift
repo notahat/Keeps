@@ -1,4 +1,5 @@
 import AppKit
+import os
 import SwiftUI
 
 /// One photo's full-size image, fitted to the space, with its neighbours
@@ -25,10 +26,9 @@ struct FullSizeImage: View {
     /// deprioritised when the user moves on before it finishes.
     @State private var highPriorityItem: PhotoItem?
 
-    /// When the user stepped to the shown photo, while its full image is
-    /// still loading, for timing how long it takes to turn sharp. Nil once
-    /// it has.
-    @State private var stepStart: ContinuousClock.Instant?
+    /// The step to the shown photo while its full image is still loading,
+    /// for timing how long it takes to turn sharp. Nil once it has.
+    @State private var pendingStep: PendingStep?
 
     private var item: PhotoItem {
         items[index]
@@ -85,23 +85,28 @@ struct FullSizeImage: View {
     /// Starts timing a step to a new photo, recording the step before it as
     /// moved on if that never turned sharp. A step whose full image is
     /// already cached is recorded as sharp straight away.
+    /// Each step is counted for the debug overlay and marked for
+    /// Instruments.
     private func startTimingStep(isSharp: Bool) {
-        if stepStart != nil {
+        if let pendingStep {
             ImagePipeline.shared.recordStep(.movedOn)
+            ImageSignposts.endStep(pendingStep.signpost, isSharp: false)
         }
         if isSharp {
             ImagePipeline.shared.recordStep(.sharp(after: .zero))
-            stepStart = nil
+            ImageSignposts.markSharpStep(to: item.stem)
+            pendingStep = nil
         } else {
-            stepStart = .now
+            pendingStep = PendingStep(start: .now, signpost: ImageSignposts.beginStep(to: item.stem))
         }
     }
 
     /// Records how long the step took to turn sharp, if it's being timed.
     private func finishTimingStep() {
-        guard let stepStart else { return }
-        ImagePipeline.shared.recordStep(.sharp(after: .now - stepStart))
-        self.stepStart = nil
+        guard let pendingStep else { return }
+        ImagePipeline.shared.recordStep(.sharp(after: .now - pendingStep.start))
+        ImageSignposts.endStep(pendingStep.signpost, isSharp: true)
+        self.pendingStep = nil
     }
 
     /// Drops the in-flight high-priority load back to prefetch priority.
@@ -115,4 +120,11 @@ struct FullSizeImage: View {
     private func preloadIndices() -> [Int] {
         (max(0, index - 2) ... min(items.count - 1, index + 4)).filter { $0 != index }
     }
+}
+
+/// A step to a photo whose full image is still loading: when the user
+/// stepped to it, and its interval in Instruments.
+private struct PendingStep {
+    let start: ContinuousClock.Instant
+    let signpost: OSSignpostIntervalState
 }

@@ -947,8 +947,11 @@ Each step builds and passes the tests, then review and commit.
 2. ~~**Fix JPEG full size,** if step 1 confirms the bug: decode a JPEG on
    its own in full.~~ Not needed: the benchmark shows a JPEG's full-size
    read decodes the whole image.
-3. **Signposts** in `ImagePipeline` and `FullSizeImage`. Check by hand
-   in Instruments.
+3. ✅ **Signposts** in `ImagePipeline` and `FullSizeImage`. Check by hand
+   in Instruments. (`ImageSignposts`, under the com.notahat.Keeps
+   subsystem's "Image loading" category, in the os_signpost instrument.
+   The queue wait is a label on each read rather than an interval, since
+   a read cancelled while queued would leave its interval open.)
 4. ✅ **Debug overlay.** (Done first. `ImageLoadStats` and the tally in
    `ImageCache` are tested; Debug ▸ Show Image Stats, ⌥⌘I, shows it.
    Steps the user moves on from before they turn sharp are counted, so
