@@ -954,30 +954,56 @@ What they show:
   and adds an alpha channel, since ImageIO decodes JPEGs at 3 bytes a
   pixel. RAF previews go through the same thing at a third the size.
 
-### Full-size images at screen size
+### Full-size images at a fixed size
 
-The full-size view never shows more pixels than the screen has, so it
-reads each image scaled to fit the largest screen rather than in full.
-On the 14-inch MacBook Pro's 3024 × 1964 screen that's about a sixth of
-a JPEG's pixels and half a RAF preview's, which shrinks the main thread
-work, the decode, and the memory alike.
+The full-size view doesn't need every pixel, so it reads each image
+scaled down rather than in full, which shrinks the main thread work, the
+decode, and the memory alike.
 
+Sizing them to the largest screen was tried first, and wasn't enough. The
+user's screens run in scaled modes: the laptop draws at 3600 × 2400 and
+the external screen at 6720 × 4480, which is 30 MP, three quarters of a
+JPEG's pixels. A trace of one hang on the external screen showed:
+
+- **The main thread barely ran:** 9 ms in a hang of 100–200 ms, so it was
+  waiting rather than busy.
+- **SwiftUI prepared each new image on a background thread**
+  (`_SwiftUIProxyImage prepare`), about 100 ms an image, converting its
+  colour and copying it. One or two images match the hangs, so the main
+  thread most likely waits for it. Time Profiler doesn't record waiting
+  threads by default, so that's inferred.
+- **The laptop screen showed no hangs:** at 8.6 MP the preparation would
+  take about 30 ms, under the 100 ms that Instruments counts as a hang.
+
+So full images are no more than 4416 px on the long side, the size of the
+JPEG preview in an X-T5 RAF, which the user finds sharp enough even on
+the big screen. Each format is read at its cheapest size under that, the
+same on every screen:
+
+| Long side | JPEG read | RAF read |
+|---|---|---|
+| 3600 px | 250 ms | 135 ms |
+| 3864 px, half a JPEG | 200 ms | 140 ms |
+| 3865 px | 400 ms | 145 ms |
+| 4416 px, a RAF's preview | 420 ms | 80 ms |
+
+- **A RAW's full image is its preview as it is,** 4416 × 2944, 13 MP,
+  about 52 MB. Anything smaller needs a resize.
+- **A JPEG's is its own size halved until it fits,** 3864 × 2576 for an
+  X-T5, 10 MP, about 40 MB. The decoder reads a half, a quarter, or an
+  eighth of the image cheaply, but a pixel over and it decodes all
+  40 MP and scales them down, taking twice as long.
 - `ImageSize.full` keeps its name and priorities, but means the image
-  the full-size view shows, fitted to the largest screen, rather than
-  the original file. 100% zoom will add a size for the original.
-- The pipeline works out the size from the screens' pixel sizes each time
-  it queues a full-size read, with a pure, tested function: the largest
-  dimension of any screen. Images already cached when a bigger screen is
-  plugged in stay at the old size until they're evicted, which is
-  acceptable for something so rare.
-- `ImageReader.fullImage` goes. The scaled read serves both sizes, and
-  is renamed from `thumbnail` to `scaledImage`, since a 3000-pixel image
-  isn't a thumbnail. The benchmark's full-size row reads at this Mac's
-  screen size.
+  the full-size view shows rather than the original file. 100% zoom will
+  add a size for the original.
+- `ImageReader` takes the `ImageSize` and chooses the pixel size, since
+  for a JPEG that depends on the file. The halving is a pure, tested
+  function.
 
-If hangs remain, the next thing to try is converting each image to the
-display's format in the background, after decoding, so Core Animation
-has nothing left to convert.
+Preparing a full image should take 35–45 ms: no longer a hang, but still
+a few dropped frames. If stepping still stutters, the next thing to
+try is converting each image to the display's format in the background,
+after decoding, so SwiftUI has nothing left to convert.
 
 ## Steps
 
@@ -1001,9 +1027,10 @@ Each step builds and passes the tests, then review and commit.
    holding an arrow key doesn't flatter the figures.) The statistics
    struct, tested, and the overlay showing it with the memory footprint,
    in debug builds only.
-5. **Full-size images at screen size** (see "First traces"). The size
-   function, tested, then the pipeline reading `.full` at it, and the
-   benchmark updated. The user repeats the J test on a JPEG group.
+5. **Full-size images at a fixed size** (see "First traces"). The JPEG
+   halving, tested, then the pipeline reading `.full` with it, and the
+   benchmark updated. The user repeats the J test on a JPEG group, on the external
+   screen.
 6. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
 7. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on

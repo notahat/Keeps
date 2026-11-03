@@ -1,11 +1,11 @@
-import CoreGraphics
 import Foundation
 import ImageIO
 
 /// Times ImageReader's reads over sample photos, to show what each kind of
 /// read costs and what size of image it gives back. It's compiled together
-/// with the app's ImageReader.swift (see run-decode-benchmark), so it times
-/// the app's own code.
+/// with the app's ImageReader.swift and ImageSize.swift (see
+/// run-decode-benchmark), so it times the app's own code, at the sizes
+/// the app reads.
 ///
 /// Each read is timed in two parts:
 ///
@@ -39,8 +39,9 @@ enum DecodeBenchmark {
             print("No photos found in \(paths.joined(separator: ", ")).")
             exit(1)
         }
+        let reads = Read.all
         for url in urls {
-            benchmark(url)
+            benchmark(url, reads: reads)
         }
     }
 
@@ -56,11 +57,11 @@ enum DecodeBenchmark {
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 
-    /// Times each kind of read of one photo, and prints a table of them.
-    static func benchmark(_ url: URL) {
+    /// Times each read of one photo, and prints a table of them.
+    static func benchmark(_ url: URL, reads: [Read]) {
         print("\n\(url.lastPathComponent)")
         print(row("Read", "Size", "Read", "Draw"))
-        for read in Read.all {
+        for read in reads {
             print(measure(read, of: url))
         }
     }
@@ -128,12 +129,17 @@ struct Read: Sendable {
 
     /// The reads the app makes, then a decode of the whole image, which
     /// the app doesn't do yet but 100% zoom would need.
-    static let all = [
-        Read(name: "Full size, as the app reads") { ImageReader.fullImage(from: $0) },
-        Read(name: "Thumbnail, 520 px") { ImageReader.thumbnail(from: $0, maxPixelSize: 520) },
-        Read(name: "Thumbnail, 2048 px") { ImageReader.thumbnail(from: $0, maxPixelSize: 2048) },
+    static let all: [Read] = [
+        app("Full size view", size: .full),
+        app("Thumbnail, 520 px", size: .thumbnail(maxPixelSize: 520)),
+        app("Tile, 2048 px", size: .thumbnail(maxPixelSize: 2048)),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
     ]
+
+    /// A read the app makes, of an image at a size.
+    static func app(_ name: String, size: ImageSize) -> Read {
+        Read(name: name) { ImageReader.image(from: $0, size: size) }
+    }
 
     /// Decodes the image itself in full, rather than any preview: for a RAW,
     /// the sensor data. Decoding happens straight away, so the draw that

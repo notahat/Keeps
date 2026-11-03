@@ -157,7 +157,7 @@ final class ImagePipeline {
     /// loaded. Only for SwiftUI previews, which are drawn before a background
     /// read would finish; in the app it would stall the main thread.
     func loadImageImmediately(for item: PhotoItem, size: ImageSize) {
-        guard let cgImage = Self.readImage(from: item.sourceURL, size: size) else { return }
+        guard let cgImage = ImageReader.image(from: item.sourceURL, size: size) else { return }
         store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
     }
 
@@ -194,14 +194,6 @@ final class ImagePipeline {
         }
     }
 
-    /// Reads an image of the given size from a file. Safe on any thread.
-    private nonisolated static func readImage(from url: URL, size: ImageSize) -> CGImage? {
-        switch size {
-        case .full: ImageReader.fullImage(from: url)
-        case let .thumbnail(maxPixelSize): ImageReader.thumbnail(from: url, maxPixelSize: maxPixelSize)
-        }
-    }
-
     /// Queues a read of an item's image, which finishes back on the main
     /// actor (see finishRead).
     private func enqueueRead(
@@ -214,7 +206,7 @@ final class ImagePipeline {
         let enqueueTime = ContinuousClock.now
         let read = BlockOperation {
             let cgImage = ImageSignposts.markRead(of: size, queuedSince: enqueueTime) {
-                Self.readImage(from: url, size: size)
+                ImageReader.image(from: url, size: size)
             }
             Task { @MainActor in
                 self.finishRead(of: item, size: size, key: key, cgImage: cgImage)
