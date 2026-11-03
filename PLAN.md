@@ -1027,10 +1027,10 @@ Each step builds and passes the tests, then review and commit.
    holding an arrow key doesn't flatter the figures.) The statistics
    struct, tested, and the overlay showing it with the memory footprint,
    in debug builds only.
-5. **Full-size images at a fixed size** (see "First traces"). The JPEG
+5. ✅ **Full-size images at a fixed size** (see "First traces"). The JPEG
    halving, tested, then the pipeline reading `.full` with it, and the
-   benchmark updated. The user repeats the J test on a JPEG group, on the external
-   screen.
+   benchmark updated. The user repeats the J test on a JPEG group, on the
+   external screen. (No hangs on either screen.)
 6. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
 7. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
