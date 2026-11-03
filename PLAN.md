@@ -900,7 +900,8 @@ later plan.
 
 ## Decode benchmark results
 
-`Benchmarks/run-decode-benchmark` on the user's Mac, over four X-T5 RAFs
+`Benchmarks/run-decode-benchmark` on 3 November 2026, on a 14-inch M1
+MacBook Pro with 32 GB of memory running macOS 27.2, over four X-T5 RAFs
 and two X-T5 JPEGs shot without RAW (there were no RAW+JPEG pairs to
 hand). Medians of five runs, with the files in the disk cache. Read is
 the background work; draw is the first draw into a bitmap of the same
