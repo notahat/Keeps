@@ -894,7 +894,8 @@ runs the scenarios and shares the overlay's numbers or a saved trace.
 Claude can run the benchmark.
 
 Out of scope until a measurement calls for it: cache budgets, limiting
-the full-size view to the screen's size, changes to preloading, and
+the full-size view to the screen's size (the first traces called for it;
+see below), changes to preloading, and
 reading the camera JPEG of a RAW+JPEG pair for display. 100% zoom is a
 later plan.
 
@@ -936,6 +937,48 @@ What they show:
   twenty RAFs is about 2 seconds of decoding, spread over the cores the
   pipeline uses.
 
+## First traces
+
+- **RAFs are smooth.** Opening a folder hangs the main thread for about
+  180 ms, which isn't noticeable. After that, reads queue and run in the
+  background, and once preloading starts, steps at full size are all
+  sharp straight away.
+- **JPEGs hang at full size.** Holding J through a group of JPEGs goes
+  slowly at first, with main thread hangs on steps that were sharp
+  straight away. Once the user gets ahead of preloading it speeds up,
+  showing only thumbnails, and the hangs stop.
+- **The cause is Core Animation preparing each image for display, on the
+  main thread** (`CA::Render::prepare_image`, about 700 ms of 3 s of main
+  thread time). For all 40 MP it copies the pixels (`memmove`), converts
+  them to the display's colour space (`vLookupTable`, `vMatrixMultiply`),
+  and adds an alpha channel, since ImageIO decodes JPEGs at 3 bytes a
+  pixel. RAF previews go through the same thing at a third the size.
+
+### Full-size images at screen size
+
+The full-size view never shows more pixels than the screen has, so it
+reads each image scaled to fit the largest screen rather than in full.
+On the 14-inch MacBook Pro's 3024 × 1964 screen that's about a sixth of
+a JPEG's pixels and half a RAF preview's, which shrinks the main thread
+work, the decode, and the memory alike.
+
+- `ImageSize.full` keeps its name and priorities, but means the image
+  the full-size view shows, fitted to the largest screen, rather than
+  the original file. 100% zoom will add a size for the original.
+- The pipeline works out the size from the screens' pixel sizes each time
+  it queues a full-size read, with a pure, tested function: the largest
+  dimension of any screen. Images already cached when a bigger screen is
+  plugged in stay at the old size until they're evicted, which is
+  acceptable for something so rare.
+- `ImageReader.fullImage` goes. The scaled read serves both sizes, and
+  is renamed from `thumbnail` to `scaledImage`, since a 3000-pixel image
+  isn't a thumbnail. The benchmark's full-size row reads at this Mac's
+  screen size.
+
+If hangs remain, the next thing to try is converting each image to the
+display's format in the background, after decoding, so Core Animation
+has nothing left to convert.
+
 ## Steps
 
 Each step builds and passes the tests, then review and commit.
@@ -958,10 +1001,13 @@ Each step builds and passes the tests, then review and commit.
    holding an arrow key doesn't flatter the figures.) The statistics
    struct, tested, and the overlay showing it with the memory footprint,
    in debug builds only.
-5. **Baseline.** The user runs the four scenarios. Record the results
+5. **Full-size images at screen size** (see "First traces"). The size
+   function, tested, then the pipeline reading `.full` at it, and the
+   benchmark updated. The user repeats the J test on a JPEG group.
+6. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
-6. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
+7. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
    the pick and keepers screens load them, with the thumbnail standing
    in. Run scenario 2 again and compare.
-7. **Review.** Look over the numbers for anything else worth doing, and
+8. **Review.** Look over the numbers for anything else worth doing, and
    plan it separately if so.
