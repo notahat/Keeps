@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- A rough flat preview of the layers on the suggested background. Icon
+       Composer applies the real shape mask and glass effects. -->
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3B6FB6"/>
+      <stop offset="1" stop-color="#22437A"/>
+    </linearGradient>
+    <clipPath id="photo">
+      <rect x="316" y="424" width="392" height="272" rx="12"/>
+    </clipPath>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#background)"/>
+  <g transform="translate(512 544) scale(1.45) translate(-512 -560)">
+    <rect x="292" y="400" width="440" height="320" rx="28" fill="#C9D6E3" transform="translate(0 -30) rotate(-7 512 560)"/>
+    <rect x="292" y="400" width="440" height="320" rx="28" fill="#E4ECF4" transform="translate(0 -16) rotate(5 512 560)"/>
+    <rect x="292" y="400" width="440" height="320" rx="28" fill="#FFFFFF"/>
+    <g clip-path="url(#photo)">
+      <rect x="316" y="424" width="392" height="272" fill="#8EC5F0"/>
+      <circle cx="628" cy="500" r="36" fill="#FFD45C"/>
+      <polygon points="316,696 420,560 490,630 560,540 708,696" fill="#3F7D5C"/>
+      <polygon points="316,696 400,620 470,670 520,640 600,696" fill="#2E5E45"/>
+    </g>
+  </g>
+  <g transform="translate(790 736) scale(1) translate(-724 -704)">
+    <circle cx="724" cy="704" r="96" fill="#34C759"/>
+    <path d="M674 706 L710 742 L776 672" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

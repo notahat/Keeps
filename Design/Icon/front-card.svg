@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="photo">
+      <rect x="316" y="424" width="392" height="272" rx="12"/>
+    </clipPath>
+  </defs>
+  <g transform="translate(512 544) scale(1.45) translate(-512 -560)">
+    <rect x="292" y="400" width="440" height="320" rx="28" fill="#FFFFFF"/>
+    <g clip-path="url(#photo)">
+      <rect x="316" y="424" width="392" height="272" fill="#8EC5F0"/>
+      <circle cx="628" cy="500" r="36" fill="#FFD45C"/>
+      <polygon points="316,696 420,560 490,630 560,540 708,696" fill="#3F7D5C"/>
+      <polygon points="316,696 400,620 470,670 520,640 600,696" fill="#2E5E45"/>
+    </g>
+  </g>
+</svg>
