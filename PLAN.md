@@ -880,19 +880,60 @@ of these.
 
 ### Sharper tiles
 
-Tiles ask for an image sized to the tile in pixels (points times the
-screen's scale), rounded up to one of a few fixed sizes, such as 1024,
-1536, 2048, or 3072. The fixed sizes mean resizing the window or opening
-another group doesn't start new reads for slightly different sizes, and
-the pick and keepers screens share what's cached. The 520-pixel
-thumbnail stands in until the larger image loads, as it already does at
-full size. `ImageSize.thumbnail(maxPixelSize:)` already takes any size,
-so the pipeline and cache need no new kind of size.
+Tiles show one of three images, chosen by the tile's longest side in
+pixels (points times the screen's scale), with the smallest that's at
+least that long:
 
-For a JPEG the fixed sizes cost more than they need to: 2048 px reads in
-about 102 ms against 62 ms at a quarter (see "The decoder's cheap sizes"
-below). A JPEG tile might read at a quarter or a half of the image,
-whichever is the cheapest that's sharp enough, then shrink.
+| Tile's longest side | Image |
+|---|---|
+| Up to 520 px | the thumbnail |
+| Up to 1932 px | the tile image, 1932 px |
+| Bigger | the full image |
+
+The sizes come from what the decoders cost (see "Tile sizes" below):
+
+- **1932 px is a quarter of an X-T5 JPEG,** the cheapest size a JPEG
+  reads at, and costs a RAW no more than 2048 px.
+- **Above that, the full image is cheaper than any size in between,** for
+  both formats. Only small groups have tiles that big, so only a few full
+  images show at once, as on the full-size view, and they share its
+  cache: showing such a tile full size is sharp straight away.
+- **The tile image isn't the full image for every tile** because a full
+  image takes 40–52 MB and 35–45 ms for SwiftUI to prepare for display,
+  so a group of twenty would cost about a second of preparing, and it
+  would be shrunk on screen by up to seven times, which is likely to look
+  jagged.
+
+Fixed sizes mean resizing the window or opening another group doesn't
+start new reads for slightly different sizes, and the pick and keepers
+screens share what's cached. The thumbnail stands in until the larger
+image loads, as it already does at full size.
+
+- **The size.** `ImageSize.tile`, a constant for
+  `.thumbnail(longestSideLength: 1932)`, so the pipeline, cache, and
+  readers need no new kind of size. Each reader already reads that size
+  at its cheapest.
+- **The choice.** A pure, tested function from a tile's longest side in
+  pixels to the `ImageSize` to show, in `Images/`.
+- **The tiles.** `ThumbnailImage` already takes the tile's frame size.
+  It works out the image to show from that and the screen's scale, and
+  when that's larger than the thumbnail, it loads both, showing the
+  thumbnail until the larger image arrives. The thumbnail is still
+  loaded because the tiles' layout takes its aspect ratio from the cached
+  thumbnails. The sort screen's cells and the piles are at most 520 px,
+  so they load only the thumbnail, as now.
+
+To check in the app:
+
+- **Jaggedness.** A big group on the laptop has tiles of about 700 px
+  showing a 1932-pixel image, shrunk nearly three times on screen. If
+  that looks jagged, a further size around 1024 px would fix it, at no
+  extra cost for a JPEG.
+- **Hitches** while a big group's tile images arrive, from preparing them
+  for display.
+- **Stand-ins.** A tile could show the best image already cached rather
+  than always the thumbnail, which would matter when resizing the window
+  takes a tile past 1932 px. Only if it's noticeable.
 
 The sandbox stops Claude launching the app or Instruments, so the user
 runs the scenarios and shares the overlay's numbers or a saved trace.
@@ -1064,6 +1105,32 @@ as they do now.
 - The benchmark's shrink rows go, since its 520-pixel thumbnail row now
   times the same thing.
 
+### Tile sizes
+
+A throwaway benchmark on 7 November 2026 timed reads between 1024 px and
+the full image, each read directly and read at a cheap size then shrunk.
+Same machine and samples, and the times agree with the 6 November run.
+(Run inside Claude's sandbox, the same reads took about twice as long,
+though the shrinks didn't, so benchmarks must run outside it.)
+
+| Long side asked for | JPEG | RAW, landscape | RAW, portrait |
+|---|---|---|---|
+| 1024 px | 69 ms | 25 ms | 29 ms |
+| 1932 px, a quarter of a JPEG | 62 ms | 41 ms | 82 ms |
+| 2048 px | 104 ms | 42 ms | 98 ms |
+| 2400–3400 px | 108–119 ms | 81–96 ms | 94–148 ms |
+| The full image | 72 ms | 41 ms | 77 ms |
+
+- **Above about 2000 px, every size costs more than the full image.** A
+  RAW's preview as it is reads faster than any scaled read above 2208 px,
+  and a JPEG read anywhere between a quarter and a half costs more than
+  one at exactly a half.
+- **Reading at a cheap size then shrinking doesn't pay at these sizes.**
+  Shrinking a large image costs 10–80 ms, as much as the read saves or
+  more.
+- **1932 px is a JPEG's cheapest read,** 40% cheaper than 2048 px, and
+  costs a RAW the same.
+
 ## Steps
 
 Each step builds and passes the tests, then review and commit.
@@ -1097,8 +1164,13 @@ Each step builds and passes the tests, then review and commit.
    136 ms. RAFs unchanged.)
 7. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
-8. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
-   the pick and keepers screens load them, with the thumbnail standing
-   in. Run scenario 2 again and compare.
-9. **Review.** Look over the numbers for anything else worth doing, and
-   plan it separately if so.
+8. **Choosing a tile's image** (see "Sharper tiles"). `ImageSize.tile`,
+   and the function choosing between the thumbnail, the tile image, and
+   the full image, tested at and either side of each boundary. The
+   benchmark's 2048-pixel tile row becomes a 1932-pixel one.
+9. **Sharper tiles.** `ThumbnailImage` loads the chosen image, with the
+   thumbnail standing in, so the pick and keepers screens' tiles load
+   it. The user runs scenario 2 again on both screens, and looks at a
+   big group for jaggedness.
+10. **Review.** Look over the numbers for anything else worth doing, and
+    plan it separately if so.
