@@ -889,6 +889,11 @@ thumbnail stands in until the larger image loads, as it already does at
 full size. `ImageSize.thumbnail(maxPixelSize:)` already takes any size,
 so the pipeline and cache need no new kind of size.
 
+For a JPEG the fixed sizes cost more than they need to: 2048 px reads in
+about 102 ms against 62 ms at a quarter (see "The decoder's cheap sizes"
+below). A JPEG tile might read at a quarter or a half of the image,
+whichever is the cheapest that's sharp enough, then shrink.
+
 The sandbox stops Claude launching the app or Instruments, so the user
 runs the scenarios and shares the overlay's numbers or a saved trace.
 Claude can run the benchmark.
@@ -1005,6 +1010,59 @@ a few dropped frames. If stepping still stutters, the next thing to
 try is converting each image to the display's format in the background,
 after decoding, so SwiftUI has nothing left to convert.
 
+### The decoder's cheap sizes
+
+The benchmark gained reads either side of a half, a quarter, and an
+eighth of an X-T5 JPEG (7728 px) and of a RAF's preview (4416 px), and
+reads at 967 and 1932 px shrunk to 520 px. Run on 6 November 2026 on the
+same machine and samples. Every time came out lower than on 3 November
+(a JPEG's full image read in 75 ms, not 200 ms), so compare within this
+run only.
+
+| Long side asked for | JPEG read | RAF read, landscape |
+|---|---|---|
+| 483–966 px, an eighth of a JPEG or less | 136 ms | 20–25 ms |
+| 967 px | 68 ms | 25 ms |
+| 1104 px, a quarter of a RAF's preview | 70 ms | 20 ms |
+| 1105 px | 70 ms | 35 ms |
+| 1932 px, a quarter of a JPEG | 62 ms | 41 ms |
+| 1933 px | 100 ms | 42 ms |
+| 2048 px | 102 ms | 42 ms |
+| 2208 px, half a RAF's preview | 105 ms | 77 ms |
+| 967 px, shrunk to 520 px | 70 ms | |
+| 1932 px, shrunk to 520 px | 68 ms | |
+
+- **A JPEG read at an eighth of its size or less is the slowest read of
+  all,** twice the cost of one a pixel larger. The 520-pixel thumbnails
+  land there, at 136 ms each.
+- **A JPEG reads cheapest at a quarter,** and nearly as cheaply anywhere
+  above an eighth. A pixel over a quarter costs 60% more.
+- **Shrinking is nearly free:** 3 ms from 967 px, 7 ms from 1932 px. So a
+  JPEG thumbnail read at a quarter and shrunk to 520 px takes 68 ms, half
+  of what it does now, and is the same image, with the same draw time and
+  memory.
+- **RAFs have nothing to gain.** Their thumbnails already take 20 ms, and
+  half the preview reads more slowly than 2048 px, so no halving rule
+  carries over.
+
+### JPEG thumbnails at a quarter
+
+A JPEG thumbnail at an eighth of the image's size or less is read at a
+quarter of it instead, rounding down, then shrunk to the size asked for.
+The quarter rather than anything just over an eighth, since it costs the
+same and gives the shrink more detail. Larger thumbnails, and RAWs, read
+as they do now.
+
+- The size to read at is a pure, tested function of the image's long
+  side and the size asked for, beside `halvedSize`.
+- `ImageReader` shrinks by drawing into a smaller bitmap with high
+  quality interpolation, as the benchmark did. The read has already
+  applied the EXIF orientation, so the shrink keeps it upright.
+- A test writes a small JPEG and reads a thumbnail of it, to check the
+  shrunk image's size and orientation.
+- The benchmark's shrink rows go, since its 520-pixel thumbnail row now
+  times the same thing.
+
 ## Steps
 
 Each step builds and passes the tests, then review and commit.
@@ -1031,10 +1089,14 @@ Each step builds and passes the tests, then review and commit.
    halving, tested, then the pipeline reading `.full` with it, and the
    benchmark updated. The user repeats the J test on a JPEG group, on the
    external screen. (No hangs on either screen.)
-6. **Baseline.** The user runs the four scenarios. Record the results
+6. **JPEG thumbnails at a quarter** (see "JPEG thumbnails at a
+   quarter"). The read size, tested, then `ImageReader` reading and
+   shrinking with it, the JPEG test, and the benchmark run again to
+   confirm 520-pixel JPEG thumbnails take about 70 ms.
+7. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
-7. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
+8. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on
    the pick and keepers screens load them, with the thumbnail standing
    in. Run scenario 2 again and compare.
-8. **Review.** Look over the numbers for anything else worth doing, and
+9. **Review.** Look over the numbers for anything else worth doing, and
    plan it separately if so.
