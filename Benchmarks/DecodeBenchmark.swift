@@ -135,23 +135,14 @@ struct Read: Sendable {
         app("Thumbnail, 520 px", size: .thumbnail(maxPixelSize: 520)),
         app("Tile, 2048 px", size: .thumbnail(maxPixelSize: 2048)),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
-    ] + decoderSteps + shrinks
-
-    /// Reads at a size a JPEG decoder takes cheaply, then shrinks the image
-    /// to the thumbnail size, timed together. Compare with the 520 px
-    /// thumbnail read, which gives the same image.
-    static let shrinks: [Read] = [967, 1932].map { pixelSize in
-        Read(name: "At \(pixelSize), shrunk to 520") { url in
-            let image = ImageReader.image(from: url, size: .thumbnail(maxPixelSize: pixelSize))
-            return image.flatMap { shrink($0, toFit: 520) }
-        }
-    }
+    ] + decoderSteps
 
     /// Reads at the sizes either side of a half, a quarter, and an eighth
     /// of an X-T5 JPEG (7728 px) and of an X-T5 RAF's preview (4416 px).
     /// A JPEG decoder reads those fractions cheaply, so comparing a step
     /// with the pixel above it shows whether a read at that size gains
-    /// from landing on the step.
+    /// from landing on the step. A JPEG read at an eighth or less goes
+    /// through ImageReader's quarter-and-shrink, so those rows time that.
     static let decoderSteps: [Read] = [
         483, 520, 552, 553, 966, 967, 1104, 1105, 1932, 1933, 2048, 2208, 2209,
     ].map { pixelSize in
@@ -161,27 +152,6 @@ struct Read: Sendable {
     /// A read the app makes, of an image at a size.
     static func app(_ name: String, size: ImageSize) -> Read {
         Read(name: name) { ImageReader.image(from: $0, size: size) }
-    }
-
-    /// Shrinks an image so its longest side is a given size, by drawing it
-    /// into a smaller bitmap with high quality interpolation. Gives back
-    /// nil if the bitmap can't be made.
-    static func shrink(_ image: CGImage, toFit maxPixelSize: Int) -> CGImage? {
-        let scale = Double(maxPixelSize) / Double(max(image.width, image.height))
-        let width = Int((Double(image.width) * scale).rounded())
-        let height = Int((Double(image.height) * scale).rounded())
-        let context = CGContext(
-            data: nil,
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: image.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!,
-            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-        )
-        context?.interpolationQuality = .high
-        context?.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-        return context?.makeImage()
     }
 
     /// Decodes the image itself in full, rather than any preview: for a RAW,

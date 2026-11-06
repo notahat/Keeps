@@ -7,7 +7,9 @@ Loading, caching, and showing photos.
 than the JPEG preview in the user's RAW files, since a full-resolution
 image costs a long pause on the main thread when it first shows. A RAW's
 full image is its preview as it is, and a JPEG's is half its size or
-less, which its decoder reads quickly. `ImagePipeline` schedules those
+less, which its decoder reads quickly. A JPEG thumbnail of an eighth of
+its size or less is read at a quarter and shrunk, since its decoder
+reads that size twice as quickly. `ImagePipeline` schedules those
 reads on a bounded queue, with on-screen requests ahead of background
 prefetching, and caches the results in `ImageCache`. A view showing an
 image keeps its `WatchedImage`, which redraws only that view when the

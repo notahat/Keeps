@@ -1053,8 +1053,9 @@ The quarter rather than anything just over an eighth, since it costs the
 same and gives the shrink more detail. Larger thumbnails, and RAWs, read
 as they do now.
 
-- The size to read at is a pure, tested function of the image's long
-  side and the size asked for, beside `halvedSize`.
+- The rule lives in `ImageReader.jpegThumbnail`, which checks the image's
+  long side against the size asked for. (It began as a separate tested
+  function, but read more clearly inline.)
 - `ImageReader` shrinks by drawing into a smaller bitmap with high
   quality interpolation, as the benchmark did. The read has already
   applied the EXIF orientation, so the shrink keeps it upright.
@@ -1089,10 +1090,11 @@ Each step builds and passes the tests, then review and commit.
    halving, tested, then the pipeline reading `.full` with it, and the
    benchmark updated. The user repeats the J test on a JPEG group, on the
    external screen. (No hangs on either screen.)
-6. **JPEG thumbnails at a quarter** (see "JPEG thumbnails at a
+6. ✅ **JPEG thumbnails at a quarter** (see "JPEG thumbnails at a
    quarter"). The read size, tested, then `ImageReader` reading and
    shrinking with it, the JPEG test, and the benchmark run again to
-   confirm 520-pixel JPEG thumbnails take about 70 ms.
+   confirm 520-pixel JPEG thumbnails take about 70 ms. (69 ms, from
+   136 ms. RAFs unchanged.)
 7. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
 8. **Sharper tiles.** The fixed sizes, a pure function, tested. Tiles on

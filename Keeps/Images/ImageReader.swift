@@ -1,72 +1,164 @@
 import AppKit
 import ImageIO
 
-/// Pure functions for reading images from files using CGImageSource. All
-/// methods are safe to call from any thread.
+/// Reads photos from files as images scaled to the size the app wants
+/// (`ImageSize`). It holds no state, so all its methods are safe to call
+/// from any thread.
 ///
-/// Every read is scaled down. A thumbnail is read at the size it names. A
-/// full image is read at whichever size near `ImageSize.full`'s limit is
-/// cheapest for the file's format (see fullImageMaxPixelSize).
+/// A RAW file's image comes from the JPEG preview the camera embeds in it,
+/// which is far quicker than decoding the sensor data. A JPEG file's image
+/// is decoded from the image itself. The JPEG decoder is much quicker at
+/// some sizes than others, so the JPEG reads pick their sizes to suit it,
+/// as measured with Benchmarks/run-decode-benchmark.
+///
+/// Every read applies the photo's EXIF orientation, so portrait shots come
+/// out upright.
 enum ImageReader {
-    /// Reads a photo's image at a size, or nil if the file can't be read.
+    /// Read a photo's image at a size, returning nil if the file can't be
+    /// read.
     nonisolated static func image(from url: URL, size: ImageSize) -> CGImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
-        let isJPEG = isJPEG(url)
-        let maxPixelSize = switch size {
-        case let .thumbnail(maxPixelSize): maxPixelSize
-        case .full: fullImageMaxPixelSize(of: source, isJPEG: isJPEG)
+        return isJPEG(url) ? jpegImage(from: source, size: size) : rawImage(from: source, size: size)
+    }
+
+    /// Read a RAW file's image at a size.
+    private nonisolated static func rawImage(from source: CGImageSource, size: ImageSize) -> CGImage? {
+        switch size {
+        case let .thumbnail(targetLongestSideLength):
+            rawThumbnail(from: source, targetLongestSideLength: targetLongestSideLength)
+        case .full: rawFull(from: source)
         }
-        return scaledImage(from: source, isJPEG: isJPEG, maxPixelSize: maxPixelSize)
     }
 
-    /// The longest side a pixel size reaches by halving it until it's no
-    /// more than the limit, rounding down. A JPEG decoder can decode at
-    /// half, a quarter, or an eighth of the size for much less than the
-    /// whole image, but only at or below those sizes: a pixel more and it
-    /// decodes the whole image and then scales it down, which takes about
-    /// twice as long.
-    nonisolated static func halvedSize(of longestSide: Int, toAtMost limit: Int) -> Int {
-        var size = longestSide
-        while size > limit {
-            size /= 2
+    /// Read a JPEG file's image at a size.
+    private nonisolated static func jpegImage(from source: CGImageSource, size: ImageSize) -> CGImage? {
+        switch size {
+        case let .thumbnail(targetLongestSideLength):
+            jpegThumbnail(from: source, targetLongestSideLength: targetLongestSideLength)
+        case .full: jpegFull(from: source)
         }
-        return size
     }
 
-    /// The longest side to read a photo's full image at. A RAW's embedded
-    /// JPEG preview is read at the limit, which is the X-T5's preview size,
-    /// so it comes back as it is with nothing to scale. A JPEG is read at
-    /// a halving of its own size, which it decodes cheaply.
-    private nonisolated static func fullImageMaxPixelSize(of source: CGImageSource, isJPEG: Bool) -> Int {
-        let limit = ImageSize.fullImageMaxPixelSize
-        guard isJPEG, let longestSide = longestSide(of: source) else { return limit }
-        return halvedSize(of: longestSide, toAtMost: limit)
-    }
-
-    /// Reads an image scaled down to fit a square of the given size. For a
-    /// JPEG it decodes the image itself, rather than the tiny blurry
-    /// thumbnail embedded in the file. For a RAW it scales the embedded
-    /// JPEG preview, which is much quicker than decoding the RAW data.
-    /// kCGImageSourceCreateThumbnailWithTransform applies the EXIF
-    /// orientation, so portrait shots display upright with no extra
-    /// rotation.
-    private nonisolated static func scaledImage(
+    /// Read a RAW file's thumbnail by scaling its embedded JPEG preview
+    /// straight to the size asked for. At thumbnail sizes that takes about
+    /// 20 ms.
+    private nonisolated static func rawThumbnail(
         from source: CGImageSource,
-        isJPEG: Bool,
-        maxPixelSize: Int
+        targetLongestSideLength: Int
     ) -> CGImage? {
+        readScaledRAW(from: source, targetLongestSideLength: targetLongestSideLength)
+    }
+
+    /// Read a RAW file's embedded JPEG preview, at the preview's own size.
+    private nonisolated static func rawFull(from source: CGImageSource) -> CGImage? {
         let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: isJPEG,
-            kCGImageSourceCreateThumbnailFromImageIfAbsent: !isJPEG,
+            kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
         ]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
-    /// The longest side of the image in a file, in pixels, from its header,
-    /// or nil if the header doesn't say.
-    private nonisolated static func longestSide(of source: CGImageSource) -> Int? {
+    /// Read a JPEG file's thumbnail.
+    private nonisolated static func jpegThumbnail(
+        from source: CGImageSource,
+        targetLongestSideLength: Int
+    ) -> CGImage? {
+        guard let imageLongestSideLength = longestSideLength(of: source) else { return nil }
+        if targetLongestSideLength <= imageLongestSideLength / 8 {
+            // If the target side length is an eighth of the image's or less,
+            // load it at a quarter of the image's size, then shrink it.
+            // That's twice as fast as loading it directly at the target size.
+            guard let image = readScaledJPEG(from: source, targetLongestSideLength: imageLongestSideLength / 4) else { return nil }
+            return shrink(image, toLongestSideLength: targetLongestSideLength)
+        } else {
+            // ...otherwise load it directly at the target size.
+            return readScaledJPEG(from: source, targetLongestSideLength: targetLongestSideLength)
+        }
+    }
+
+    /// Read a JPEG file's full image.
+    private nonisolated static func jpegFull(from source: CGImageSource) -> CGImage? {
+        guard let imageLongestSideLength = longestSideLength(of: source) else { return nil }
+        // Load it at the image's size halved until it fits the limit. Loading
+        // at exactly a half takes half the time of a size a pixel larger.
+        let readLongestSideLength = halvedSize(
+            of: imageLongestSideLength,
+            toAtMost: ImageSize.fullImageMaxPixelSize
+        )
+        return readScaledJPEG(from: source, targetLongestSideLength: readLongestSideLength)
+    }
+
+    /// Halve an image's longest side length until it's no more than the
+    /// limit, rounding down, and return the result. A JPEG file's full
+    /// image is read at this length, since its decoder reads exactly a half
+    /// of the image cheaply, but a pixel more costs twice as much.
+    nonisolated static func halvedSize(of imageLongestSideLength: Int, toAtMost limit: Int) -> Int {
+        var length = imageLongestSideLength
+        while length > limit {
+            length /= 2
+        }
+        return length
+    }
+
+    /// Read a RAW file's embedded JPEG preview, scaled so its longest side is no
+    /// more than the target length.
+    private nonisolated static func readScaledRAW(
+        from source: CGImageSource,
+        targetLongestSideLength: Int
+    ) -> CGImage? {
+        let options: [CFString: Any] = [
+            // Fall back to generating the image from the RAW if there's no embedded JPEG.
+            kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: targetLongestSideLength,
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    }
+
+    /// Read a JPEG file's image, scaled so its longest side is no more than the
+    /// target length.
+    private nonisolated static func readScaledJPEG(
+        from source: CGImageSource,
+        targetLongestSideLength: Int
+    ) -> CGImage? {
+        let options: [CFString: Any] = [
+            // Always scale from the full image rather than using a smaller embedded preview.
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: targetLongestSideLength,
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    }
+
+    /// Shrink an image so its longest side is a given length, by drawing it
+    /// into a smaller bitmap with high quality interpolation, returning nil
+    /// if the bitmap can't be made. The image keeps its colour space
+    /// when that's RGB, and is converted to sRGB otherwise, since the
+    /// bitmap has no other layout to suit a grey or CMYK one.
+    private nonisolated static func shrink(_ image: CGImage, toLongestSideLength targetLongestSideLength: Int) -> CGImage? {
+        let scale = Double(targetLongestSideLength) / Double(max(image.width, image.height))
+        let width = max(1, Int((Double(image.width) * scale).rounded()))
+        let height = max(1, Int((Double(image.height) * scale).rounded()))
+        let colorSpace = image.colorSpace.flatMap { $0.model == .rgb ? $0 : nil }
+            ?? CGColorSpace(name: CGColorSpace.sRGB)!
+        let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+        )
+        context?.interpolationQuality = .high
+        context?.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context?.makeImage()
+    }
+
+    /// Read the length in pixels of the longest side of a file's image. The
+    /// length comes from the file's header, so the image isn't decoded.
+    /// Return nil if the header doesn't give it.
+    private nonisolated static func longestSideLength(of source: CGImageSource) -> Int? {
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
         guard let width = properties?[kCGImagePropertyPixelWidth] as? Int,
               let height = properties?[kCGImagePropertyPixelHeight] as? Int
@@ -74,7 +166,7 @@ enum ImageReader {
         return max(width, height)
     }
 
-    /// Whether a file is a JPEG, going by its extension.
+    /// Return true if a file is a JPEG, going by its extension.
     private nonisolated static func isJPEG(_ url: URL) -> Bool {
         ["jpg", "jpeg"].contains(url.pathExtension.lowercased())
     }
