@@ -14,6 +14,14 @@ import ImageIO
 /// Every read applies the photo's EXIF orientation, so portrait shots come
 /// out upright.
 enum ImageReader {
+    /// When a JPEG file is read as a full image, it's scaled down so its
+    /// longest side is no more than this many pixels. The limit matches the
+    /// JPEG preview a Fuji X-T5 embeds in its RAW files, which looks sharp
+    /// enough even on a large external screen.
+    /// Reading JPEG files in full, at 40 MP, makes Core Animation pause the
+    /// main thread each time one first shows.
+    private nonisolated static let maxFullImageLongestSideLength = 4416
+
     /// Read a photo's image at a size, returning nil if the file can't be
     /// read.
     nonisolated static func image(from url: URL, size: ImageSize) -> CGImage? {
@@ -83,7 +91,7 @@ enum ImageReader {
         // at exactly a half takes half the time of a size a pixel larger.
         let readLongestSideLength = halvedSize(
             of: imageLongestSideLength,
-            toAtMost: ImageSize.fullImageMaxPixelSize
+            toAtMost: maxFullImageLongestSideLength
         )
         return readScaledJPEG(from: source, targetLongestSideLength: readLongestSideLength)
     }

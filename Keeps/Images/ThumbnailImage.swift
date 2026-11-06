@@ -58,7 +58,7 @@ struct ThumbnailImage: View {
     static let pixelSize: Int = displaySize * 2
 
     /// The size thumbnails are read and cached at.
-    static let imageSize: ImageSize = .thumbnail(maxPixelSize: pixelSize)
+    static let imageSize: ImageSize = .thumbnail(longestSideLength: pixelSize)
 
     /// The shape of most camera sensors, width over height, for laying out
     /// photos before their thumbnails have loaded, or piles whose photos

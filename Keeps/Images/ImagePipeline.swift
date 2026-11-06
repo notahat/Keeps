@@ -189,7 +189,7 @@ final class ImagePipeline {
     /// The key a read is tracked by: the item and the size.
     private func readKey(for item: PhotoItem, size: ImageSize) -> String {
         switch size {
-        case let .thumbnail(maxPixelSize): "\(item.id)@\(maxPixelSize)"
+        case let .thumbnail(longestSideLength): "\(item.id)@\(longestSideLength)"
         case .full: "\(item.id)@full"
         }
     }

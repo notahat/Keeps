@@ -48,7 +48,7 @@ final class ImageCache {
     /// The key an image is cached under: the photo's file and the size.
     private func cacheKey(for item: PhotoItem, size: ImageSize) -> String {
         switch size {
-        case let .thumbnail(maxPixelSize): "\(item.sourceURL.path)@\(maxPixelSize)"
+        case let .thumbnail(longestSideLength): "\(item.sourceURL.path)@\(longestSideLength)"
         case .full: "\(item.sourceURL.path)@full"
         }
     }
@@ -118,7 +118,7 @@ private nonisolated extension ImageSize {
     /// Where the size sorts in a list: thumbnails by size, then full.
     var sortOrder: Int {
         switch self {
-        case let .thumbnail(maxPixelSize): maxPixelSize
+        case let .thumbnail(longestSideLength): longestSideLength
         case .full: .max
         }
     }

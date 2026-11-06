@@ -132,8 +132,8 @@ struct Read: Sendable {
     /// steps a JPEG decoder takes cheaply.
     static let all: [Read] = [
         app("Full size view", size: .full),
-        app("Thumbnail, 520 px", size: .thumbnail(maxPixelSize: 520)),
-        app("Tile, 2048 px", size: .thumbnail(maxPixelSize: 2048)),
+        app("Thumbnail, 520 px", size: .thumbnail(longestSideLength: 520)),
+        app("Tile, 2048 px", size: .thumbnail(longestSideLength: 2048)),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
     ] + decoderSteps
 
@@ -145,8 +145,8 @@ struct Read: Sendable {
     /// through ImageReader's quarter-and-shrink, so those rows time that.
     static let decoderSteps: [Read] = [
         483, 520, 552, 553, 966, 967, 1104, 1105, 1932, 1933, 2048, 2208, 2209,
-    ].map { pixelSize in
-        app("At \(pixelSize) px", size: .thumbnail(maxPixelSize: pixelSize))
+    ].map { longestSideLength in
+        app("At \(longestSideLength) px", size: .thumbnail(longestSideLength: longestSideLength))
     }
 
     /// A read the app makes, of an image at a size.
