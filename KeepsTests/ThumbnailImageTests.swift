@@ -16,12 +16,12 @@ struct ThumbnailImageTests {
 
     @Test("A frame a fraction of a pixel longer than a thumbnail shows the tile image")
     func tileImageJustAboveThumbnail() {
-        #expect(ThumbnailImage.chooseImageSize(forLongestSideLength: 520.5) == .tile)
+        #expect(ThumbnailImage.chooseImageSize(forLongestSideLength: 520.5) == ThumbnailImage.tileImageSize)
     }
 
     @Test("A frame as long as the tile image shows the tile image")
     func tileImageAtItsLength() {
-        #expect(ThumbnailImage.chooseImageSize(forLongestSideLength: 1932) == .tile)
+        #expect(ThumbnailImage.chooseImageSize(forLongestSideLength: 1932) == ThumbnailImage.tileImageSize)
     }
 
     @Test("A frame a fraction of a pixel longer than the tile image shows the full image")

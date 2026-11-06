@@ -65,14 +65,25 @@ struct ThumbnailImage: View {
     /// The size thumbnails are read and cached at.
     static let imageSize: ImageSize = .thumbnail(longestSideLength: pixelSize)
 
+    /// The longest side of the tile image, in pixels. 1932 px is a quarter
+    /// of a Fuji X-T5 JPEG file's longest side, which the JPEG decoder reads
+    /// more cheaply than any other size. Reading a RAW file at this size
+    /// costs no more than at 2048 px. A frame larger than this shows the
+    /// full image, which reads more cheaply than any size in between.
+    static let tileLongestSideLength: Int = 1932
+
+    /// The size tile images are read and cached at, for frames larger than
+    /// a thumbnail but no longer than the tile image's longest side.
+    static let tileImageSize: ImageSize = .thumbnail(longestSideLength: tileLongestSideLength)
+
     /// Choose the image to show in a frame whose longest side is this many
     /// pixels long: the smallest of the thumbnail, the tile image, and the
     /// full image that's at least that long.
     static func chooseImageSize(forLongestSideLength length: CGFloat) -> ImageSize {
         if length <= CGFloat(pixelSize) {
             imageSize
-        } else if length <= CGFloat(ImageSize.tileLongestSideLength) {
-            .tile
+        } else if length <= CGFloat(tileLongestSideLength) {
+            tileImageSize
         } else {
             .full
         }

@@ -909,8 +909,9 @@ start new reads for slightly different sizes, and the pick and keepers
 screens share what's cached. The thumbnail stands in until the larger
 image loads, as it already does at full size.
 
-- **The size.** `ImageSize.tile`, a constant for
-  `.thumbnail(longestSideLength: 1932)`, so the pipeline, cache, and
+- **The size.** `ThumbnailImage.tileImageSize`, a constant for
+  `.thumbnail(longestSideLength: 1932)` beside the thumbnail's size, so
+  the pipeline, cache, and
   readers need no new kind of size. Each reader already reads that size
   at its cheapest.
 - **The choice.** A pure, tested function from a tile's longest side in
@@ -1167,7 +1168,8 @@ Each step builds and passes the tests, then review and commit.
 8. ✅ **Choosing a tile's image** (see "Sharper tiles").
    (`ThumbnailImage.chooseImageSize(forLongestSideLength:)`, beside the
    thumbnail size it compares with. The benchmark's tile row reads in
-   60 ms for a JPEG and 41 ms for a RAW.) `ImageSize.tile`,
+   60 ms for a JPEG and 41 ms for a RAW. The tile image's size is
+   `ThumbnailImage.tileImageSize`.) `ImageSize.tile`,
    and the function choosing between the thumbnail, the tile image, and
    the full image, tested at and either side of each boundary. The
    benchmark's 2048-pixel tile row becomes a 1932-pixel one.

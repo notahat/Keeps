@@ -129,11 +129,13 @@ struct Read: Sendable {
 
     /// The reads the app makes, then a decode of the whole image, which
     /// the app doesn't do yet but 100% zoom would need, then reads at the
-    /// steps a JPEG decoder takes cheaply.
+    /// steps a JPEG decoder takes cheaply. The thumbnail and tile sizes
+    /// are ThumbnailImage's pixelSize and tileLongestSideLength, written
+    /// out here because the benchmark doesn't compile that view.
     static let all: [Read] = [
         app("Full size view", size: .full),
         app("Thumbnail, 520 px", size: .thumbnail(longestSideLength: 520)),
-        app("Tile, \(ImageSize.tileLongestSideLength) px", size: .tile),
+        app("Tile, 1932 px", size: .thumbnail(longestSideLength: 1932)),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
     ] + decoderSteps
 
