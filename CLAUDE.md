@@ -37,8 +37,7 @@ folder needs adding to that exception list.
   `GridScrolling` does the scrolling; the geometry is in pure, tested
   helpers (`PhotoGridMetrics`, `GridHitTarget`).
 - `Pick/` — the pick screen. `PickScreen` draws the open group's tiles and
-  handles input, laying them out with `TileLayout`. Still being built (see
-  PLAN.md).
+  handles input, laying them out with `TileLayout`.
 - `Done/` — the done screen. `DoneScreen` shows the done groups as piles,
   any of which can be opened on the pick screen.
 - `Keepers/` — the keepers screen. `KeepersScreen` shows the keepers of
