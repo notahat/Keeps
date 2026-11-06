@@ -5,11 +5,13 @@ Loading, caching, and showing photos.
 `ImageReader` decodes files into images, scaled to the size asked for
 (`ImageSize`): thumbnails for cells and tiles, and full images no bigger
 than the JPEG preview in the user's RAW files, since a full-resolution
-image costs a long pause on the main thread when it first shows. A RAW's
-full image is its preview as it is, and a JPEG's is half its size or
-less, which its decoder reads quickly. A JPEG thumbnail of an eighth of
-its size or less is read at a quarter and shrunk, since its decoder
-reads that size twice as quickly. `ImagePipeline` schedules those
+image costs a long pause on the main thread when it first shows. It hands
+each file to the reader for its format. `RAWImageReader` reads a RAW
+file's embedded preview, as it is for a full image. `JPEGImageReader`
+reads a JPEG file's full image at half its size or less, which its
+decoder reads quickly, and a thumbnail of an eighth of its size or less
+at a quarter, then shrinks it, since its decoder reads that size twice as
+quickly. `ImagePipeline` schedules those
 reads on a bounded queue, with on-screen requests ahead of background
 prefetching, and caches the results in `ImageCache`. A view showing an
 image keeps its `WatchedImage`, which redraws only that view when the

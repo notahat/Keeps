@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the decode benchmark with the app's ImageReader and ImageSize, then
+# Builds the decode benchmark with the app's image readers and ImageSize, then
 # runs it over the photos in Samples/, or in the folders or files given as
 # arguments.
 set -eu
@@ -9,7 +9,11 @@ binary="${TMPDIR:-/tmp}/keeps-decode-benchmark"
 
 swiftc -O -swift-version 6 -parse-as-library \
     -o "$binary" \
-    Benchmarks/DecodeBenchmark.swift Keeps/Images/ImageReader.swift Keeps/Images/ImageSize.swift
+    Benchmarks/DecodeBenchmark.swift \
+    Keeps/Images/ImageReader.swift \
+    Keeps/Images/RAWImageReader.swift \
+    Keeps/Images/JPEGImageReader.swift \
+    Keeps/Images/ImageSize.swift
 
 if [ "$#" -eq 0 ]; then
     set -- Samples

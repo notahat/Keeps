@@ -3,7 +3,7 @@ import ImageIO
 
 /// Times ImageReader's reads over sample photos, to show what each kind of
 /// read costs and what size of image it gives back. It's compiled together
-/// with the app's ImageReader.swift and ImageSize.swift (see
+/// with the app's image readers and ImageSize.swift (see
 /// run-decode-benchmark), so it times the app's own code, at the sizes
 /// the app reads.
 ///
@@ -142,7 +142,7 @@ struct Read: Sendable {
     /// A JPEG decoder reads those fractions cheaply, so comparing a step
     /// with the pixel above it shows whether a read at that size gains
     /// from landing on the step. A JPEG read at an eighth or less goes
-    /// through ImageReader's quarter-and-shrink, so those rows time that.
+    /// through JPEGImageReader's quarter-and-shrink, so those rows time that.
     static let decoderSteps: [Read] = [
         483, 520, 552, 553, 966, 967, 1104, 1105, 1932, 1933, 2048, 2208, 2209,
     ].map { longestSideLength in
