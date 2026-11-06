@@ -1164,7 +1164,10 @@ Each step builds and passes the tests, then review and commit.
    136 ms. RAFs unchanged.)
 7. **Baseline.** The user runs the four scenarios. Record the results
    here and agree what good looks like.
-8. **Choosing a tile's image** (see "Sharper tiles"). `ImageSize.tile`,
+8. ✅ **Choosing a tile's image** (see "Sharper tiles").
+   (`ThumbnailImage.chooseImageSize(forLongestSideLength:)`, beside the
+   thumbnail size it compares with. The benchmark's tile row reads in
+   60 ms for a JPEG and 41 ms for a RAW.) `ImageSize.tile`,
    and the function choosing between the thumbnail, the tile image, and
    the full image, tested at and either side of each boundary. The
    benchmark's 2048-pixel tile row becomes a 1932-pixel one.

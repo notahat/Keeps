@@ -60,6 +60,19 @@ struct ThumbnailImage: View {
     /// The size thumbnails are read and cached at.
     static let imageSize: ImageSize = .thumbnail(longestSideLength: pixelSize)
 
+    /// Choose the image to show in a frame whose longest side is this many
+    /// pixels long: the smallest of the thumbnail, the tile image, and the
+    /// full image that's at least that long.
+    static func chooseImageSize(forLongestSideLength length: CGFloat) -> ImageSize {
+        if length <= CGFloat(pixelSize) {
+            imageSize
+        } else if length <= CGFloat(ImageSize.tileLongestSideLength) {
+            .tile
+        } else {
+            .full
+        }
+    }
+
     /// The shape of most camera sensors, width over height, for laying out
     /// photos before their thumbnails have loaded, or piles whose photos
     /// may differ.

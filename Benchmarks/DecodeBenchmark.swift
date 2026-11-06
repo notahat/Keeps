@@ -133,7 +133,7 @@ struct Read: Sendable {
     static let all: [Read] = [
         app("Full size view", size: .full),
         app("Thumbnail, 520 px", size: .thumbnail(longestSideLength: 520)),
-        app("Tile, 2048 px", size: .thumbnail(longestSideLength: 2048)),
+        app("Tile, \(ImageSize.tileLongestSideLength) px", size: .tile),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
     ] + decoderSteps
 
