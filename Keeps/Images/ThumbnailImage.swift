@@ -1,14 +1,19 @@
 import AppKit
 import SwiftUI
 
-/// Shows one photo's thumbnail in a fixed-size frame, square unless given a
-/// size, with a placeholder until the thumbnail loads.
+/// Shows one photo in a fixed-size frame, square unless given a size, with
+/// a placeholder until its thumbnail loads.
 ///
-/// When the view appears, it asks the image pipeline for the thumbnail at
-/// the priority for images on screen. When it disappears, it drops the
-/// request to background priority, so thumbnails on screen load before
-/// ones that have scrolled away. It can draw a border round the image,
-/// because only this view knows the image's real shape.
+/// A frame larger than a thumbnail, such as a tile on the pick or keepers
+/// screen, also loads a larger image, the tile image or the full image,
+/// chosen by the frame's size in pixels. The thumbnail stands in until the
+/// larger image arrives.
+///
+/// When the view appears, it asks the image pipeline for its images at the
+/// priority for images on screen. When it disappears, it drops the
+/// requests to background priority, so images on screen load before ones
+/// that have scrolled away. It can draw a border round the image, because
+/// only this view knows the image's real shape.
 ///
 /// It draws no selection highlight, badge, or other decoration; the screens
 /// add their own on top.
@@ -28,8 +33,8 @@ struct ThumbnailImage: View {
     /// What to show while the image loads.
     var placeholder: Placeholder = .square
 
-    /// The space the image is fitted into. The same thumbnail is loaded
-    /// whatever this is, so a larger frame scales it up.
+    /// The space the image is fitted into. A frame larger than a thumbnail
+    /// loads a larger image too.
     var frameSize = CGSize(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
 
     /// Receives the image's width-to-height ratio once it has loaded.
@@ -97,40 +102,67 @@ struct ThumbnailImage: View {
         return TileLayout.commonAspectRatio(of: ratios) ?? typicalAspectRatio
     }
 
+    /// How many pixels the screen has to a point.
+    @Environment(\.displayScale) private var displayScale
+
     /// The thumbnail, which redraws this view when it loads. It's nil until
     /// the view first appears.
     @State private var thumbnail: WatchedImage?
 
+    /// The larger image the frame calls for, which redraws this view when it
+    /// loads. It's nil when the frame is no larger than a thumbnail.
+    @State private var largerImage: WatchedImage?
+
+    /// The size of the larger image the frame calls for, or nil when the
+    /// frame is no larger than a thumbnail.
+    private var largerImageSize: ImageSize? {
+        let longestSideLength = max(frameSize.width, frameSize.height) * displayScale
+        let size = Self.chooseImageSize(forLongestSideLength: longestSideLength)
+        return size == Self.imageSize ? nil : size
+    }
+
     var body: some View {
         ThumbnailFrame(
-            image: thumbnail?.image,
+            image: largerImage?.image ?? thumbnail?.image,
             borderWidth: borderWidth,
             borderColor: borderColor,
             placeholder: placeholder,
             frameSize: frameSize
         )
         .onAppear {
-            loadThumbnail()
+            // The thumbnail is asked for first, so it's read first and can
+            // stand in while the larger image loads.
+            thumbnail = loadImage(size: Self.imageSize)
+            largerImage = largerImageSize.map { loadImage(size: $0) }
         }
         .onDisappear {
             ImagePipeline.shared.deprioritizeImage(for: item, size: Self.imageSize)
+            if let largerImageSize {
+                ImagePipeline.shared.deprioritizeImage(for: item, size: largerImageSize)
+            }
+        }
+        .onChange(of: largerImageSize) { oldSize, newSize in
+            if let oldSize {
+                ImagePipeline.shared.deprioritizeImage(for: item, size: oldSize)
+            }
+            largerImage = newSize.map { loadImage(size: $0) }
         }
         .onChange(of: thumbnail?.image) { _, loaded in
             reportAspectRatio(of: loaded)
         }
     }
 
-    /// Starts watching the thumbnail, and asks for it to be read if it isn't
-    /// cached.
-    private func loadThumbnail() {
-        let watched = ImagePipeline.shared.watchedImage(for: item, size: Self.imageSize)
-        thumbnail = watched
-        guard watched.image == nil else { return }
+    /// Start watching the photo's image at a size, ask for it to be read if
+    /// it isn't cached, and return the watched image.
+    private func loadImage(size: ImageSize) -> WatchedImage {
+        let watched = ImagePipeline.shared.watchedImage(for: item, size: size)
+        guard watched.image == nil else { return watched }
         if loadsInBackground {
-            ImagePipeline.shared.prefetchImage(for: item, size: Self.imageSize)
+            ImagePipeline.shared.prefetchImage(for: item, size: size)
         } else {
-            ImagePipeline.shared.requestImage(for: item, size: Self.imageSize)
+            ImagePipeline.shared.requestImage(for: item, size: size)
         }
+        return watched
     }
 
     /// Passes a loaded thumbnail's width-to-height ratio to

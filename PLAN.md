@@ -1171,7 +1171,8 @@ Each step builds and passes the tests, then review and commit.
    and the function choosing between the thumbnail, the tile image, and
    the full image, tested at and either side of each boundary. The
    benchmark's 2048-pixel tile row becomes a 1932-pixel one.
-9. **Sharper tiles.** `ThumbnailImage` loads the chosen image, with the
+9. ✅ **Sharper tiles.** (Checked by eye in the app; no numbers
+   recorded.) `ThumbnailImage` loads the chosen image, with the
    thumbnail standing in, so the pick and keepers screens' tiles load
    it. The user runs scenario 2 again on both screens, and looks at a
    big group for jaggedness.

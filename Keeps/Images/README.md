@@ -17,7 +17,11 @@ prefetching, and caches the results in `ImageCache`. A view showing an
 image keeps its `WatchedImage`, which redraws only that view when the
 image arrives.
 
-`ThumbnailImage` shows a photo's thumbnail. `FullSizeImage` shows a photo
+`ThumbnailImage` shows a photo's thumbnail, and in a frame larger than a
+thumbnail, such as a tile, a larger image too: the 1932-pixel tile image,
+or the full image for the largest tiles, which a JPEG's and a RAW's
+decoders read more cheaply than any size in between. The thumbnail stands
+in until the larger image loads. `FullSizeImage` shows a photo
 full size, with its thumbnail standing in until it loads and its
 neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
 far the current burst of loading has got.
