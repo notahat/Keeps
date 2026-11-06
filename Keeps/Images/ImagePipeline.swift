@@ -18,8 +18,8 @@ final class WatchedImage {
 
 /// Schedules image reads and caches the results. Every read goes through a
 /// bounded OperationQueue at one of four priorities: the full-size image
-/// being looked at, then the full-size images near it, then thumbnails on
-/// screen, then background prefetching. A view gets a WatchedImage from
+/// being looked at, then the full-size images near it, then scaled images
+/// on screen, then background prefetching. A view gets a WatchedImage from
 /// `watchedImage(for:size:)` and reads its image in its body, so the view
 /// redraws when the image loads, without suspending on async/await. It
 /// doesn't decode files itself (that's ImageReader's job) or draw anything.
@@ -34,11 +34,11 @@ final class ImagePipeline {
     /// The full-size images either side of it, read ahead.
     private static let nearbyImagePriority: Operation.QueuePriority = .high
 
-    /// Thumbnails on screen. Low rather than normal so that full-size reads
-    /// always pre-empt them.
-    private static let visibleThumbnailPriority: Operation.QueuePriority = .low
+    /// Scaled images on screen, such as thumbnails and medium images. Low
+    /// rather than normal so that full-size reads always pre-empt them.
+    private static let visibleScaledImagePriority: Operation.QueuePriority = .low
 
-    /// Thumbnails read ahead in the background.
+    /// Scaled images read ahead in the background.
     private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
 
     private let cache = ImageCache()
@@ -174,7 +174,7 @@ final class ImagePipeline {
     private func requestPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
         case .full: Self.currentImagePriority
-        case .thumbnail: Self.visibleThumbnailPriority
+        case .scaled: Self.visibleScaledImagePriority
         }
     }
 
@@ -182,14 +182,14 @@ final class ImagePipeline {
     private func prefetchPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
         case .full: Self.nearbyImagePriority
-        case .thumbnail: Self.backgroundPrefetchPriority
+        case .scaled: Self.backgroundPrefetchPriority
         }
     }
 
     /// The key a read is tracked by: the item and the size.
     private func readKey(for item: PhotoItem, size: ImageSize) -> String {
         switch size {
-        case let .thumbnail(longestSideLength): "\(item.id)@\(longestSideLength)"
+        case let .scaled(longestSideLength): "\(item.id)@\(longestSideLength)"
         case .full: "\(item.id)@full"
         }
     }

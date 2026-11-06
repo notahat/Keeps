@@ -39,8 +39,8 @@ final class ImageCache {
         cache.setObject(image, forKey: key)
     }
 
-    /// What's cached at each size: thumbnails from smallest to largest, then
-    /// full-size images.
+    /// What's cached at each size: scaled images from smallest to largest,
+    /// then full-size images.
     func contents() -> [Contents] {
         tally.contents()
     }
@@ -48,7 +48,7 @@ final class ImageCache {
     /// The key an image is cached under: the photo's file and the size.
     private func cacheKey(for item: PhotoItem, size: ImageSize) -> String {
         switch size {
-        case let .thumbnail(longestSideLength): "\(item.sourceURL.path)@\(longestSideLength)"
+        case let .scaled(longestSideLength): "\(item.sourceURL.path)@\(longestSideLength)"
         case .full: "\(item.sourceURL.path)@full"
         }
     }
@@ -87,7 +87,7 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
         ImageSignposts.markEviction(of: size)
     }
 
-    /// The counts at each size, thumbnails from smallest to largest, then
+    /// The counts at each size, scaled images from smallest to largest, then
     /// full-size images.
     func contents() -> [ImageCache.Contents] {
         let grouped = entries.withLock { entries in
@@ -115,10 +115,10 @@ private nonisolated extension Array {
 }
 
 private nonisolated extension ImageSize {
-    /// Where the size sorts in a list: thumbnails by size, then full.
+    /// Where the size sorts in a list: scaled images by size, then full.
     var sortOrder: Int {
         switch self {
-        case let .thumbnail(longestSideLength): longestSideLength
+        case let .scaled(longestSideLength): longestSideLength
         case .full: .max
         }
     }

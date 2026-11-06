@@ -5,11 +5,11 @@ import Testing
 import UniformTypeIdentifiers
 
 struct ImageReaderTests {
-    @Test("A small JPEG thumbnail comes back at the size asked for, upright")
-    func readsSmallThumbnailUpright() throws {
+    @Test("A small scaled JPEG image comes back at the size asked for, upright")
+    func readsSmallScaledImageUpright() throws {
         let url = try writeJPEG(width: 400, height: 200, orientation: .right)
 
-        let image = ImageReader.image(from: url, size: .thumbnail(longestSideLength: 40))
+        let image = ImageReader.image(from: url, size: .scaled(longestSideLength: 40))
 
         #expect(image?.width == 20)
         #expect(image?.height == 40)

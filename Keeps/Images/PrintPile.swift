@@ -53,7 +53,7 @@ struct PrintPile: View {
     /// they load in the background.
     @ViewBuilder private func pilePrint(of photo: PhotoItem, layer: Int) -> some View {
         if layer < Self.photoLayerCount {
-            ThumbnailImage(
+            FramedPhoto(
                 item: photo,
                 borderWidth: borderWidth,
                 loadsInBackground: layer > 0,
@@ -70,7 +70,7 @@ struct PrintPile: View {
     /// What a print shows while loading: blank paper once its shape is
     /// known, otherwise the usual square for the top print and nothing for
     /// the ones beneath.
-    private func placeholder(isTopLayer: Bool) -> ThumbnailImage.Placeholder {
+    private func placeholder(isTopLayer: Bool) -> FramedPhoto.Placeholder {
         if let paperAspectRatio {
             return .paper(aspectRatio: paperAspectRatio)
         }
@@ -119,7 +119,7 @@ struct PileLabel: View {
 }
 
 #Preview("Large pile, blank prints beneath") {
-    PrintPile(photos: PreviewPhotos.makeItems(count: 12), length: 260, aspectRatio: ThumbnailImage.typicalAspectRatio)
+    PrintPile(photos: PreviewPhotos.makeItems(count: 12), length: 260, aspectRatio: FramedPhoto.typicalAspectRatio)
         .padding()
         .background(.black)
 }

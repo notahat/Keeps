@@ -7,16 +7,15 @@ enum RAWImageReader {
     /// Read a RAW file's image at a size.
     nonisolated static func image(from source: CGImageSource, size: ImageSize) -> CGImage? {
         switch size {
-        case let .thumbnail(targetLongestSideLength):
-            thumbnail(from: source, targetLongestSideLength: targetLongestSideLength)
+        case let .scaled(targetLongestSideLength):
+            scaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
         case .full: fullImage(from: source)
         }
     }
 
-    /// Read a RAW file's thumbnail by scaling its embedded JPEG preview
-    /// straight to the size asked for. At thumbnail sizes that takes about
-    /// 20 ms.
-    private nonisolated static func thumbnail(
+    /// Read a RAW file's scaled image by scaling its embedded JPEG preview
+    /// straight to the size asked for. A thumbnail takes about 20 ms.
+    private nonisolated static func scaledImage(
         from source: CGImageSource,
         targetLongestSideLength: Int
     ) -> CGImage? {

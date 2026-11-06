@@ -28,7 +28,7 @@ enum PreviewPhotos {
             fatalError("Missing preview photo \(fileName).jpg")
         }
         let item = PhotoItem(id: UUID(), stem: stem, rawURL: nil, jpegURL: url, fileCreationDate: .now)
-        ImagePipeline.shared.loadImageImmediately(for: item, size: ThumbnailImage.imageSize)
+        ImagePipeline.shared.loadImageImmediately(for: item, size: FramedPhoto.thumbnailSize)
         return item
     }
 }

@@ -58,7 +58,7 @@ struct FolderSidebar: View {
         PrintPile(
             photos: photoIndices.map { grouping.items[$0] },
             length: Self.length,
-            aspectRatio: ThumbnailImage.typicalAspectRatio
+            aspectRatio: FramedPhoto.typicalAspectRatio
         )
         .overlay(alignment: .bottom) {
             PileLabel(text: label, color: color)

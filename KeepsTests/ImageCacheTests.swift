@@ -10,11 +10,11 @@ struct ImageCacheTests {
         let items = makePhotoItems(count: 3)
 
         cache.setImage(makeImage(width: 10, height: 5), for: items[0], size: .full)
-        cache.setImage(makeImage(width: 4, height: 2), for: items[1], size: .thumbnail(longestSideLength: 4))
-        cache.setImage(makeImage(width: 4, height: 4), for: items[2], size: .thumbnail(longestSideLength: 4))
+        cache.setImage(makeImage(width: 4, height: 2), for: items[1], size: .scaled(longestSideLength: 4))
+        cache.setImage(makeImage(width: 4, height: 4), for: items[2], size: .scaled(longestSideLength: 4))
 
         #expect(cache.contents() == [
-            ImageCache.Contents(size: .thumbnail(longestSideLength: 4), imageCount: 2, byteCount: (8 + 16) * 4),
+            ImageCache.Contents(size: .scaled(longestSideLength: 4), imageCount: 2, byteCount: (8 + 16) * 4),
             ImageCache.Contents(size: .full, imageCount: 1, byteCount: 50 * 4),
         ])
     }

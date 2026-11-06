@@ -17,14 +17,14 @@ enum JPEGImageReader {
     /// Read a JPEG file's image at a size.
     nonisolated static func image(from source: CGImageSource, size: ImageSize) -> CGImage? {
         switch size {
-        case let .thumbnail(targetLongestSideLength):
-            thumbnail(from: source, targetLongestSideLength: targetLongestSideLength)
+        case let .scaled(targetLongestSideLength):
+            scaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
         case .full: fullImage(from: source)
         }
     }
 
-    /// Read a JPEG file's thumbnail.
-    private nonisolated static func thumbnail(
+    /// Read a JPEG file's scaled image.
+    private nonisolated static func scaledImage(
         from source: CGImageSource,
         targetLongestSideLength: Int
     ) -> CGImage? {

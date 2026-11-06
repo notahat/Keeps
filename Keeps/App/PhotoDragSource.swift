@@ -92,7 +92,7 @@ final class PhotoDragView: NSView, NSDraggingSource {
     /// the file's icon if the thumbnail isn't loaded) centred on the pointer.
     private func makeDraggingItem(for photo: PhotoItem, at location: NSPoint) -> NSDraggingItem {
         let item = NSDraggingItem(pasteboardWriter: photo.sourceURL as NSURL)
-        let image = ImagePipeline.shared.cachedImage(for: photo, size: ThumbnailImage.imageSize)
+        let image = ImagePipeline.shared.cachedImage(for: photo, size: FramedPhoto.thumbnailSize)
             ?? NSWorkspace.shared.icon(forFile: photo.sourceURL.path)
         let size = Self.dragImageSize(for: image.size)
         let frame = NSRect(

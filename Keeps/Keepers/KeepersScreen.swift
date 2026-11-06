@@ -44,7 +44,7 @@ struct KeepersScreen: View {
     init(grouping: Grouping) {
         self.grouping = grouping
         let keepers = grouping.keepersOfDoneGroups.map { grouping.items[$0] }
-        _aspectRatio = State(initialValue: ThumbnailImage.commonAspectRatio(of: keepers))
+        _aspectRatio = State(initialValue: FramedPhoto.commonAspectRatio(of: keepers))
     }
 
     var body: some View {
@@ -124,7 +124,7 @@ struct KeepersScreen: View {
     /// The tile for a keeper, in its frame, with the selection highlight and
     /// click handling.
     private func tile(of keeper: PhotoItem, index: Int, frame: CGRect) -> some View {
-        ThumbnailImage(item: keeper, frameSize: frame.size)
+        FramedPhoto(item: keeper, frameSize: frame.size)
             .selectionHighlight(isSelected: index == selectedIndex)
             .contentShape(Rectangle())
             // The single click is a simultaneous gesture. As a second

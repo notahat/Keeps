@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 
 /// Shows one photo in a fixed-size frame, square unless given a size, with
-/// a placeholder until its thumbnail loads.
+/// a placeholder until its thumbnail loads. Cells, tiles, and piles all
+/// show their photos with it.
 ///
-/// A frame larger than a thumbnail, such as a tile on the pick or keepers
-/// screen, also loads a larger image, the tile image or the full image,
-/// chosen by the frame's size in pixels. The thumbnail stands in until the
-/// larger image arrives.
+/// It chooses which image to show by the frame's size in pixels: the
+/// thumbnail, the medium image, or the full image. It always loads the
+/// thumbnail, which stands in until a larger image arrives.
 ///
 /// When the view appears, it asks the image pipeline for its images at the
 /// priority for images on screen. When it disappears, it drops the
@@ -17,7 +17,7 @@ import SwiftUI
 ///
 /// It draws no selection highlight, badge, or other decoration; the screens
 /// add their own on top.
-struct ThumbnailImage: View {
+struct FramedPhoto: View {
     let item: PhotoItem
 
     /// A border drawn around the image itself, following its shape rather
@@ -35,7 +35,7 @@ struct ThumbnailImage: View {
 
     /// The space the image is fitted into. A frame larger than a thumbnail
     /// loads a larger image too.
-    var frameSize = CGSize(width: CGFloat(Self.displaySize), height: CGFloat(Self.displaySize))
+    var frameSize = CGSize(width: CGFloat(Self.standardFrameLength), height: CGFloat(Self.standardFrameLength))
 
     /// Receives the image's width-to-height ratio once it has loaded.
     var onAspectRatioKnown: ((CGFloat) -> Void)?
@@ -54,36 +54,37 @@ struct ThumbnailImage: View {
         case none
     }
 
-    /// The width and height, in points, of the frame thumbnails are usually
-    /// shown in.
-    static let displaySize: Int = 260
+    /// The width and height, in points, of the usual frame: a cell on the
+    /// sort and done screens.
+    static let standardFrameLength: Int = 260
 
-    /// The longest side of a thumbnail, in pixels: twice the display size,
-    /// so thumbnails are sharp on Retina screens.
-    static let pixelSize: Int = displaySize * 2
+    /// The longest side of a thumbnail, in pixels: twice the standard
+    /// frame's length, so thumbnails are sharp in it on Retina screens.
+    static let thumbnailLongestSideLength: Int = standardFrameLength * 2
 
     /// The size thumbnails are read and cached at.
-    static let imageSize: ImageSize = .thumbnail(longestSideLength: pixelSize)
+    static let thumbnailSize: ImageSize = .scaled(longestSideLength: thumbnailLongestSideLength)
 
-    /// The longest side of the tile image, in pixels. 1932 px is a quarter
-    /// of a Fuji X-T5 JPEG file's longest side, which the JPEG decoder reads
-    /// more cheaply than any other size. Reading a RAW file at this size
-    /// costs no more than at 2048 px. A frame larger than this shows the
-    /// full image, which reads more cheaply than any size in between.
-    static let tileLongestSideLength: Int = 1932
+    /// The longest side of the medium image, in pixels. 1932 px is a
+    /// quarter of a Fuji X-T5 JPEG file's longest side, which the JPEG
+    /// decoder reads more cheaply than any other size. Reading a RAW file
+    /// at this size costs no more than at 2048 px. A frame larger than this
+    /// shows the full image, which reads more cheaply than any size in
+    /// between.
+    static let mediumImageLongestSideLength: Int = 1932
 
-    /// The size tile images are read and cached at, for frames larger than
-    /// a thumbnail but no longer than the tile image's longest side.
-    static let tileImageSize: ImageSize = .thumbnail(longestSideLength: tileLongestSideLength)
+    /// The size medium images are read and cached at, for frames larger
+    /// than a thumbnail but no longer than the medium image.
+    static let mediumImageSize: ImageSize = .scaled(longestSideLength: mediumImageLongestSideLength)
 
     /// Choose the image to show in a frame whose longest side is this many
-    /// pixels long: the smallest of the thumbnail, the tile image, and the
+    /// pixels long: the smallest of the thumbnail, the medium image, and the
     /// full image that's at least that long.
     static func chooseImageSize(forLongestSideLength length: CGFloat) -> ImageSize {
-        if length <= CGFloat(pixelSize) {
-            imageSize
-        } else if length <= CGFloat(tileLongestSideLength) {
-            tileImageSize
+        if length <= CGFloat(thumbnailLongestSideLength) {
+            thumbnailSize
+        } else if length <= CGFloat(mediumImageLongestSideLength) {
+            mediumImageSize
         } else {
             .full
         }
@@ -95,8 +96,8 @@ struct ThumbnailImage: View {
     static let typicalAspectRatio: CGFloat = 1.5
 
     /// How far in from the frame's edges the image is drawn. Views that zoom
-    /// out of a thumbnail inset their image by the same amount, so it lines
-    /// up.
+    /// out of a framed photo inset their image by the same amount, so it
+    /// lines up.
     static let imageInset: CGFloat = 3
 
     /// The most common shape among the photos' cached thumbnails, width over
@@ -105,7 +106,7 @@ struct ThumbnailImage: View {
     /// their tiles.
     static func commonAspectRatio(of photos: some Sequence<PhotoItem>) -> CGFloat {
         let ratios = photos.compactMap { photo -> CGFloat? in
-            guard let size = ImagePipeline.shared.cachedImage(for: photo, size: imageSize)?.size,
+            guard let size = ImagePipeline.shared.cachedImage(for: photo, size: thumbnailSize)?.size,
                   size.height > 0
             else { return nil }
             return size.width / size.height
@@ -129,11 +130,11 @@ struct ThumbnailImage: View {
     private var largerImageSize: ImageSize? {
         let longestSideLength = max(frameSize.width, frameSize.height) * displayScale
         let size = Self.chooseImageSize(forLongestSideLength: longestSideLength)
-        return size == Self.imageSize ? nil : size
+        return size == Self.thumbnailSize ? nil : size
     }
 
     var body: some View {
-        ThumbnailFrame(
+        FramedPhotoContent(
             image: largerImage?.image ?? thumbnail?.image,
             borderWidth: borderWidth,
             borderColor: borderColor,
@@ -143,11 +144,11 @@ struct ThumbnailImage: View {
         .onAppear {
             // The thumbnail is asked for first, so it's read first and can
             // stand in while the larger image loads.
-            thumbnail = loadImage(size: Self.imageSize)
+            thumbnail = loadImage(size: Self.thumbnailSize)
             largerImage = largerImageSize.map { loadImage(size: $0) }
         }
         .onDisappear {
-            ImagePipeline.shared.deprioritizeImage(for: item, size: Self.imageSize)
+            ImagePipeline.shared.deprioritizeImage(for: item, size: Self.thumbnailSize)
             if let largerImageSize {
                 ImagePipeline.shared.deprioritizeImage(for: item, size: largerImageSize)
             }
@@ -184,14 +185,14 @@ struct ThumbnailImage: View {
     }
 }
 
-/// Draws a thumbnail, or its placeholder while there's no image yet, with no
-/// tie to the image pipeline, so it can be previewed. Loading is left to
-/// ThumbnailImage.
-private struct ThumbnailFrame: View {
+/// Draws a framed photo's image, or its placeholder while there's no image
+/// yet, with no tie to the image pipeline, so it can be previewed. Loading
+/// is left to FramedPhoto.
+private struct FramedPhotoContent: View {
     let image: NSImage?
     let borderWidth: CGFloat
     let borderColor: Color
-    let placeholder: ThumbnailImage.Placeholder
+    let placeholder: FramedPhoto.Placeholder
     let frameSize: CGSize
 
     var body: some View {
@@ -204,7 +205,7 @@ private struct ThumbnailFrame: View {
                     .scaledToFit()
                     .padding(borderWidth)
                     .background(borderFill)
-                    .padding(ThumbnailImage.imageInset)
+                    .padding(FramedPhoto.imageInset)
             } else {
                 placeholderView
             }
@@ -212,7 +213,7 @@ private struct ThumbnailFrame: View {
         .frame(width: frameSize.width, height: frameSize.height)
     }
 
-    /// The stand-in drawn while loading (see ThumbnailImage.Placeholder).
+    /// The stand-in drawn while loading (see FramedPhoto.Placeholder).
     @ViewBuilder private var placeholderView: some View {
         switch placeholder {
         case .square:
@@ -231,14 +232,14 @@ private struct ThumbnailFrame: View {
     }
 }
 
-/// The frame every preview uses, the size thumbnails are shown at.
+/// The frame every preview uses, the standard frame.
 private let previewFrameSize = CGSize(
-    width: CGFloat(ThumbnailImage.displaySize),
-    height: CGFloat(ThumbnailImage.displaySize)
+    width: CGFloat(FramedPhoto.standardFrameLength),
+    height: CGFloat(FramedPhoto.standardFrameLength)
 )
 
 #Preview("Landscape photo, no border") {
-    ThumbnailFrame(
+    FramedPhotoContent(
         image: NSImage(contentsOf: PreviewPhotos.landscape.sourceURL),
         borderWidth: 0, borderColor: .white,
         placeholder: .square, frameSize: previewFrameSize
@@ -248,7 +249,7 @@ private let previewFrameSize = CGSize(
 }
 
 #Preview("Portrait photo, white border") {
-    ThumbnailFrame(
+    FramedPhotoContent(
         image: NSImage(contentsOf: PreviewPhotos.portrait.sourceURL),
         borderWidth: 6, borderColor: .white,
         placeholder: .square, frameSize: previewFrameSize
@@ -258,7 +259,7 @@ private let previewFrameSize = CGSize(
 }
 
 #Preview("Loading, square placeholder") {
-    ThumbnailFrame(
+    FramedPhotoContent(
         image: nil, borderWidth: 0, borderColor: .white,
         placeholder: .square, frameSize: previewFrameSize
     )
@@ -267,9 +268,9 @@ private let previewFrameSize = CGSize(
 }
 
 #Preview("Loading, blank paper placeholder") {
-    ThumbnailFrame(
+    FramedPhotoContent(
         image: nil, borderWidth: 6, borderColor: .white,
-        placeholder: .paper(aspectRatio: ThumbnailImage.typicalAspectRatio), frameSize: previewFrameSize
+        placeholder: .paper(aspectRatio: FramedPhoto.typicalAspectRatio), frameSize: previewFrameSize
     )
     .padding()
     .background(.black)

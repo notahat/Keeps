@@ -15,8 +15,6 @@ import SwiftUI
 /// over them, and handles input, including the full-size view's. TileLayout
 /// works out where the tiles go, PickArrangement says which photos are tiles,
 /// and Grouping holds the open group, its keepers, and the done groups.
-/// Tiles scale up the sort screen's thumbnails rather than loading larger
-/// images.
 struct PickScreen: View {
     let grouping: Grouping
     let group: Range<Int>
@@ -67,7 +65,7 @@ struct PickScreen: View {
     init(grouping: Grouping, group: Range<Int>) {
         self.grouping = grouping
         self.group = group
-        _aspectRatio = State(initialValue: ThumbnailImage.commonAspectRatio(of: grouping.items[group]))
+        _aspectRatio = State(initialValue: FramedPhoto.commonAspectRatio(of: grouping.items[group]))
     }
 
     /// Which of the group's photos are tiles and which are on the pile.

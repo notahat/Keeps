@@ -26,7 +26,7 @@ folder needs adding to that exception list.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
 - `Images/` — loading, caching, and showing images (`ImagePipeline`,
-  `ThumbnailImage`, `FullSizeImage`, load progress, `PileJitter`), and
+  `FramedPhoto`, `FullSizeImage`, load progress, `PileJitter`), and
   `TileLayout`, the pure, tested tile grid the screens share.
 - `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
   selection, scroll position, open group, keepers, and done groups, and
@@ -92,6 +92,19 @@ name.
 - **Section**: which of the sort, done, and keepers screens a window
   shows when no group is open (`FolderSection`). The user selects it by
   clicking a pile in the sidebar.
+- **Cell**, **tile**, and **pile**: places a photo is shown on screen. A
+  cell is one place in the sort screen's grid, a tile is one photo on the
+  pick or keepers screen, and a pile is a stack of prints. Each shows
+  whichever image suits its size, so none of them is named after an
+  image.
+- **Thumbnail**: a photo's image scaled to 520 pixels on its longest side,
+  for cells, piles, and drag images, and to stand in while a larger image
+  loads. It's an image, never a place on screen.
+- **Medium image**: a photo's image scaled to 1932 pixels on its longest
+  side, for tiles too large for a thumbnail.
+- **Full image**: the largest image read, for the full-size view and the
+  largest tiles. For a RAW file it's the embedded JPEG preview; a JPEG
+  file is scaled down to no more than that size.
 
 ## Build & Test
 

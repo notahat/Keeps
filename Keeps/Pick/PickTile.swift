@@ -10,7 +10,7 @@ struct PickTile: View {
     let isKeeper: Bool
 
     var body: some View {
-        ThumbnailImage(item: item, frameSize: size)
+        FramedPhoto(item: item, frameSize: size)
             .selectionHighlight(isSelected: isFocused)
             .overlay(alignment: .topTrailing) {
                 if isKeeper {

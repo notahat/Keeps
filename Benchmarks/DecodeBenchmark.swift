@@ -129,13 +129,14 @@ struct Read: Sendable {
 
     /// The reads the app makes, then a decode of the whole image, which
     /// the app doesn't do yet but 100% zoom would need, then reads at the
-    /// steps a JPEG decoder takes cheaply. The thumbnail and tile sizes
-    /// are ThumbnailImage's pixelSize and tileLongestSideLength, written
-    /// out here because the benchmark doesn't compile that view.
+    /// steps a JPEG decoder takes cheaply. The thumbnail and medium image
+    /// sizes are FramedPhoto's thumbnailLongestSideLength and
+    /// mediumImageLongestSideLength, written out here because the benchmark
+    /// doesn't compile that view.
     static let all: [Read] = [
         app("Full size view", size: .full),
-        app("Thumbnail, 520 px", size: .thumbnail(longestSideLength: 520)),
-        app("Tile, 1932 px", size: .thumbnail(longestSideLength: 1932)),
+        app("Thumbnail, 520 px", size: .scaled(longestSideLength: 520)),
+        app("Medium image, 1932 px", size: .scaled(longestSideLength: 1932)),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
     ] + decoderSteps
 
@@ -148,7 +149,7 @@ struct Read: Sendable {
     static let decoderSteps: [Read] = [
         483, 520, 552, 553, 966, 967, 1104, 1105, 1932, 1933, 2048, 2208, 2209,
     ].map { longestSideLength in
-        app("At \(longestSideLength) px", size: .thumbnail(longestSideLength: longestSideLength))
+        app("At \(longestSideLength) px", size: .scaled(longestSideLength: longestSideLength))
     }
 
     /// A read the app makes, of an image at a size.

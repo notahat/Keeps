@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One cell on the sort screen: the thumbnail plus the selection highlight,
+/// One cell on the sort screen: the photo plus the selection highlight,
 /// the boundary bars on either side, and, for a collapsed group, a pile of
 /// prints with a photo count. Bars are drawn centred in the gap next to the
 /// cell, so a boundary at a row wrap shows at both the end of one row and
@@ -38,12 +38,12 @@ struct SortCell: View {
             }
     }
 
-    /// The thumbnail, or for a collapsed group a pile with its photo count.
+    /// The photo, or for a collapsed group a pile with its photo count.
     @ViewBuilder private var content: some View {
         if let pile {
             CollapsedGroup(pile: pile)
         } else {
-            ThumbnailImage(item: item)
+            FramedPhoto(item: item)
         }
     }
 }

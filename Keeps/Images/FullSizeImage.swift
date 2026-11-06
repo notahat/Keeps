@@ -75,7 +75,7 @@ struct FullSizeImage: View {
         highPriorityItem = item
         fullImage = ImagePipeline.shared.watchedImage(for: item, size: .full)
         startTimingStep(isSharp: fullImage?.image != nil)
-        thumbnail = ImagePipeline.shared.watchedImage(for: item, size: ThumbnailImage.imageSize)
+        thumbnail = ImagePipeline.shared.watchedImage(for: item, size: FramedPhoto.thumbnailSize)
         ImagePipeline.shared.requestImage(for: item, size: .full)
         for preloadIndex in preloadIndices() {
             ImagePipeline.shared.prefetchImage(for: items[preloadIndex], size: .full)

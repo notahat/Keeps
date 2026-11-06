@@ -1,8 +1,8 @@
 /// Identifies which size of decoded image is being requested or cached.
 nonisolated enum ImageSize: Hashable, CustomStringConvertible {
     /// An image scaled down so its longest side is no more than this length
-    /// in pixels, for the sort screen's cells and the tiles.
-    case thumbnail(longestSideLength: Int)
+    /// in pixels, such as a thumbnail or a medium image.
+    case scaled(longestSideLength: Int)
 
     /// The image the full-size view shows: a RAW file's embedded preview as
     /// it is, or a JPEG file scaled down to a size ImageReader chooses.
@@ -12,7 +12,7 @@ nonisolated enum ImageSize: Hashable, CustomStringConvertible {
     /// and signposts.
     var description: String {
         switch self {
-        case let .thumbnail(longestSideLength): "\(longestSideLength) px"
+        case let .scaled(longestSideLength): "\(longestSideLength) px"
         case .full: "full"
         }
     }

@@ -131,7 +131,7 @@ private struct ImageStatsPanel: View {
     return ImageStatsPanel(snapshot: ImageStatsSnapshot(
         memoryFootprint: 1_234_000_000,
         cacheContents: [
-            ImageCache.Contents(size: .thumbnail(longestSideLength: 520), imageCount: 812, byteCount: 585_000_000),
+            ImageCache.Contents(size: .scaled(longestSideLength: 520), imageCount: 812, byteCount: 585_000_000),
             ImageCache.Contents(size: .full, imageCount: 7, byteCount: 364_000_000),
         ],
         readCount: 3,

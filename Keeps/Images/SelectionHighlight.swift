@@ -7,7 +7,7 @@ import SwiftUI
 struct SelectionHighlight: ViewModifier {
     /// The outline's line width. The line is centred on the item's edge, so
     /// half of it falls outside the item, and the inner half sits in the
-    /// space ThumbnailImage leaves round the photo (its imageInset).
+    /// space FramedPhoto leaves round the photo (its imageInset).
     static let lineWidth: CGFloat = 3
 
     let isSelected: Bool

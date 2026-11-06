@@ -16,7 +16,7 @@ struct DoneScreen: View {
     /// Whether the screen has keyboard focus, so that Return reaches it.
     @FocusState private var hasKeyboardFocus: Bool
 
-    private static let cellSize = CGFloat(ThumbnailImage.displaySize)
+    private static let cellSize = CGFloat(FramedPhoto.standardFrameLength)
     private static let spacing: CGFloat = 12
 
     /// Starts with the group last opened selected, if it's done, so coming

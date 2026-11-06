@@ -8,9 +8,9 @@ import Foundation
 /// up with the gaps, and pure functions over them for rows, slots, scroll
 /// offsets, and where the movement keys go.
 enum PhotoGridMetrics {
-    /// The width and height of a cell, the size thumbnails are shown at.
+    /// The width and height of a cell, a framed photo's standard frame.
     static var cellSize: CGFloat {
-        CGFloat(ThumbnailImage.displaySize)
+        CGFloat(FramedPhoto.standardFrameLength)
     }
 
     /// The space between cells, horizontally and vertically.

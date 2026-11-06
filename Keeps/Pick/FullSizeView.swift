@@ -33,9 +33,9 @@ struct FullSizeView: View {
                 PhotoPositionLabel(index: focusedIndex, count: photos.count)
                     .padding(12)
             }
-            // The same inset as the tile's thumbnail, so the photo doesn't jump
+            // The same inset as the tile's photo, so the photo doesn't jump
             // as it takes over from the tile.
-            .padding(ThumbnailImage.imageInset)
+            .padding(FramedPhoto.imageInset)
             .matchedGeometryEffect(
                 id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(photos[focusedIndex].id),
                 in: zoomNamespace,
