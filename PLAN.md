@@ -1180,3 +1180,150 @@ Each step builds and passes the tests, then review and commit.
    big group for jaggedness.
 10. **Review.** Look over the numbers for anything else worth doing, and
     plan it separately if so.
+
+# Plan: Bringing the code in line with the coding guidelines
+
+## Goal
+
+A review of the code against the rewritten global CLAUDE.md found one
+bug, some duplication, logic sitting in views without tests, silent
+fallbacks, names that drift from the glossary, and function comments in
+several styles. This plan fixes them, bug first, then structure, then
+the smaller and more mechanical changes.
+
+## Decisions
+
+- **Function names.** Functions with side effects or I/O start with a
+  verb (`readImage(from:)`, `makeAppMenu()`). Pure lookups and SwiftUI
+  view builders may keep the noun names Swift's API guidelines give them
+  (`photoIndex(forGap:)`, `header`). Recorded in the project CLAUDE.md,
+  which wins over the global one.
+- **`$0`.** Fine in one-line closures whose meaning is plain. Name the
+  parameters where the order or meaning isn't obvious, such as
+  `map { ($1.stem, $0) }`, or in nested closures. Also recorded in the
+  project CLAUDE.md.
+- **Function comments** are imperative sentences ("Return the cell a
+  movement key goes to…"), not noun phrases or the third person.
+- **keeps.json doesn't change.** Renames that touch `SavedGrouping` or
+  `KeepsFile` keep their keys on disk through `CodingKeys`, and the
+  existing format fixtures stay as they are.
+- **The measuring plan above stays** until its Baseline and Review steps
+  are done. Its findings move to `Benchmarks/README.md`.
+
+## Steps
+
+Each step builds and passes the tests, then stops for review before a
+commit.
+
+1. **Clear out finished plans.** Move the decode benchmark results, the
+   first traces, the decoder's cheap sizes, and the tile sizes from the
+   measuring plan into `Benchmarks/README.md`, worded as they stand
+   rather than as plan steps, and drop its line pointing at PLAN.md.
+   Delete the nine finished plans and the measuring plan's done design
+   sections, keeping its goal, what to measure, scenarios, what good
+   looks like, and its open steps. Git keeps the history.
+2. **The done screen keeps its selection (bug).** `DoneScreen` finds the
+   last opened group through `selectedPhotoIndex`, but closing a done
+   group moves the selection to the next group that isn't done, so the
+   selection is almost always lost. Test first: Grouping remembers the
+   last opened group after it closes. Then `Grouping.lastOpenedGroup`,
+   kept in memory only, and `DoneScreen` uses it.
+3. **Image sizes out of `FramedPhoto`.** The thumbnail and medium image
+   sizes, the choice between them, and the aspect ratio helpers move
+   from the view to `ImageSize.swift`. The benchmark uses the real
+   values instead of copies of 520 and 1932, and `FramedPhotoTests`
+   becomes `ImageSizeTests` without `@MainActor`.
+4. **Full image priorities.** Tiles now request `.full` images at the
+   same top priority as the photo shown full size. Decide with the user
+   whether a tile's full image should rank lower, change the code if so,
+   and correct the comments in `ImagePipeline` and `ImageSize`.
+5. **One click gesture.** The click and double-click handling copied
+   into the four screens becomes one modifier in Keys, beside
+   `handlesKeys`, with its explanation written once.
+6. **One scrolling tile grid.** The tile grid that `PickScreen` and
+   `KeepersScreen` both build (state, spacing, scroll tracking,
+   `reveal`, stepping at full size, the full-size overlay) becomes one
+   view in Images, `ScrollingTiles`. Stepping at full size, clamped to
+   the ends, becomes a pure function on `TileLayout`, tested. The shared
+   grid spacing and pile border width get one definition each.
+7. **Scrolling decisions out of `GridScrolling`.** Whether a change holds
+   position, follows the selection, or does nothing becomes a pure,
+   tested function returning an enum. `PhotoGridMetrics.
+   scrollOffsetHoldingItem`'s seven parameters become a before and an
+   after value.
+8. **Step timing out of `FullSizeImage`.** The rules for a step that's
+   moved on from and a step that's sharp at once become a pure value,
+   tested like `ImageLoadStats`, with the view making the signpost and
+   pipeline calls.
+9. **The group number from Grouping.** `PickScreen.header` stops working
+   out the group number itself, and with it the `?? 0` that would show
+   "Group 1" for a missing group. Grouping provides it, tested.
+10. **Fail loudly.**
+    - `FolderScanner.creationDate` throws rather than giving 1970.
+    - `ImagePipeline` logs a failed read with the file's path, and the
+      preview loader stops with `fatalError`.
+    - Guards in Grouping against calls that can't happen (bad indexes,
+      marking done with no group open, opening something that isn't a
+      group) become preconditions, and the tests of ignoring them go.
+      Guards for real user actions stay.
+    - A scroll anchor that isn't in the folder is a precondition failure.
+    - Clamps that can't take effect go: `KeepersScreen`'s index clamp and
+      tile count guard, `PhotoGridMetrics`' column count checks, and the
+      bounds checks in `TileLayout`.
+    - The benchmark checks for a folder instead of relying on `try?`.
+    - `borderColor` goes from `FramedPhoto` and `BlankPrint`, since it's
+      always white.
+11. **One name per concept.**
+    - `items` becomes `photos` wherever it means the folder's photos.
+    - Pick's "focused" tile becomes "selected", like the other screens.
+    - `DoneScreen`'s cells become piles.
+    - Sort's "item" for a grid position becomes cell or slot, and
+      `PhotoGridMetrics`' slot parameters say slot.
+    - `FullSizeImage` becomes `FullSizePhoto`, and `TileLayout`'s private
+      `Grid` becomes `TileGrid`.
+    - Paper becomes blank print.
+    - "Stats" becomes "Statistics", keeping the `showsImageStats`
+      settings key.
+    - Add "to go" and "set aside" to the glossary.
+12. **Names that say what they do.**
+    - Record the two naming decisions above in the project CLAUDE.md.
+    - Functions with side effects get verbs: `makeAppMenu()` and the
+      other menus, `readImage(from:size:)`,
+      `readLongestSideLength(of:)`, `readMemoryFootprint()`,
+      `FolderWindowController.show(_:)`, `snapshotState()` and
+      `applyRestored(state:)`.
+    - Booleans start with is, has, or should: `needsScrolling`,
+      `loadsInBackground`, and `isAutoSaving` (which becomes
+      `isStopped`).
+    - `workflow` becomes `formatName`, keeping the `"workflow"` key on
+      disk.
+    - Name the `$0` parameters picked out in the review, and the
+      pattern-named test helpers `StubModel` and `ErrorBox`.
+13. **Comments.**
+    - Rewrite function comments as imperative sentences.
+    - Give sizes their units.
+    - Add the missing doc comments, and a header for `KeyHandling.swift`.
+    - Fix the stale ones: `PhotoItem`, `TestHelpers`, and
+      `FullSizeImage`'s "sort screen's thumbnail".
+    - Remove words that point to the future, such as "yet".
+    - Drop `PhotoGridMetrics`' repeated "Pure.".
+    - Name the preload window's 2 back and 4 ahead as constants.
+14. **Tests.**
+    - Give the scanner and session tests sentence names.
+    - Split, or use `@Test(arguments:)` for, tests that check several
+      things.
+    - Move misplaced tests to the files for what they test.
+    - Use `#require` where a check guards later steps.
+    - Delete the reader tests' temporary files.
+    - Derive the hit target threshold from `edgeFraction` and test the
+      right edge.
+15. **Small things.**
+    - `isPlainLetter` moves out of `MoveDirection.swift`.
+    - `PileLabel` gets its own file.
+    - `placedInPile` becomes private.
+    - `Array.sum(of:)` is inlined.
+    - `FolderSidebar`'s padding parameter goes, and its corner radius
+      becomes one constant.
+    - `PhotoDragSource`'s empty guard goes.
+    - The folder READMEs catch up with their folders and state the
+      screens' layering rule the same way.
