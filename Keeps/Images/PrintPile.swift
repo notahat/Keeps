@@ -10,9 +10,10 @@ import SwiftUI
 ///
 /// It draws no label or badge; callers add their own.
 struct PrintPile: View {
+    /// The photos in the pile, the top one first.
     let photos: [PhotoItem]
 
-    /// The width and height of the square the pile fills.
+    /// The width and height, in points, of the square the pile fills.
     let length: CGFloat
 
     /// The photos' usual shape, for the blank prints. When nil, the top
@@ -20,12 +21,13 @@ struct PrintPile: View {
     /// photos are nearly always the same shape.
     var aspectRatio: CGFloat?
 
-    /// A white border so each photo reads as a print on paper.
+    /// The width, in points, of a white border so each photo reads as a
+    /// print on paper.
     var borderWidth: CGFloat = 6
 
-    /// The border for a pile as large as the standard frame, as on the sort
-    /// and done screens: a little wider than the default, to suit the
-    /// larger prints.
+    /// The border width, in points, for a pile as large as the standard
+    /// frame, as on the sort and done screens: a little wider than the
+    /// default, to suit the larger prints.
     static let standardFrameBorderWidth: CGFloat = 7
 
     /// How many prints, from the top, show their photos.
@@ -52,8 +54,9 @@ struct PrintPile: View {
         aspectRatio ?? topAspectRatio
     }
 
-    /// One print on the pile, untilted: the photo for the top few layers,
-    /// otherwise a blank print, or nothing until the print's shape is known.
+    /// Draw one print on the pile, untilted: the photo for the top few
+    /// layers, otherwise a blank print, or nothing until the print's shape
+    /// is known. `layer` counts down from the top print, which is 0.
     /// Only the top print loads urgently; the others are mostly hidden, so
     /// they load in the background.
     @ViewBuilder private func pilePrint(of photo: PhotoItem, layer: Int) -> some View {
@@ -72,9 +75,9 @@ struct PrintPile: View {
         }
     }
 
-    /// What a print shows while loading: a blank print once its shape is
-    /// known, otherwise the usual square for the top print and nothing for
-    /// the ones beneath.
+    /// Choose what a print shows while loading: a blank print once its shape
+    /// is known, otherwise the usual square for the top print and nothing
+    /// for the ones beneath.
     private func placeholder(isTopLayer: Bool) -> FramedPhoto.Placeholder {
         if let blankPrintAspectRatio {
             return .blankPrint(aspectRatio: blankPrintAspectRatio)
@@ -84,7 +87,7 @@ struct PrintPile: View {
 }
 
 extension View {
-    /// Places a print in a messy pile: shrunk a little to leave room for the
+    /// Place a print in a messy pile: shrunk a little to leave room for the
     /// tilt, shadowed, and tilted and nudged by its jitter.
     func placedInPile(_ jitter: PileJitter) -> some View {
         scaleEffect(0.8)
@@ -98,6 +101,8 @@ extension View {
 /// or in white on a colour when given one, to make a pile stand out.
 struct PileLabel: View {
     let text: String
+
+    /// The capsule's colour, or nil for the plain material.
     var color: Color?
 
     var body: some View {

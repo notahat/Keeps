@@ -43,10 +43,11 @@ struct ScrollingTiles<Tile: View>: View {
     /// points. ScrollingTiles positions it and handles its clicks.
     let makeTile: (Int, CGSize) -> Tile
 
+    /// Where the scroll view is told to scroll, to reveal a tile.
     @State private var scrollPosition = ScrollPosition()
 
-    /// How far the tiles are scrolled, tracked so that revealing a tile
-    /// scrolls only as far as needed.
+    /// How far the tiles are scrolled, in points, tracked so that revealing
+    /// a tile scrolls only as far as needed.
     @State private var scrollOffset: CGFloat = 0
 
     /// The smallest a tile's longer side may be, in points, before the
@@ -63,6 +64,8 @@ struct ScrollingTiles<Tile: View>: View {
         SelectionHighlight.lineWidth
     }
 
+    /// Make the tiles for some photos. Each parameter is described on the
+    /// property of the same name.
     init(
         photos: [PhotoItem],
         aspectRatio: CGFloat,

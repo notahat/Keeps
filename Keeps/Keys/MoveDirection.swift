@@ -6,8 +6,8 @@ import SwiftUI
 nonisolated enum MoveDirection: Equatable {
     case left, right, up, down
 
-    /// The direction a key moves in, or nil for any other key. The letters
-    /// are lowercased so they still work with Caps Lock on.
+    /// Make the direction a key moves in, or nil for any other key. The
+    /// letters are lowercased so they still work with Caps Lock on.
     init?(key: KeyEquivalent, characters: String) {
         switch key {
         case .leftArrow: self = .left
@@ -25,7 +25,7 @@ nonisolated enum MoveDirection: Equatable {
         }
     }
 
-    /// The direction a key press moves in, or nil for any other key.
+    /// Make the direction a key press moves in, or nil for any other key.
     init?(_ press: KeyPress) {
         self.init(key: press.key, characters: press.characters)
     }
@@ -40,17 +40,17 @@ nonisolated enum MoveDirection: Equatable {
     }
 }
 
-/// Whether a key is the given lowercase letter with none of ⌘, ⌃, or ⌥ held,
-/// so a screen's letter keys don't catch menu shortcuts such as ⌘C. Shift
-/// and Caps Lock are allowed.
+/// Return whether a key is the given lowercase letter with none of ⌘, ⌃, or
+/// ⌥ held, so a screen's letter keys don't catch menu shortcuts such as ⌘C.
+/// Shift and Caps Lock are allowed.
 nonisolated func isPlainLetter(_ letter: String, characters: String, modifiers: EventModifiers) -> Bool {
     modifiers.isDisjoint(with: [.command, .control, .option])
         && characters.lowercased() == letter
 }
 
 extension KeyPress {
-    /// Whether this press is the given lowercase letter with none of ⌘, ⌃,
-    /// or ⌥ held.
+    /// Return whether this press is the given lowercase letter with none of
+    /// ⌘, ⌃, or ⌥ held.
     func isPlain(letter: String) -> Bool {
         isPlainLetter(letter, characters: characters, modifiers: modifiers)
     }

@@ -15,19 +15,25 @@ final class ImageCache {
         let byteCount: Int
     }
 
+    /// The images, keyed by cacheKey.
     private let cache = NSCache<NSString, NSImage>()
+
+    /// What the cache holds at each size, kept alongside it since NSCache
+    /// can't list its contents.
     private let tally = CacheTally()
 
+    /// Make an empty cache.
     init() {
         cache.delegate = tally
     }
 
-    /// The cached image of a photo at a size, or nil if there isn't one.
+    /// Return the cached image of a photo at a size, or nil if there isn't
+    /// one.
     func image(for photo: PhotoItem, size: ImageSize) -> NSImage? {
         cache.object(forKey: cacheKey(for: photo, size: size) as NSString)
     }
 
-    /// Caches the image of a photo at a size, replacing any already there.
+    /// Cache the image of a photo at a size, replacing any already there.
     func setImage(_ image: NSImage, for photo: PhotoItem, size: ImageSize) {
         let key = cacheKey(for: photo, size: size) as NSString
         // NSCache may not report a replaced image as evicted, so it's taken
@@ -39,13 +45,14 @@ final class ImageCache {
         cache.setObject(image, forKey: key)
     }
 
-    /// What's cached at each size: scaled images from smallest to largest,
-    /// then full-size images.
+    /// Return what's cached at each size: scaled images from smallest to
+    /// largest, then full-size images.
     func contents() -> [Contents] {
         tally.contents()
     }
 
-    /// The key an image is cached under: the photo's file and the size.
+    /// Return the key an image is cached under: the photo's file and the
+    /// size.
     private func cacheKey(for photo: PhotoItem, size: ImageSize) -> String {
         switch size {
         case let .scaled(longestSideLength): "\(photo.sourceURL.path)@\(longestSideLength)"
@@ -67,28 +74,28 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
     /// The cached images, by identity, since eviction gives only the image.
     private let entries = Mutex<[ObjectIdentifier: Entry]>([:])
 
-    /// Counts an image newly cached at a size.
+    /// Count an image newly cached at a size.
     func add(_ image: NSImage, size: ImageSize) {
         let entry = Entry(size: size, byteCount: Self.byteCount(of: image))
         entries.withLock { $0[ObjectIdentifier(image)] = entry }
     }
 
-    /// Stops counting an image that has left the cache, and gives back the
-    /// size it was cached at, or nil if it wasn't being counted.
+    /// Stop counting an image that has left the cache, and return the size
+    /// it was cached at, or nil if it wasn't being counted.
     @discardableResult
     func remove(_ image: NSImage) -> ImageSize? {
         entries.withLock { $0.removeValue(forKey: ObjectIdentifier(image))?.size }
     }
 
-    /// Hears from NSCache that it's evicting an image, and marks the
-    /// eviction for Instruments.
+    /// Stop counting an image NSCache is evicting, and mark the eviction for
+    /// Instruments.
     func cache(_: NSCache<AnyObject, AnyObject>, willEvictObject object: Any) {
         guard let image = object as? NSImage, let size = remove(image) else { return }
         ImageSignposts.markEviction(of: size)
     }
 
-    /// The counts at each size, scaled images from smallest to largest, then
-    /// full-size images.
+    /// Return the counts at each size, scaled images from smallest to
+    /// largest, then full-size images.
     func contents() -> [ImageCache.Contents] {
         let grouped = entries.withLock { entries in
             Dictionary(grouping: entries.values, by: \.size)
@@ -100,7 +107,8 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
             .sorted { $0.size.sortOrder < $1.size.sortOrder }
     }
 
-    /// Roughly how much memory an image takes decoded: four bytes a pixel.
+    /// Return roughly how many bytes of memory an image takes decoded: four
+    /// a pixel. Return zero if the image has no bitmap to measure.
     private static func byteCount(of image: NSImage) -> Int {
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return 0 }
         return cgImage.width * cgImage.height * 4
@@ -108,7 +116,7 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
 }
 
 private nonisolated extension Array {
-    /// The total of a number taken from each element.
+    /// Return the total of a number taken from each element.
     func sum(of value: (Element) -> Int) -> Int {
         reduce(0) { $0 + value($1) }
     }

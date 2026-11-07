@@ -32,8 +32,8 @@ struct FramedPhoto: View {
     /// What to show while the image loads.
     var placeholder: Placeholder = .square
 
-    /// The space the image is fitted into. A frame larger than a thumbnail
-    /// loads a larger image too.
+    /// The space, in points, the image is fitted into. A frame larger than a
+    /// thumbnail loads a larger image too.
     var frameSize = CGSize(width: CGFloat(Self.standardFrameLength), height: CGFloat(Self.standardFrameLength))
 
     /// Receives the image's width-to-height ratio once it has loaded.
@@ -65,15 +65,15 @@ struct FramedPhoto: View {
     /// may differ.
     static let typicalAspectRatio: CGFloat = 1.5
 
-    /// How far in from the frame's edges the image is drawn. Views that zoom
-    /// out of a framed photo inset their image by the same amount, so it
-    /// lines up.
+    /// How far in from the frame's edges, in points, the image is drawn.
+    /// Views that zoom out of a framed photo inset their image by the same
+    /// amount, so the images line up.
     static let imageInset: CGFloat = 3
 
-    /// The most common shape among the photos' cached thumbnails, width over
-    /// height, or the typical shape when none are cached. Tiles laid out
-    /// before the thumbnails load take this shape, so most photos fill
-    /// their tiles.
+    /// Return the most common shape among the photos' cached thumbnails,
+    /// width over height, or the typical shape when none are cached. Tiles
+    /// laid out before the thumbnails load take this shape, so most photos
+    /// fill their tiles.
     static func commonAspectRatio(of photos: some Sequence<PhotoItem>) -> CGFloat {
         let ratios = photos.compactMap { photo -> CGFloat? in
             guard let size = ImagePipeline.shared.cachedImage(for: photo, size: .thumbnail)?.size,
@@ -146,17 +146,16 @@ struct FramedPhoto: View {
         return watched
     }
 
-    /// Passes a loaded thumbnail's width-to-height ratio to
-    /// onAspectRatioKnown.
+    /// Pass a loaded thumbnail's width-to-height ratio to onAspectRatioKnown.
     private func reportAspectRatio(of loaded: NSImage?) {
         guard let loaded, loaded.size.height > 0 else { return }
         onAspectRatioKnown?(loaded.size.width / loaded.size.height)
     }
 }
 
-/// Draws a framed photo's image, or its placeholder while there's no image
-/// yet, with no tie to the image pipeline, so it can be previewed. Loading
-/// is left to FramedPhoto.
+/// Draws a framed photo's image, or its placeholder until there's an image,
+/// with no tie to the image pipeline, so it can be previewed. Loading is
+/// left to FramedPhoto.
 private struct FramedPhotoContent: View {
     let image: NSImage?
     let borderWidth: CGFloat
@@ -200,7 +199,7 @@ private struct FramedPhotoContent: View {
     }
 }
 
-/// The frame every preview uses, the standard frame.
+/// The frame, in points, every preview uses: the standard frame.
 private let previewFrameSize = CGSize(
     width: CGFloat(FramedPhoto.standardFrameLength),
     height: CGFloat(FramedPhoto.standardFrameLength)

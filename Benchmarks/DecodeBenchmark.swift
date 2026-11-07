@@ -30,8 +30,8 @@ enum DecodeBenchmark {
     /// The file extensions of the photos the app reads.
     static let photoExtensions: Set = ["raf", "jpg", "jpeg"]
 
-    /// Benchmarks every photo in the folders or files named on the command
-    /// line.
+    /// Benchmark every photo in the folders or files named on the command
+    /// line. Exit with status 1 if there are no photos.
     static func main() {
         let paths = CommandLine.arguments.dropFirst()
         let urls = paths.flatMap { photoURLs(at: URL(filePath: $0)) }
@@ -46,7 +46,7 @@ enum DecodeBenchmark {
     }
 
     /// Return the photos at a path: the file itself, or the photos in a
-    /// folder, sorted by name. Stops the benchmark if nothing is there or a
+    /// folder, sorted by name. Stop the benchmark if nothing is there or a
     /// folder can't be read.
     static func photoURLs(at url: URL) -> [URL] {
         var isFolder: ObjCBool = false
@@ -63,7 +63,7 @@ enum DecodeBenchmark {
         }
     }
 
-    /// Times each read of one photo, and prints a table of them.
+    /// Time each read of one photo, and print a table of the times.
     static func benchmark(_ url: URL, reads: [Read]) {
         print("\n\(url.lastPathComponent)")
         print(row("Read", "Size", "Read", "Draw"))
@@ -72,7 +72,7 @@ enum DecodeBenchmark {
         }
     }
 
-    /// One row of the table, with the columns lined up.
+    /// Format one row of the table, with the columns lined up.
     static func row(_ name: String, _ size: String, _ readTime: String, _ drawTime: String) -> String {
         let columns = [
             name.padding(toLength: 28, withPad: " ", startingAt: 0),
@@ -83,8 +83,9 @@ enum DecodeBenchmark {
         return "  " + columns.joined(separator: "  ")
     }
 
-    /// Runs a read of a photo several times, and gives back its table row:
-    /// the size of image it gave and its median read and draw times.
+    /// Run a read of a photo several times, and return the read's table row:
+    /// the size of image the read gave, in pixels, and its median read and
+    /// draw times. If any run fails, the times show as dashes.
     static func measure(_ read: Read, of url: URL) -> String {
         var readTimes: [Duration] = []
         var drawTimes: [Duration] = []
@@ -100,8 +101,8 @@ enum DecodeBenchmark {
         return row(read.name, size, milliseconds(median(readTimes)), milliseconds(median(drawTimes)))
     }
 
-    /// Draws an image once into a new bitmap of its own size, which decodes
-    /// it if the read didn't.
+    /// Draw an image once into a new bitmap of its own size, which decodes
+    /// the image if the read didn't.
     static func draw(_ image: CGImage) {
         let context = CGContext(
             data: nil,
@@ -115,12 +116,13 @@ enum DecodeBenchmark {
         context?.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
     }
 
-    /// The middle of some times, or the lower of the middle two.
+    /// Return the middle of some times, or the lower of the middle two. The
+    /// times must not be empty.
     static func median(_ times: [Duration]) -> Duration {
         times.sorted()[(times.count - 1) / 2]
     }
 
-    /// A time in whole milliseconds, such as "42 ms".
+    /// Format a time in whole milliseconds, rounded down, such as "42 ms".
     static func milliseconds(_ duration: Duration) -> String {
         let (seconds, attoseconds) = duration.components
         return "\(seconds * 1000 + attoseconds / 1_000_000_000_000_000) ms"
@@ -131,6 +133,8 @@ enum DecodeBenchmark {
 /// table.
 struct Read: Sendable {
     let name: String
+
+    /// Read the image at a URL, giving nil if the read fails.
     let perform: @Sendable (URL) -> CGImage?
 
     /// The reads the app makes, then a decode of the whole image, which
@@ -155,14 +159,15 @@ struct Read: Sendable {
         app("At \(longestSideLength) px", size: .scaled(longestSideLength: longestSideLength))
     }
 
-    /// A read the app makes, of an image at a size.
+    /// Return a read the app makes, of an image at a size.
     static func app(_ name: String, size: ImageSize) -> Read {
         Read(name: name) { ImageReader.readImage(from: $0, size: size) }
     }
 
-    /// Decodes the image itself in full, rather than any preview: for a RAW,
+    /// Decode the image itself in full, rather than any preview: for a RAW,
     /// the sensor data. Decoding happens straight away, so the draw that
-    /// follows doesn't include it.
+    /// follows doesn't include the decoding. Return nil if the file can't be
+    /// read.
     static func decodeWholeImage(from url: URL) -> CGImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
         let options = [kCGImageSourceShouldCacheImmediately: true] as CFDictionary
@@ -171,7 +176,8 @@ struct Read: Sendable {
 }
 
 extension String {
-    /// The string with spaces in front to make it a given length.
+    /// Return the string with spaces in front to make it a given length. A
+    /// string already that long or longer comes back unchanged.
     func leftPadded(toLength length: Int) -> String {
         String(repeating: " ", count: max(0, length - count)) + self
     }

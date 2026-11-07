@@ -8,6 +8,8 @@ import Foundation
 nonisolated struct PinnedCell: Equatable {
     /// The cell's index among the cells as they were before the change.
     let index: Int
+
+    /// Whether a click pinned the cell, rather than a key press.
     let isFromClick: Bool
 }
 

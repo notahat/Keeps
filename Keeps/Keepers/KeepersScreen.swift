@@ -9,8 +9,8 @@ import SwiftUI
 ///
 /// KeepersScreen draws the tiles in ScrollingTiles, which handles clicks
 /// and the movement keys, and shows the full-size view over them. Grouping
-/// holds the keepers. It only shows them: they're changed on the pick
-/// screen.
+/// holds the keepers. KeepersScreen only shows the keepers: they're changed
+/// on the pick screen.
 struct KeepersScreen: View {
     let grouping: Grouping
 
@@ -21,13 +21,15 @@ struct KeepersScreen: View {
     @State private var isFullSize = false
 
     /// The tiles' shape, worked out once when the screen is first built so
-    /// that nothing moves while it's showing.
+    /// that nothing moves while the screen is showing.
     @State private var aspectRatio: CGFloat
 
-    /// Whether the tiles have keyboard focus. They keep it while the
+    /// Whether the tiles have keyboard focus. The tiles keep focus while the
     /// full-size view is up, and handle its keys too.
     @FocusState private var hasKeyboardFocus: Bool
 
+    /// Show the keepers of the done groups, working out the tiles' shape
+    /// from them.
     init(grouping: Grouping) {
         self.grouping = grouping
         let keepers = grouping.keepersOfDoneGroups.map { grouping.photos[$0] }
@@ -65,7 +67,8 @@ struct KeepersScreen: View {
         }
     }
 
-    /// The selected keeper full size, with its place among the keepers.
+    /// Build the selected keeper's full-size view, with its place among the
+    /// keepers.
     private func fullSize(of keepers: [PhotoItem]) -> some View {
         FullSizePhoto(photos: keepers, index: selectedIndex)
             .overlay(alignment: .bottomTrailing) {

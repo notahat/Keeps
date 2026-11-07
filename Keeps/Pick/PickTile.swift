@@ -5,6 +5,8 @@ import SwiftUI
 /// where it sits; PickScreen places it and handles clicks.
 struct PickTile: View {
     let photo: PhotoItem
+
+    /// The tile's size in points.
     let size: CGSize
     let isSelected: Bool
     let isKeeper: Bool
@@ -21,7 +23,7 @@ struct PickTile: View {
     }
 }
 
-/// The size every tile preview uses.
+/// The size in points every tile preview uses.
 private let previewTileSize = CGSize(width: 300, height: 300)
 
 #Preview("Plain tile") {

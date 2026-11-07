@@ -18,6 +18,8 @@ import SwiftUI
 /// group, its keepers, and the done groups.
 struct PickScreen: View {
     let grouping: Grouping
+
+    /// The open group, as a range of photo indices in the folder.
     let group: Range<Int>
 
     /// Where the full-size view is: hidden, sitting exactly over the selected
@@ -31,27 +33,33 @@ struct PickScreen: View {
     /// The selected tile, as its index among the tiles.
     @State private var selectedIndex = 0
 
+    /// Where the full-size view is.
     @State private var fullSizeState = FullSizeState.hidden
 
     /// The tiles' shape, worked out once when the group opens so that
-    /// nothing moves while it's open.
+    /// nothing moves while the group is open.
     @State private var aspectRatio: CGFloat
 
-    /// Whether the tiles have keyboard focus. They keep it while the
+    /// Whether the tiles have keyboard focus. The tiles keep focus while the
     /// full-size view is up, and handle its keys too.
     @FocusState private var hasKeyboardFocus: Bool
 
-    /// Pairs each tile with the full-size view, so opening and closing it
-    /// zooms between the selected tile and full size.
+    /// Pairs each tile with the full-size view, so opening and closing the
+    /// full-size view zooms between the selected tile and full size.
     @Namespace private var zoomNamespace
 
+    /// The animation for zooming the full-size view in and out.
     private static let zoomAnimation = Animation.snappy(duration: 0.2)
 
+    /// The space in points around the header, the pile, and the full-size
+    /// view, matching the gaps between tiles.
     private static let spacing = FramedPhoto.gridSpacing
 
-    /// The width and height of the pile of photos that weren't kept.
+    /// The width and height in points of the pile of photos that weren't
+    /// kept.
     private static let pileLength: CGFloat = 220
 
+    /// Show an open group, working out its tiles' shape from its photos.
     init(grouping: Grouping, group: Range<Int>) {
         self.grouping = grouping
         self.group = group
@@ -63,7 +71,7 @@ struct PickScreen: View {
         PickArrangement(group: group, keepers: grouping.keepers, isDone: grouping.isDone(group))
     }
 
-    /// The photos at some indices in the folder.
+    /// Return the photos at some indices in the folder, in the same order.
     private func photos(_ photoIndices: [Int]) -> [PhotoItem] {
         photoIndices.map { grouping.photos[$0] }
     }
@@ -156,7 +164,8 @@ struct PickScreen: View {
         }
     }
 
-    /// The tile for a photo, at the tile at an index among the tiles.
+    /// Build the tile for a photo, given the tile's index among the tiles and
+    /// its size in points.
     private func tile(ofPhoto photoIndex: Int, index: Int, size: CGSize) -> some View {
         let photo = grouping.photos[photoIndex]
         return PickTile(
@@ -170,8 +179,8 @@ struct PickScreen: View {
         .matchedGeometryEffect(id: AnyHashable(photo.id), in: zoomNamespace)
     }
 
-    /// Handles the keys that do the same on the tiles and at full size:
-    /// F, Space, Return, and Escape. Returns false for any other key.
+    /// Handle the keys that do the same on the tiles and at full size:
+    /// F, Space, Return, and Escape. Return false for any other key.
     private func handleActionKey(_ press: KeyPress) -> Bool {
         if press.isPlain(letter: "f") {
             toggleSelectedKeeper()
@@ -194,7 +203,7 @@ struct PickScreen: View {
         return true
     }
 
-    /// Marks the selected photo as a keeper, or unmarks it, unless the group
+    /// Mark the selected photo as a keeper, or unmark it, unless the group
     /// is done.
     private func toggleSelectedKeeper() {
         let tilePhotos = arrangement.tilePhotos
@@ -202,10 +211,11 @@ struct PickScreen: View {
         grouping.toggleKeeper(atPhoto: tilePhotos[selectedIndex])
     }
 
-    /// Marks the group done, which piles up the photos that weren't kept, or
-    /// marks a done group not done, which brings them back. The selection
-    /// stays on the selected photo, or if it goes onto the pile, moves to
-    /// the nearest keeper before it.
+    /// Mark the group done, which piles up the photos that weren't kept, or
+    /// mark a done group not done, which brings them back. The selection
+    /// stays on the selected photo, or if the photo goes onto the pile,
+    /// moves to the nearest keeper before the photo. Close the full-size
+    /// view without animating.
     private func toggleDone() {
         let tilePhotos = arrangement.tilePhotos
         let selectedPhoto = tilePhotos.indices.contains(selectedIndex) ? tilePhotos[selectedIndex] : group.lowerBound
@@ -218,15 +228,15 @@ struct PickScreen: View {
         selectedIndex = arrangement.tileIndex(nearestPhoto: selectedPhoto) ?? 0
     }
 
-    /// Puts the full-size view up over the selected tile, when there is one.
-    /// It zooms out from there as it appears.
+    /// Put the full-size view up over the selected tile, when there is one.
+    /// The view zooms out from the tile as it appears.
     private func openFullSize() {
         guard arrangement.tilePhotos.indices.contains(selectedIndex) else { return }
         fullSizeState = .overTile
     }
 
-    /// Zooms the full-size view back into the selected tile while the other
-    /// tiles fade in, and takes it down once it's there.
+    /// Zoom the full-size view back into the selected tile while the other
+    /// tiles fade in, and take the view down once it's there.
     private func closeFullSize() {
         withAnimation(Self.zoomAnimation) {
             fullSizeState = .overTile

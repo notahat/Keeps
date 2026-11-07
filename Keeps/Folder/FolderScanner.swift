@@ -2,16 +2,19 @@ import Foundation
 
 /// Scans a folder and produces the list of photos found inside, pairing RAW
 /// and JPEG files that share a filename stem and sorting the result by file
-/// creation date. It only reads the file system: it doesn't load image
-/// data, change any state, or know anything about the rest of the app.
+/// creation date. FolderScanner only reads the file system: it doesn't load
+/// image data, change any state, or know anything about the rest of the app.
 enum FolderScanner {
+    /// The lowercased file extensions read as RAW and as JPEG files. Files
+    /// with any other extension are ignored.
     private static let rawExtensions: Set<String> = [
         "cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2", "rw1", "3fr",
     ]
     private static let jpegExtensions: Set<String> = ["jpg", "jpeg"]
 
-    /// Scans the folder for RAW and JPEG files and returns the resulting
-    /// PhotoItems in chronological order. Throws if the folder, or a photo's
+    /// Scan the folder for RAW and JPEG files and return the resulting
+    /// photos in chronological order, each with a new id. Hidden files and
+    /// subfolders' contents are left out. Throw if the folder, or a photo's
     /// creation date, cannot be read.
     static func scan(url: URL) throws -> [PhotoItem] {
         let urls = try FileManager.default.contentsOfDirectory(
@@ -23,7 +26,7 @@ enum FolderScanner {
         return try buildSortedItems(rawByStem: rawByStem, jpegByStem: jpegByStem)
     }
 
-    /// Splits the files into RAW and JPEG dictionaries keyed by filename
+    /// Split the files into RAW and JPEG dictionaries keyed by filename
     /// stem. Files with unsupported extensions are dropped.
     private static func splitFilesByType(
         urls: [URL]
@@ -44,9 +47,9 @@ enum FolderScanner {
         return (rawByStem, jpegByStem)
     }
 
-    /// Builds a PhotoItem for each stem, pairing its RAW and JPEG files when
-    /// it has both, and sorts them by creation date. Throws if a creation
-    /// date can't be read.
+    /// Build a PhotoItem for each stem, pairing its RAW and JPEG files when
+    /// it has both, and sort them by creation date, taken from the JPEG file
+    /// when there is one. Throw if a creation date can't be read.
     private static func buildSortedItems(
         rawByStem: [String: URL],
         jpegByStem: [String: URL]
@@ -69,7 +72,7 @@ enum FolderScanner {
             .sorted { $0.fileCreationDate < $1.fileCreationDate }
     }
 
-    /// Return the file's creation date. Throws if the file can't be read or
+    /// Return the file's creation date. Throw if the file can't be read or
     /// its volume doesn't record creation dates, since the photos couldn't
     /// then be put in order.
     private static func creationDate(of url: URL) throws -> Date {

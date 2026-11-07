@@ -3,16 +3,26 @@ import os
 import SwiftUI
 
 /// One photo's full image, fitted to the space, with its neighbours
-/// preloaded: the shown photo loads at high priority, and the 4 photos after
-/// it and the 2 before it at low priority. Shows the photo's thumbnail while
-/// the full image loads, or a spinner when there's no thumbnail either.
+/// preloaded: the shown photo loads at high priority, and a few photos after
+/// it and before it (preloadAheadCount and preloadBehindCount) at low
+/// priority. Shows the photo's thumbnail while the full image loads, or a
+/// spinner when there's no thumbnail either.
 ///
 /// Draws and loads only. The caller handles keys and focus, draws anything
 /// over the image, and changes `index` to move through `photos`. Knows
 /// nothing about groups or keepers.
 struct FullSizePhoto: View {
     let photos: [PhotoItem]
+
+    /// The shown photo, as an index into `photos`.
     let index: Int
+
+    /// How many photos after the shown one have their full images preloaded.
+    private static let preloadAheadCount = 4
+
+    /// How many photos before the shown one have their full images
+    /// preloaded.
+    private static let preloadBehindCount = 2
 
     /// The shown photo's full image, which redraws this view when it loads.
     @State private var fullImage: WatchedImage?
@@ -29,6 +39,7 @@ struct FullSizePhoto: View {
     /// for timing how long it takes to turn sharp. Nil once it has.
     @State private var pendingStep: PendingStep?
 
+    /// The shown photo.
     private var photo: PhotoItem {
         photos[index]
     }
@@ -68,8 +79,8 @@ struct FullSizePhoto: View {
         }
     }
 
-    /// Watches the shown photo's images, loads its full image at high
-    /// priority, and prefetches the photos around it.
+    /// Watch the shown photo's images, load its full image at high priority,
+    /// and prefetch the photos around it.
     private func loadPhotoAndNeighbours() {
         highPriorityPhoto = photo
         fullImage = ImagePipeline.shared.watchedImage(for: photo, size: .full)
@@ -81,11 +92,10 @@ struct FullSizePhoto: View {
         }
     }
 
-    /// Starts timing a step to a new photo, recording the step before it as
+    /// Start timing a step to a new photo, recording the step before it as
     /// moved on if that never turned sharp. A step whose full image is
-    /// already cached is recorded as sharp straight away.
-    /// Each step is counted for the debug overlay and marked for
-    /// Instruments.
+    /// already cached is recorded as sharp straight away. Each step is
+    /// counted for the debug overlay and marked for Instruments.
     private func startTimingStep(isSharp: Bool) {
         if let pendingStep {
             ImagePipeline.shared.recordStep(.movedOn)
@@ -100,7 +110,7 @@ struct FullSizePhoto: View {
         }
     }
 
-    /// Records how long the step took to turn sharp, if it's being timed.
+    /// Record how long the step took to turn sharp, if it's being timed.
     private func finishTimingStep() {
         guard let pendingStep else { return }
         ImagePipeline.shared.recordStep(.sharp(after: .now - pendingStep.start))
@@ -108,16 +118,20 @@ struct FullSizePhoto: View {
         self.pendingStep = nil
     }
 
-    /// Drops the in-flight high-priority load back to prefetch priority.
+    /// Drop the in-flight high-priority load back to prefetch priority.
     private func deprioritizeHighPriorityLoad() {
         guard let highPriorityPhoto else { return }
         ImagePipeline.shared.deprioritizeImage(for: highPriorityPhoto, size: .full)
         self.highPriorityPhoto = nil
     }
 
-    /// The indices to preload: up to 4 ahead and 2 behind the shown photo.
+    /// Return the indices of the photos to preload: up to preloadAheadCount
+    /// ahead of the shown photo and preloadBehindCount behind it, stopping
+    /// at either end of `photos`.
     private func preloadIndices() -> [Int] {
-        (max(0, index - 2) ... min(photos.count - 1, index + 4)).filter { $0 != index }
+        let first = max(0, index - Self.preloadBehindCount)
+        let last = min(photos.count - 1, index + Self.preloadAheadCount)
+        return (first ... last).filter { $0 != index }
     }
 }
 

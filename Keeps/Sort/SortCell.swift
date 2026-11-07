@@ -6,8 +6,12 @@ import SwiftUI
 /// cell, so a boundary at a row wrap shows at both the end of one row and
 /// the start of the next.
 struct SortCell: View {
+    /// The photo to draw. A collapsed group's cell draws its pile instead.
     let photo: PhotoItem
     var isSelected: Bool = false
+
+    /// The bars to draw in the gaps before and after the cell; nil for no
+    /// bar.
     var leadingBoundary: BoundaryStyle?
     var trailingBoundary: BoundaryStyle?
 
@@ -68,6 +72,7 @@ private struct CollapsedGroup: View {
 private struct BoundaryBar: View {
     let style: SortCell.BoundaryStyle
 
+    /// The bar's width in points.
     static let width: CGFloat = 4
 
     var body: some View {

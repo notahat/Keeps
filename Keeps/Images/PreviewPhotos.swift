@@ -12,7 +12,7 @@ enum PreviewPhotos {
     /// A portrait photo.
     static let portrait = makePhoto(fileName: "preview-portrait", stem: "PREVIEW_PORTRAIT")
 
-    /// Makes the given number of photos, alternating landscape and portrait.
+    /// Make the given number of photos, alternating landscape and portrait.
     /// Each has its own stem, so in a pile each print is tilted differently.
     static func makePhotos(count: Int) -> [PhotoItem] {
         (1 ... count).map { index in
@@ -21,8 +21,8 @@ enum PreviewPhotos {
         }
     }
 
-    /// Makes a photo for one of the preview JPEGs and caches its thumbnail,
-    /// failing if the file is missing from the bundle.
+    /// Make a photo for one of the preview JPEGs and cache its thumbnail,
+    /// stopping with a fatal error if the file is missing from the bundle.
     private static func makePhoto(fileName: String, stem: String) -> PhotoItem {
         guard let url = Bundle.main.url(forResource: fileName, withExtension: "jpg") else {
             fatalError("Missing preview photo \(fileName).jpg")

@@ -5,8 +5,8 @@ import SwiftUI
 extension View {
     /// Call `handleClick` on every click, and `handleDoubleClick` on a
     /// double click, each with where the click landed in this view's own
-    /// coordinates. A double click calls `handleClick` for its first click
-    /// too, so a double click selects before it acts.
+    /// coordinates, in points. A double click calls `handleClick` for its
+    /// first click too, so a double click selects before it acts.
     ///
     /// The single click is a simultaneous gesture rather than a second tap
     /// gesture. SwiftUI would hold back a plain single tap until the

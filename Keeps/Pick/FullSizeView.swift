@@ -9,10 +9,16 @@ import SwiftUI
 /// Draws only. PickScreen controls when it shows and when it's zoomed, and
 /// handles its keys, since the tiles keep keyboard focus throughout.
 struct FullSizeView: View {
+    /// The photos shown as tiles, in order.
     let photos: [PhotoItem]
+
+    /// The selected photo's index in `photos`.
     let selectedIndex: Int
+
     let isKeeper: Bool
     let isZoomed: Bool
+
+    /// The namespace the tiles supply their frames to.
     let zoomNamespace: Namespace.ID
 
     /// The id the view matches once zoomed. No tile has this id, so there's

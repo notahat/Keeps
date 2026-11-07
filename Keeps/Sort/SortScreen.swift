@@ -3,11 +3,12 @@ import SwiftUI
 
 /// The sort screen, where the folder is split into groups: a lazy scrolling
 /// grid with one cell per photo or collapsed group. Clicking the edge of a
-/// cell toggles the boundary in that gap, and clicking its middle selects it.
-/// Arrow and h/j/k/l keys move the selection, Escape clears it, and C
-/// collapses every group. Double-clicking a group, or pressing Return with
-/// it selected, opens it on the pick screen. Done groups leave the grid,
-/// and once they all have, an all-done message replaces it.
+/// cell toggles the boundary in that gap, and clicking a cell's middle
+/// selects the cell. Arrow and h/j/k/l keys move the selection, Escape
+/// clears the selection, and C collapses every group. Double-clicking a
+/// group, or pressing Return with the group selected, opens the group on
+/// the pick screen. Done groups leave the grid, and once they all have, an
+/// all-done message replaces the grid.
 ///
 /// SortScreen draws the cells, handles input, and owns keyboard focus.
 /// Scrolling is left to GridScrolling, the geometry to PhotoGridMetrics, and
@@ -18,7 +19,9 @@ struct SortScreen: View {
     /// The gap under the pointer, or nil when the pointer is not over a gap.
     @State private var hoveredGap: Int?
 
+    /// Where the grid is scrolled to, held still as groups collapse.
     @State private var scrolling = GridScrolling()
+
     @FocusState private var hasKeyboardFocus: Bool
 
     private static let cellSize = PhotoGridMetrics.cellSize
@@ -70,7 +73,8 @@ struct SortScreen: View {
         }
     }
 
-    /// The lazy grid of cells, measuring its own width for the column count.
+    /// Build the lazy grid of cells after some blank slots, measuring the
+    /// grid's own width for the column count.
     private func grid(blankSlotCount: Int) -> some View {
         // Found once per render rather than once per cell, since finding
         // the selected cell searches the whole layout.
@@ -95,8 +99,8 @@ struct SortScreen: View {
         .padding(.horizontal, Self.spacing / 2)
     }
 
-    /// One cell, widened to fill its slot, with click and hover handling
-    /// attached.
+    /// Build one cell, widened to fill its slot, with click and hover
+    /// handling attached.
     private func interactiveCell(photo: PhotoItem, index: Int, isSelected: Bool, layout: GroupLayout) -> some View {
         SortCell(
             photo: photo,
@@ -120,16 +124,17 @@ struct SortScreen: View {
         .id(photo.id)
     }
 
-    /// The pile a cell draws if it is a collapsed group, or nil for a single
-    /// photo.
+    /// Return the pile a cell draws if the cell is a collapsed group, or nil
+    /// for a single photo.
     private func pile(ofCell cellIndex: Int, in layout: GroupLayout) -> Pile? {
         let cell = layout.cells[cellIndex]
         guard cell.isCollapsed else { return nil }
         return Pile(group: cell.photoRange, folderPhotos: grouping.photos, keepers: grouping.keepers)
     }
 
-    /// How to draw the bar at a gap: nothing at a locked gap, placed if
-    /// there is a boundary there, previewed if the pointer is over it.
+    /// Choose how to draw the bar at a gap: nothing at a locked gap, placed
+    /// if there is a boundary there, previewed if the pointer is over the
+    /// gap.
     private func boundaryStyle(atGap gapIndex: Int, in layout: GroupLayout) -> SortCell.BoundaryStyle? {
         guard layout.isGapEditable(gapIndex) else { return nil }
         if layout.hasBoundary(atGap: gapIndex) {
@@ -138,8 +143,8 @@ struct SortScreen: View {
         return gapIndex == hoveredGap ? .preview : nil
     }
 
-    /// Records the gap under the pointer in the slot at `index`, if it has
-    /// changed.
+    /// Record the gap under the pointer in the slot at `index`, if the gap
+    /// has changed.
     private func updateHoveredGap(for phase: HoverPhase, index: Int) {
         let gapIndex: Int? = switch phase {
         case let .active(location): hitTarget(at: location, index: index).gapIndex
@@ -149,8 +154,8 @@ struct SortScreen: View {
         hoveredGap = gapIndex
     }
 
-    /// Toggles the boundary at a clicked gap, or selects a clicked cell, then
-    /// takes keyboard focus. A locked gap, such as beside a collapsed group,
+    /// Toggle the boundary at a clicked gap, or select a clicked cell, then
+    /// take keyboard focus. A locked gap, such as beside a collapsed group,
     /// counts as the cell.
     private func handleClick(at location: CGPoint, index: Int) {
         scrolling.noteClick(onCellAt: index)
@@ -162,7 +167,7 @@ struct SortScreen: View {
         hasKeyboardFocus = true
     }
 
-    /// Opens the group of a double-clicked cell. Double-clicking an editable
+    /// Open the group of a double-clicked cell. Double-clicking an editable
     /// gap opens nothing, since its two clicks have already toggled the
     /// boundary and back.
     private func handleDoubleClick(at location: CGPoint, index: Int) {
@@ -170,8 +175,9 @@ struct SortScreen: View {
         grouping.open(groupAtCell: index)
     }
 
-    /// The gap a point within the slot at `index` targets, if it's one whose
-    /// boundary can be toggled; nil for the cell itself or a locked gap.
+    /// Return the gap a point within the slot at `index` targets, if it's
+    /// one whose boundary can be toggled; nil for the cell itself or a
+    /// locked gap.
     private func editableGap(at location: CGPoint, index: Int) -> Int? {
         guard let gapIndex = hitTarget(at: location, index: index).gapIndex,
               grouping.layout.isGapEditable(gapIndex)
@@ -179,14 +185,14 @@ struct SortScreen: View {
         return gapIndex
     }
 
-    /// What a point within the slot at `index` targets: the cell, or the gap
-    /// at one of its edges.
+    /// Return what a point within the slot at `index` targets: the cell, or
+    /// the gap at one of its edges.
     private func hitTarget(at location: CGPoint, index: Int) -> GridHitTarget {
         GridHitTarget.resolve(offset: location.x, cellWidth: Self.slotWidth, index: index)
     }
 
-    /// Moves the selection for the movement keys, using the current column
-    /// count to move up and down a row. Passes any other key, or any key when
+    /// Move the selection for the movement keys, using the current column
+    /// count to move up and down a row. Pass any other key, or any key when
     /// nothing is selected, to handleCommandKey.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         scrolling.noteKeyPress(cells: scrollCells)
@@ -202,9 +208,9 @@ struct SortScreen: View {
         return true
     }
 
-    /// Handles keys that aren't for moving the selection: Escape clears the
+    /// Handle keys that aren't for moving the selection: Escape clears the
     /// selection, Return opens the selected cell's group, and C collapses
-    /// every group. Returns false for any other key.
+    /// every group. Return false for any other key.
     private func handleCommandKey(_ press: KeyPress) -> Bool {
         if press.key == .escape {
             grouping.clearSelection()

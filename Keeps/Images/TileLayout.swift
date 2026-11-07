@@ -8,9 +8,12 @@ import CoreGraphics
 /// and the tile size follows. The block of tiles is centred in the space,
 /// as is a short last row. Tiles stop shrinking at a minimum size; past
 /// that, as many columns as fit are stretched to fill the width, and the
-/// tiles scroll vertically.
+/// tiles scroll vertically. All lengths are in points.
 nonisolated struct TileLayout {
+    /// How many tiles each row holds; zero when there are no tiles.
     let columnCount: Int
+
+    /// The size every tile shares.
     let tileSize: CGSize
 
     /// Each tile's frame, in the coordinates of the content.
@@ -24,8 +27,10 @@ nonisolated struct TileLayout {
     /// scroll.
     let isScrollable: Bool
 
-    /// `aspectRatio` is each tile's width over its height.
-    /// `minimumTileLength` is the smallest a tile's longer side may be.
+    /// Lay out some tiles in the available size, with `spacing` between
+    /// them. `aspectRatio` is each tile's width over its height, and must
+    /// be positive. `minimumTileLength` is the smallest a tile's longer side
+    /// may be.
     init(
         tileCount: Int,
         aspectRatio: CGFloat,
@@ -66,11 +71,11 @@ nonisolated struct TileLayout {
         isScrollable = blockSize.height > availableSize.height + 0.5
     }
 
-    /// The tile a movement key goes to from the given tile. Left and right
-    /// step through the tiles in order; up and down go to the horizontally
-    /// nearest tile in the next row, the left one when two are equally
-    /// near. Stays put when there is nowhere to go. The index must be one
-    /// of the tiles.
+    /// Return the tile a movement key goes to from the given tile. Left and
+    /// right step through the tiles in order; up and down go to the
+    /// horizontally nearest tile in the next row, the left one when two are
+    /// equally near. Return the given tile when there is nowhere to go. The
+    /// index must be one of the tiles.
     func target(from index: Int, moving direction: MoveDirection) -> Int {
         let row = index / columnCount
         let midX = tileFrames[index].midX
@@ -82,17 +87,17 @@ nonisolated struct TileLayout {
         }
     }
 
-    /// The tile a movement key goes to when the tiles are stepped through
-    /// one at a time, as at full size, where there's no grid to move
+    /// Return the tile a movement key goes to when the tiles are stepped
+    /// through one at a time, as at full size, where there's no grid to move
     /// around: the next tile for right and down, the previous for left and
-    /// up. Stays put at either end.
+    /// up. Return the given tile at either end.
     func stepTarget(from index: Int, moving direction: MoveDirection) -> Int {
         max(0, min(tileFrames.count - 1, index + direction.linearStep))
     }
 
-    /// Where to scroll so a tile is fully in view, moving only as far as
-    /// needed, or nil when it already is. The index must be one of the
-    /// tiles.
+    /// Return where to scroll so a tile is fully in view, moving only as far
+    /// as needed, or nil when the tile already is. The index must be one of
+    /// the tiles.
     func scrollOffset(revealing index: Int, from currentOffset: CGFloat, viewportHeight: CGFloat) -> CGFloat? {
         let frame = tileFrames[index]
         if frame.minY < currentOffset {
@@ -104,18 +109,18 @@ nonisolated struct TileLayout {
         return nil
     }
 
-    /// The most common of some width-to-height ratios, rounded to two
-    /// decimal places so that photos of the same shape match despite
-    /// rounding in their pixel sizes. The earliest wins a tie. Nil when
-    /// there are none.
+    /// Return the most common of some width-to-height ratios, rounded to
+    /// two decimal places so that photos of the same shape match despite
+    /// rounding in their pixel sizes. The earliest wins a tie. Return nil
+    /// when there are none.
     static func commonAspectRatio(of ratios: [CGFloat]) -> CGFloat? {
         let rounded = ratios.map { ($0 * 100).rounded() / 100 }
         let counts = Dictionary(rounded.map { ($0, 1) }, uniquingKeysWith: +)
         return rounded.max { first, second in counts[first, default: 0] < counts[second, default: 0] }
     }
 
-    /// The tile in a row whose centre is horizontally nearest the given
-    /// point, the leftmost on a tie, or nil when there is no such row.
+    /// Return the tile in a row whose centre is horizontally nearest the
+    /// given point, the leftmost on a tie, or nil when there is no such row.
     private func nearestTile(inRow row: Int, toMidX midX: CGFloat) -> Int? {
         let firstInRow = row * columnCount
         guard row >= 0, firstInRow < tileFrames.count else { return nil }
@@ -133,8 +138,9 @@ private nonisolated struct TileGrid {
     let tileSize: CGSize
     let spacing: CGFloat
 
-    /// The grid with the largest tiles that fit, or, when those would be
-    /// below the minimum, minimum-size columns stretched to fill the width.
+    /// Choose the grid with the largest tiles that fit, or, when those would
+    /// be below the minimum, minimum-size columns stretched to fill the
+    /// width.
     static func choose(
         tileCount: Int,
         aspectRatio: CGFloat,
@@ -161,8 +167,9 @@ private nonisolated struct TileGrid {
         )
     }
 
-    /// The widest a tile can be with the given column count while every row
-    /// still fits in the available space.
+    /// Return the widest a tile can be with the given column count while
+    /// every row still fits in the available space, or zero when nothing
+    /// fits.
     private static func fittedWidth(
         columnCount: Int,
         tileCount: Int,
@@ -176,8 +183,9 @@ private nonisolated struct TileGrid {
         return max(0, min(widthThatFitsAcross, heightThatFitsDown * aspectRatio))
     }
 
-    /// As many minimum-width columns as fit across, and the width that
-    /// stretches them to fill it.
+    /// Return as many minimum-width columns as fit across, at least one and
+    /// no more than there are tiles, and the width that stretches them to
+    /// fill the available width.
     private static func scrollingColumns(
         tileCount: Int,
         minimumWidth: CGFloat,
@@ -203,8 +211,8 @@ private nonisolated struct TileGrid {
         )
     }
 
-    /// Where a tile sits, given where the block starts. A short last row is
-    /// centred within the block.
+    /// Return where a tile sits, given where the block starts. A short last
+    /// row is centred within the block.
     func frame(ofTile index: Int, blockOrigin: CGPoint) -> CGRect {
         let row = index / columnCount
         let column = index % columnCount
@@ -217,7 +225,7 @@ private nonisolated struct TileGrid {
         return CGRect(origin: origin, size: tileSize)
     }
 
-    /// The length of a line of tiles with spacing between them.
+    /// Return the length of a line of tiles with spacing between them.
     private func length(of count: Int, tilesOf tileLength: CGFloat) -> CGFloat {
         CGFloat(count) * tileLength + CGFloat(max(0, count - 1)) * spacing
     }

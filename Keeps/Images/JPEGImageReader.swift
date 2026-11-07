@@ -9,12 +9,13 @@ enum JPEGImageReader {
     /// When a JPEG file is read as a full image, it's scaled down so its
     /// longest side is no more than this many pixels. The limit matches the
     /// JPEG preview a Fuji X-T5 embeds in its RAW files, which looks sharp
-    /// enough even on a large external screen.
-    /// Reading JPEG files in full, at 40 MP, makes Core Animation pause the
-    /// main thread each time one first shows.
+    /// enough even on a large external screen. Reading JPEG files in full,
+    /// at 40 MP, makes Core Animation pause the main thread each time one
+    /// first shows.
     private nonisolated static let maxFullImageLongestSideLength = 4416
 
-    /// Read a JPEG file's image at a size.
+    /// Read a JPEG file's image at a size, returning nil if the file can't
+    /// be read.
     nonisolated static func readImage(from source: CGImageSource, size: ImageSize) -> CGImage? {
         switch size {
         case let .scaled(targetLongestSideLength):
@@ -83,9 +84,9 @@ enum JPEGImageReader {
 
     /// Shrink an image so its longest side is a given length, by drawing it
     /// into a smaller bitmap with high quality interpolation, returning nil
-    /// if the bitmap can't be made. The image keeps its colour space
-    /// when that's RGB, and is converted to sRGB otherwise, since the
-    /// bitmap has no other layout to suit a grey or CMYK one.
+    /// if the bitmap can't be made. The image keeps its colour space when
+    /// that's RGB, and is converted to sRGB otherwise, since the bitmap has
+    /// no other layout to suit a grey or CMYK one.
     private nonisolated static func shrink(_ image: CGImage, toLongestSideLength targetLongestSideLength: Int) -> CGImage? {
         let scale = Double(targetLongestSideLength) / Double(max(image.width, image.height))
         let width = max(1, Int((Double(image.width) * scale).rounded()))

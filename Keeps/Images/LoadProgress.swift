@@ -5,7 +5,10 @@ import Foundation
 /// total counts every load queued during it, including ones added partway.
 /// It's a pure value, with no tie to the pipeline, so it can be tested.
 nonisolated struct LoadProgress {
+    /// How many loads have been queued during the current burst.
     private var totalQueued = 0
+
+    /// How many loads are still queued or running.
     private var remaining = 0
 
     /// The fraction of the burst done, from 0 to 1, or nil when nothing is
@@ -15,7 +18,7 @@ nonisolated struct LoadProgress {
         return Double(totalQueued - remaining) / Double(totalQueued)
     }
 
-    /// Updates the progress from the number of loads still queued or
+    /// Update the progress from the number of loads still queued or
     /// running. A rise means new work joined the burst.
     mutating func record(queueCount: Int) {
         if queueCount == 0 {

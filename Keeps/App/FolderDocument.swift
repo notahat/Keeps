@@ -8,6 +8,7 @@ import AppKit
 /// The document is never saved and never autosaves. The grouping is
 /// written to the folder's keeps.json as it changes.
 final class FolderDocument: NSDocument {
+    /// The open folder, or nil until AppKit has read it.
     private var session: FolderSession?
 
     /// Turns off autosaving, since there's nothing for AppKit to save.
@@ -15,8 +16,9 @@ final class FolderDocument: NSDocument {
         false
     }
 
-    /// Opens the folder's session. This replaces AppKit's default reading,
-    /// which would load the whole folder into a file wrapper.
+    /// Open the folder's session, in place of AppKit's default reading,
+    /// which would load the whole folder into a file wrapper. Throw when the
+    /// folder can't be read, which AppKit reports to the user.
     override nonisolated func read(from url: URL, ofType _: String) throws {
         // AppKit reads documents on the main thread unless the class opts in
         // to concurrent reading, which this one doesn't.
@@ -25,7 +27,7 @@ final class FolderDocument: NSDocument {
         }
     }
 
-    /// Makes the folder's window.
+    /// Make the folder's window.
     override func makeWindowControllers() {
         guard let session else {
             preconditionFailure("A folder document makes its window only after reading the folder")

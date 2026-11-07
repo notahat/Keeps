@@ -5,22 +5,26 @@ import SwiftUI
 /// same as dragging those files from Finder, so they can be dropped into
 /// Lightroom, a Finder folder, or anything else that takes files. The drag
 /// is drawn as a pile of the photos' thumbnails. A press that ends without
-/// a drag is a click, which it reports to `onClick`. The AppKit view takes
-/// every press, so a click would never reach the view underneath.
+/// a drag is a click, which PhotoDragSource reports to `onClick`. The AppKit
+/// view takes every press, so a click would never reach the view
+/// underneath.
 ///
-/// It only starts drags and reports clicks. Its owner supplies the photos
-/// to drag, decides what a click does, and draws the view underneath.
-/// Dragging within the app does nothing.
+/// PhotoDragSource only starts drags and reports clicks. Its owner supplies
+/// the photos to drag, decides what a click does, and draws the view
+/// underneath. Dragging within the app does nothing.
 struct PhotoDragSource: NSViewRepresentable {
+    /// The photos whose files a drag carries.
     let photos: [PhotoItem]
+
+    /// Called when a press ends without starting a drag.
     let onClick: () -> Void
 
-    /// Makes the AppKit view that starts the drags.
+    /// Make the AppKit view that starts the drags.
     func makeNSView(context _: Context) -> PhotoDragView {
         PhotoDragView()
     }
 
-    /// Gives the AppKit view the current photos to drag, and what to do on
+    /// Give the AppKit view the current photos to drag, and what to do on
     /// a click.
     func updateNSView(_ view: PhotoDragView, context _: Context) {
         view.photos = photos
@@ -31,7 +35,10 @@ struct PhotoDragSource: NSViewRepresentable {
 /// The AppKit view behind PhotoDragSource, which starts a drag with one item
 /// per photo, since SwiftUI's drag modifiers hand over only one.
 final class PhotoDragView: NSView, NSDraggingSource {
+    /// The photos whose files a drag carries; with none, no drag starts.
     var photos: [PhotoItem] = []
+
+    /// Called when a press ends without starting a drag.
     var onClick: () -> Void = {}
 
     /// Whether this press has already started a drag, since mouseDragged
@@ -46,24 +53,24 @@ final class PhotoDragView: NSView, NSDraggingSource {
     /// drag, and the click would be lost.
     private static let dragThreshold: CGFloat = 4
 
-    /// The longest side of each photo in the drag image.
+    /// The longest side of each photo in the drag image, in points.
     private static let dragImageLength: CGFloat = 96
 
-    /// Stops a press here from moving the window, so that dragging moves the
+    /// False, so a press here doesn't move the window, and dragging moves the
     /// photos instead.
     override var mouseDownCanMoveWindow: Bool {
         false
     }
 
-    /// Gets ready for a new drag, noting where the press began. Overriding
-    /// this also keeps the press here, rather than passing it on to the next
-    /// responder as NSView does by default.
+    /// Get ready for a new drag, noting where the press began. Overriding
+    /// mouseDown also keeps the press here, rather than passing it on to the
+    /// next responder as NSView does by default.
     override func mouseDown(with event: NSEvent) {
         hasStartedDrag = false
         pressLocation = convert(event.locationInWindow, from: nil)
     }
 
-    /// Starts the drag once the pointer has moved past the drag threshold.
+    /// Start the drag once the pointer has moved past the drag threshold.
     override func mouseDragged(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
         let distance = hypot(location.x - pressLocation.x, location.y - pressLocation.y)
@@ -74,13 +81,13 @@ final class PhotoDragView: NSView, NSDraggingSource {
         session.draggingFormation = .pile
     }
 
-    /// Reports a click when the press ends without having started a drag.
+    /// Report a click when the press ends without having started a drag.
     override func mouseUp(with _: NSEvent) {
         guard !hasStartedDrag else { return }
         onClick()
     }
 
-    /// Copies outside the app, and refuses drops inside it.
+    /// Copy outside the app, and refuse drops inside it.
     func draggingSession(
         _: NSDraggingSession,
         sourceOperationMaskFor context: NSDraggingContext
@@ -88,7 +95,7 @@ final class PhotoDragView: NSView, NSDraggingSource {
         context == .outsideApplication ? .copy : []
     }
 
-    /// Makes the drag item for one photo's file, drawn as its thumbnail (or
+    /// Make the drag item for one photo's file, drawn as its thumbnail (or
     /// the file's icon if the thumbnail isn't loaded) centred on the pointer.
     private func makeDraggingItem(for photo: PhotoItem, at location: NSPoint) -> NSDraggingItem {
         let item = NSDraggingItem(pasteboardWriter: photo.sourceURL as NSURL)
@@ -105,7 +112,8 @@ final class PhotoDragView: NSView, NSDraggingSource {
         return item
     }
 
-    /// An image's size scaled so its longest side is the drag image length.
+    /// Return an image's size scaled so its longest side is the drag image
+    /// length, or a square of that length for an empty image.
     private static func dragImageSize(for imageSize: NSSize) -> NSSize {
         let longestSide = max(imageSize.width, imageSize.height)
         guard longestSide > 0 else { return NSSize(width: dragImageLength, height: dragImageLength) }

@@ -198,7 +198,7 @@ commit.
     `isScrollable`, `loadsInBackground` became `shouldLoadInBackground`,
     and `show(_:)` became `updateTitle(for:)`. The test helpers are
     `ObservableSelection` and `ReportedError`.)
-13. **Comments.**
+13. ✅ **Comments.**
     - Rewrite function comments as imperative sentences.
     - Give sizes their units.
     - Add the missing doc comments, and a header for `KeyHandling.swift`.

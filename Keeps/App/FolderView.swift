@@ -6,8 +6,8 @@ import SwiftUI
 /// The app has four main screens: sort, pick, done, and keepers. The pick
 /// screen takes over the whole window whenever a group is open. Otherwise
 /// the window shows one of the other three, and which one it shows is the
-/// section (FolderSection). The user selects the
-/// section by clicking a pile in the sidebar (FolderSidebar).
+/// section (FolderSection). The user selects the section by clicking a pile
+/// in the sidebar (FolderSidebar).
 ///
 /// FolderView owns the folder's grouping, its keeps.json, and the section,
 /// and sets up the grouping and keeps.json when the window opens. It shows
@@ -15,6 +15,7 @@ import SwiftUI
 /// photos. It reports keeps.json errors with AppKit's standard error alert,
 /// and tells the window which section is showing, for its title.
 struct FolderView: View {
+    /// The open folder and its photos.
     let session: FolderSession
 
     /// Called with the section that's showing when the view appears, and
@@ -22,7 +23,10 @@ struct FolderView: View {
     /// show the section's name in its title.
     let onSectionChange: (FolderSection) -> Void
 
+    /// The folder's grouping, or nil until start() makes it.
     @State private var grouping: Grouping?
+
+    /// The folder's keeps.json, or nil until start() makes it.
     @State private var keepsFile: KeepsFile?
 
     /// The section the user has selected by clicking a pile in the sidebar.
@@ -79,10 +83,10 @@ struct FolderView: View {
         }
     }
 
-    /// Creates the grouping, restores it from keeps.json, starts auto-save,
-    /// and prefetches thumbnails. Runs once, since a window keeps the same
-    /// folder for its whole life. When keeps.json can't be read, says so and
-    /// doesn't auto-save, so the work in it isn't written over.
+    /// Create the grouping, restore it from keeps.json, start auto-save, and
+    /// prefetch thumbnails. Later calls do nothing, since a window keeps the
+    /// same folder for its whole life. When keeps.json can't be read, say so
+    /// and don't auto-save, so the work in the file isn't written over.
     private func start() {
         guard grouping == nil else { return }
         let newGrouping = Grouping(photos: session.photos)
@@ -110,9 +114,12 @@ struct FolderView: View {
 /// The one screen the window is on: the pick screen while a group is open,
 /// otherwise the screen for the section the user has selected, with the
 /// sidebar beside it once there are done groups to go to. FolderView owns
-/// the grouping and the section; this only shows them.
+/// the grouping and the section; CurrentScreen only shows them.
 private struct CurrentScreen: View {
+    /// The folder's grouping, which says whether a group is open.
     let grouping: Grouping
+
+    /// The section the user has selected.
     @Binding var section: FolderSection
 
     var body: some View {

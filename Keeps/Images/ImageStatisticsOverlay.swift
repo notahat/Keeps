@@ -12,10 +12,11 @@ import SwiftUI
 /// because an image loaded. Clicks pass through it. Where it sits is up to
 /// the view that shows it.
 struct ImageStatisticsOverlay: View {
-    /// The user defaults key for whether the overlay shows. It keeps its
-    /// original name, so the setting survives the overlay's renaming.
+    /// The user defaults key for whether the overlay shows. Changing it
+    /// would lose the setting already saved under it.
     static let isShownKey = "showsImageStats"
 
+    /// Whether the user has turned the overlay on.
     @AppStorage(Self.isShownKey) private var isShown = false
 
     var body: some View {
@@ -30,12 +31,20 @@ struct ImageStatisticsOverlay: View {
 
 /// The figures the overlay shows at one moment.
 private struct ImageStatisticsSnapshot {
+    /// The app's memory footprint in bytes, or nil if the system wouldn't
+    /// say.
     let memoryFootprint: UInt64?
+
+    /// What's cached at each size.
     let cacheContents: [ImageCache.Contents]
+
+    /// How many reads are queued or running.
     let readCount: Int
+
+    /// The hit rate and recent steps at full size.
     let statistics: ImageLoadStatistics
 
-    /// Takes the figures from the image pipeline and the system now.
+    /// Take the figures from the image pipeline and the system now.
     static func current() -> ImageStatisticsSnapshot {
         let pipeline = ImagePipeline.shared
         return ImageStatisticsSnapshot(
@@ -46,8 +55,9 @@ private struct ImageStatisticsSnapshot {
         )
     }
 
-    /// The app's memory footprint in bytes, as Activity Monitor and Xcode's
-    /// memory gauge report it, or nil if the system won't say.
+    /// Read the app's memory footprint in bytes, as Activity Monitor and
+    /// Xcode's memory gauge report it, or return nil if the system won't
+    /// say.
     private static func readMemoryFootprint() -> UInt64? {
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
@@ -93,7 +103,7 @@ private struct ImageStatisticsPanel: View {
         row("Moved on", "\(statistics.movedOnCount) of the last \(ImageLoadStatistics.recentStepLimit) steps")
     }
 
-    /// One labelled figure.
+    /// Make a row of one labelled figure.
     private func row(_ label: String, _ value: String) -> some View {
         GridRow {
             Text(label)
@@ -102,17 +112,17 @@ private struct ImageStatisticsPanel: View {
         }
     }
 
-    /// A number of bytes in megabytes, such as "364 MB".
+    /// Format a number of bytes in whole megabytes, such as "364 MB".
     private static func megabytes(_ byteCount: Int) -> String {
         "\(byteCount / 1_000_000) MB"
     }
 
-    /// A share as a whole percentage, or a dash when there's none.
+    /// Format a share as a whole percentage, or a dash when there's none.
     private static func percentage(_ share: Double?) -> String {
         share.map { "\(Int(($0 * 100).rounded()))%" } ?? "–"
     }
 
-    /// A time in whole milliseconds, or a dash when there's none.
+    /// Format a time in whole milliseconds, or a dash when there's none.
     private static func milliseconds(_ duration: Duration?) -> String {
         guard let duration else { return "–" }
         let (seconds, attoseconds) = duration.components

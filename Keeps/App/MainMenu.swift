@@ -7,7 +7,7 @@ import AppKit
 /// built here.
 @MainActor
 enum MainMenu {
-    /// Makes the whole menu bar.
+    /// Make the whole menu bar.
     static func makeMenuBar() -> NSMenu {
         let menuBar = NSMenu()
         var menus = [makeAppMenu(), makeFileMenu(), makeWindowMenu()]
@@ -22,7 +22,7 @@ enum MainMenu {
         return menuBar
     }
 
-    /// Makes the menu named after the app: About, hiding, and Quit.
+    /// Make the menu named after the app: About, hiding, and Quit.
     private static func makeAppMenu() -> NSMenu {
         let appName = ProcessInfo.processInfo.processName
         let menu = NSMenu(title: appName)
@@ -44,7 +44,7 @@ enum MainMenu {
         return menu
     }
 
-    /// Makes the File menu: Open… and Close.
+    /// Make the File menu: Open… and Close.
     private static func makeFileMenu() -> NSMenu {
         let menu = NSMenu(title: "File")
         menu.addItem(withTitle: "Open…",
@@ -55,7 +55,7 @@ enum MainMenu {
         return menu
     }
 
-    /// Makes the Window menu and registers it with the app, which lists the
+    /// Make the Window menu and register it with the app, which lists the
     /// open windows in it.
     private static func makeWindowMenu() -> NSMenu {
         let menu = NSMenu(title: "Window")
@@ -70,7 +70,7 @@ enum MainMenu {
     }
 
     #if DEBUG
-        /// Makes the Debug menu, with tools for developing the app.
+        /// Make the Debug menu, with tools for developing the app.
         private static func makeDebugMenu() -> NSMenu {
             let menu = NSMenu(title: "Debug")
             let showStatistics = menu.addItem(withTitle: "Show Image Statistics",
@@ -88,19 +88,21 @@ enum MainMenu {
     /// while it's on. The setting is a user default, so it lasts across
     /// launches, and every window's overlay follows it.
     final class ImageStatisticsToggle: NSObject, NSMenuItemValidation {
+        /// The one toggle, which the menu item targets.
         static let shared = ImageStatisticsToggle()
 
+        /// Whether the overlay is on, as stored in the user defaults.
         private var isShown: Bool {
             get { UserDefaults.standard.bool(forKey: ImageStatisticsOverlay.isShownKey) }
             set { UserDefaults.standard.set(newValue, forKey: ImageStatisticsOverlay.isShownKey) }
         }
 
-        /// Turns the overlay on or off.
+        /// Turn the overlay on or off.
         @objc func toggle(_: Any?) {
             isShown.toggle()
         }
 
-        /// Ticks the item while the overlay is on.
+        /// Tick the item while the overlay is on, and keep it enabled.
         func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
             menuItem.state = isShown ? .on : .off
             return true

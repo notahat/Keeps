@@ -6,7 +6,7 @@ import Observation
 ///
 /// The user splits the folder by placing boundaries between photos. Each
 /// group runs from one boundary to the next, and the folder's start always
-/// begins one. The photos after the last boundary aren't in a group yet.
+/// begins one. The photos after the last boundary aren't in a group.
 /// The user collapses groups as they move on, and a collapsed group can't
 /// change. On the pick screen the user opens a group, picks its keepers,
 /// and marks it done. Closing the open group means leaving the pick screen.
@@ -72,7 +72,7 @@ class Grouping {
     /// Converts photos to and from the stems they're saved by.
     @ObservationIgnored private let stems: PhotoStems
 
-    /// Starts a grouping of the given photos with no boundaries, and nothing
+    /// Start a grouping of the given photos with no boundaries, and nothing
     /// collapsed, selected, open, kept, or done.
     init(photos: [PhotoItem]) {
         self.photos = photos
@@ -80,7 +80,7 @@ class Grouping {
         layout = GroupLayout(photoCount: photos.count, boundaries: [])
     }
 
-    /// Rederives the layout after the boundaries, collapse point, or done
+    /// Rederive the layout after the boundaries, collapse point, or done
     /// groups change.
     private func updateLayout() {
         layout = GroupLayout(
@@ -112,7 +112,7 @@ class Grouping {
         selectedPhotoIndex.flatMap { layout.cellIndex(containing: $0) }
     }
 
-    /// Toggles the boundary at a gap between cells, identified by the index
+    /// Toggle the boundary at a gap between cells, identified by the index
     /// of the cell after it. Locked gaps (see GroupLayout.isGapEditable) are
     /// left alone.
     func toggleBoundary(atGap gapIndex: Int) {
@@ -120,31 +120,31 @@ class Grouping {
         toggleBoundary(atPhoto: layout.photoIndex(forGap: gapIndex))
     }
 
-    /// Toggles the boundary before the given photo, from 1 to the photo
+    /// Toggle the boundary before the given photo, from 1 to the photo
     /// count, where a boundary there closes the last group. The folder
-    /// always starts a group, so there is no boundary before photo 0. Stops
-    /// the app for any other index.
+    /// always starts a group, so there is no boundary before photo 0. Any
+    /// other index stops the app.
     func toggleBoundary(atPhoto photoIndex: Int) {
         precondition(1 ... photos.count ~= photoIndex, "No boundary can go before photo \(photoIndex)")
         boundaries.toggle(photoIndex)
     }
 
-    /// Selects a cell. A collapsed group is selected via its first photo.
+    /// Select a cell. A collapsed group is selected via its first photo.
     func selectCell(at cellIndex: Int) {
         selectedPhotoIndex = layout.cells[cellIndex].photoRange.lowerBound
     }
 
-    /// Deselects everything.
+    /// Deselect everything.
     func clearSelection() {
         selectedPhotoIndex = nil
     }
 
-    /// Collapses every group, which is every photo up to the last boundary.
+    /// Collapse every group, which is every photo up to the last boundary.
     func collapseGroups() {
         collapsedUpTo = boundaries.max() ?? 0
     }
 
-    /// Opens the group that a sort screen cell belongs to (see open(_:)).
+    /// Open the group that a sort screen cell belongs to (see open(_:)).
     /// Photos after the working point aren't in a group, so their cells open
     /// nothing.
     func open(groupAtCell cellIndex: Int) {
@@ -155,11 +155,12 @@ class Grouping {
 
     // MARK: - Pick screen
 
-    /// Opens a group on the pick screen, whether or not it's done.
+    /// Open a group on the pick screen, whether or not it's done.
     /// Every group up to and including it is collapsed first, so its photos
     /// can't change while it's open; later groups that are already collapsed
     /// stay collapsed. The group is also selected, so the sort screen shows
-    /// it when the user comes back. Stops the app if it isn't a group.
+    /// it when the user comes back. A range that isn't a group stops the
+    /// app.
     func open(_ group: Range<Int>) {
         precondition(layout.groups.contains(group), "\(group) isn't a group")
         collapsedUpTo = max(collapsedUpTo, group.upperBound)
@@ -168,19 +169,19 @@ class Grouping {
         selectedPhotoIndex = group.lowerBound
     }
 
-    /// Marks a photo as a keeper, or unmarks it if it already is one.
+    /// Mark a photo as a keeper, or unmark it if it already is one.
     func toggleKeeper(atPhoto photoIndex: Int) {
         precondition(photos.indices.contains(photoIndex), "There's no photo \(photoIndex)")
         keepers.toggle(photoIndex)
     }
 
-    /// Marks the open group done, leaving it open. A group must be open.
+    /// Mark the open group done, leaving it open. A group must be open.
     func markOpenGroupDone() {
         guard let openGroup else { preconditionFailure("No group is open") }
         doneGroupStarts.insert(openGroup.lowerBound)
     }
 
-    /// Marks the open group not done, leaving it open. Once closed, it
+    /// Mark the open group not done, leaving it open. Once closed, the group
     /// shows on the sort screen's grid again, for the user to work on. A
     /// group must be open.
     func markOpenGroupNotDone() {
@@ -188,11 +189,11 @@ class Grouping {
         doneGroupStarts.remove(openGroup.lowerBound)
     }
 
-    /// Closes the open group, so the pick screen goes away, leaving whether
-    /// the group is done unchanged. When it's done, the user has finished
-    /// with it, so the selection moves on to the next group that isn't
-    /// done, or to the working point when there is none, ready for the user
-    /// to open with Return.
+    /// Close the open group, so the pick screen goes away, leaving whether
+    /// the group is done unchanged. When the group is done, the user has
+    /// finished with it, so the selection moves on to the next group that
+    /// isn't done, or to the working point when there is none, ready for the
+    /// user to open with Return.
     func closeOpenGroup() {
         guard let closed = openGroup else { return }
         openGroup = nil
@@ -203,13 +204,13 @@ class Grouping {
 
     // MARK: - Done groups and keepers
 
-    /// Whether a group has been marked done.
+    /// Return whether a group has been marked done.
     func isDone(_ group: Range<Int>) -> Bool {
         doneGroupStarts.contains(group.lowerBound)
     }
 
     /// Return a group's place among all the groups, counting from one, for
-    /// showing to the user. Stops the app if it isn't a group.
+    /// showing to the user. A range that isn't a group stops the app.
     func groupNumber(of group: Range<Int>) -> Int {
         guard let index = layout.groups.firstIndex(of: group) else {
             preconditionFailure("\(group) isn't a group")
@@ -217,7 +218,7 @@ class Grouping {
         return index + 1
     }
 
-    /// How many of a group's photos are keepers.
+    /// Return how many of a group's photos are keepers.
     func keptCount(in group: Range<Int>) -> Int {
         group.count { keepers.contains($0) }
     }
@@ -244,7 +245,7 @@ class Grouping {
         doneGroups.flatMap { group in group.filter { !keepers.contains($0) } }
     }
 
-    /// The photos not yet in a done group, in folder order, so the next to
+    /// The photos outside the done groups, in folder order, so the next to
     /// work on comes first.
     var photosToGo: [Int] {
         let done = Set(doneGroups.joined())
@@ -258,7 +259,7 @@ class Grouping {
 
     // MARK: - Saving
 
-    /// A snapshot of everything worth saving, with photos named by their
+    /// Make a snapshot of everything worth saving, with photos named by their
     /// stems. KeepsFile calls this inside an observation block, and reading
     /// each saved property here is what subscribes it to that property's
     /// changes: anything left out of the snapshot would change without
@@ -280,7 +281,7 @@ class Grouping {
         )
     }
 
-    /// Replaces the state with restored state, dropping anything that refers
+    /// Replace the state with restored state, dropping anything that refers
     /// to a photo no longer in the folder.
     func restore(from state: SavedGrouping) {
         boundaries = Set(state.boundaries.compactMap(stems.photoIndex(at:)))
@@ -297,7 +298,7 @@ class Grouping {
 }
 
 private extension Set {
-    /// Removes a member if it's there, otherwise inserts it.
+    /// Remove a member if it's there, otherwise insert it.
     mutating func toggle(_ member: Element) {
         if contains(member) {
             remove(member)

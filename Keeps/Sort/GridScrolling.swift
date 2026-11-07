@@ -19,6 +19,8 @@ final class GridScrolling {
         /// The photo each cell shows, in order. The grid identifies each
         /// cell by its photo's id.
         let photoIDs: [UUID]
+
+        /// The selected cell's photo, or nil when nothing is selected.
         let selectedPhotoID: UUID?
 
         /// A photo to keep at the same height on screen whenever the cells
@@ -45,8 +47,8 @@ final class GridScrolling {
         }
     }
 
-    /// The part of the content on screen: its top, in the same terms
-    /// scrollTo(y:) takes, and its height.
+    /// The part of the content on screen: its top, in points in the same
+    /// terms scrollTo(y:) takes, and its height in points.
     fileprivate struct VisibleRegion: Equatable {
         let offset: CGFloat
         let height: CGFloat
@@ -62,8 +64,15 @@ final class GridScrolling {
     /// Whether the grid's width has been measured, so columnCount is real.
     private var isMeasured = false
 
+    /// Whether the grid has appeared. The scroll position isn't reported
+    /// before then.
     private var hasAppeared = false
+
+    /// Whether the view is moving, by the user or on its own.
     private var isScrolling = false
+
+    /// The part of the content on screen, as last reported by the scroll
+    /// view.
     private var visibleRegion = VisibleRegion(offset: 0, height: 0)
 
     /// The cell behind the next change, if a click or key press came first.
@@ -76,17 +85,17 @@ final class GridScrolling {
     /// reported, so the default position can't overwrite a saved one.
     private var pendingInitialAnchor: GridScrollAnchor?
 
-    /// The blank slots actually shown before the first cell.
+    /// Return how many blank slots are actually shown before the first cell.
     func blankSlotCount(for cells: Cells) -> Int {
         PhotoGridMetrics.blankSlotCount(for: cells.leadingBlankSlots, columnCount: columnCount)
     }
 
-    /// The value whose changes the scroll view watches.
+    /// Return the value whose changes the scroll view watches.
     func trigger(for cells: Cells) -> Trigger {
         Trigger(cells: cells, blankSlotCount: blankSlotCount(for: cells))
     }
 
-    /// Records the column count once the grid's width is known, and re-applies
+    /// Record the column count once the grid's width is known, and re-apply
     /// the saved scroll position for it.
     func measure(columnCount newColumnCount: Int, cells: Cells) {
         columnCount = newColumnCount
@@ -94,14 +103,14 @@ final class GridScrolling {
         applyPendingInitialAnchor(cells: cells)
     }
 
-    /// Pins the clicked cell, in case the click changes the cells, and stops
+    /// Pin the clicked cell, in case the click changes the cells, and stop
     /// holding the saved scroll position. Call before acting on the click.
     func noteClick(onCellAt index: Int) {
         pinnedCell = PinnedCell(index: index, isFromClick: true)
         pendingInitialAnchor = nil
     }
 
-    /// Marks changes from here on as keyboard-driven: the selection is
+    /// Mark changes from here on as keyboard-driven: the selection is
     /// followed, and if the cells change, the middle of the view holds
     /// still. Call before acting on the key.
     func noteKeyPress(cells: Cells) {
@@ -109,7 +118,7 @@ final class GridScrolling {
         pendingInitialAnchor = nil
     }
 
-    /// Sets the opening scroll position: the saved anchor if there is one
+    /// Set the opening scroll position: the saved anchor if there is one
     /// (held until the user takes over; see pendingInitialAnchor),
     /// otherwise the selection, centred.
     fileprivate func appear(cells: Cells, savedAnchor: GridScrollAnchor?, scrollProxy: ScrollViewProxy) {
@@ -122,7 +131,7 @@ final class GridScrolling {
         }
     }
 
-    /// Records the part of the content on screen, reporting the scroll
+    /// Record the part of the content on screen, reporting the scroll
     /// position unless the view is still moving.
     fileprivate func updateVisibleRegion(
         _ region: VisibleRegion,
@@ -135,7 +144,7 @@ final class GridScrolling {
         }
     }
 
-    /// Tracks whether the view is moving, so the scroll position is reported
+    /// Track whether the view is moving, so the scroll position is reported
     /// only once it settles, not on every frame. The user scrolling stops
     /// holding the saved position.
     fileprivate func changePhase(to phase: ScrollPhase, cells: Cells, scrollAnchor: Binding<GridScrollAnchor?>) {
@@ -148,7 +157,7 @@ final class GridScrolling {
         }
     }
 
-    /// Scrolls in response to a change, if it calls for it (see
+    /// Scroll in response to a change, if it calls for it (see
     /// GridScrollResponse). Following the selection uses a nil anchor, so
     /// the view scrolls only as far as needed.
     fileprivate func respondToChange(from old: Trigger, to new: Trigger, scrollProxy: ScrollViewProxy) {
@@ -164,8 +173,8 @@ final class GridScrolling {
         }
     }
 
-    /// Scrolls to the pending initial anchor at the current column count.
-    /// Does nothing until the grid has been measured, since the anchor's
+    /// Scroll to the pending initial anchor at the current column count.
+    /// Do nothing until the grid has been measured, since the anchor's
     /// position depends on the column count.
     private func applyPendingInitialAnchor(cells: Cells) {
         guard let pendingInitialAnchor, isMeasured,
@@ -179,9 +188,9 @@ final class GridScrolling {
         position.scrollTo(y: offset)
     }
 
-    /// Writes where the view is now to the scroll anchor binding, as the
-    /// first cell of the row at the top and how far into that row the view
-    /// has scrolled.
+    /// Write where the view is now to the scroll anchor binding, as the
+    /// first cell of the row at the top and how far into that row, in
+    /// points, the view has scrolled.
     private func reportScrollAnchor(cells: Cells, scrollAnchor: Binding<GridScrollAnchor?>) {
         guard hasAppeared, pendingInitialAnchor == nil,
               let index = firstCellIndex(inRowAt: visibleRegion.offset, cells: cells)
@@ -194,18 +203,20 @@ final class GridScrolling {
         scrollAnchor.wrappedValue = anchor
     }
 
-    /// The index of the first cell in the row at a height within the
-    /// content, clamped to the cells so that blank slots and space past the
-    /// end land on the nearest cell. Nil when there are no cells.
+    /// Return the index of the first cell in the row at a height, in points,
+    /// within the content, clamped to the cells so that blank slots and
+    /// space past the end land on the nearest cell. Return nil when there
+    /// are no cells.
     private func firstCellIndex(inRowAt height: CGFloat, cells: Cells) -> Int? {
         guard !cells.photoIDs.isEmpty else { return nil }
         let slot = PhotoGridMetrics.firstSlot(inRowAt: height, columnCount: columnCount)
         return min(max(0, slot - blankSlotCount(for: cells)), cells.photoIDs.count - 1)
     }
 
-    /// Scrolls so that a cell from before the change, or if it has gone its
+    /// Scroll so that a cell from before the change, or if it has gone its
     /// nearest survivor, is at the same height on screen as before. Without
-    /// this, collapsing groups above the view would carry it forward.
+    /// the scroll, collapsing groups above the view would carry the view
+    /// forward.
     private func holdPosition(ofCellAt heldIndex: Int, across old: Trigger, to new: Trigger) {
         guard let offset = PhotoGridMetrics.scrollOffsetHoldingCell(
             at: heldIndex,
@@ -218,7 +229,8 @@ final class GridScrolling {
         position.scrollTo(y: offset)
     }
 
-    /// A pin on the first cell of the row in the middle of the view.
+    /// Return a pin on the first cell of the row in the middle of the view,
+    /// or nil when there are no cells.
     private func pinForMiddleOfView(cells: Cells) -> PinnedCell? {
         let middle = visibleRegion.offset + visibleRegion.height / 2
         return firstCellIndex(inRowAt: middle, cells: cells).map { index in
@@ -228,9 +240,9 @@ final class GridScrolling {
 }
 
 extension View {
-    /// Attaches a GridScrolling to this scroll view: binds its scroll
-    /// position, feeds it scroll geometry and phase changes and changes to
-    /// the cells, and sets the opening position on appear. The scroll
+    /// Attach a GridScrolling to this scroll view: bind its scroll position,
+    /// feed it scroll geometry and phase changes and changes to the cells,
+    /// and set the opening position on appear. The scroll
     /// position is read from `scrollAnchor` on appear and written back to it
     /// as the view settles.
     func gridScrolling(

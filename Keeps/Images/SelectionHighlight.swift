@@ -5,16 +5,17 @@ import SwiftUI
 /// Finder. It only draws the outline; each screen tracks which item is
 /// selected.
 struct SelectionHighlight: ViewModifier {
-    /// The outline's line width. The line is centred on the item's edge, so
-    /// half of it falls outside the item, and the inner half sits in the
-    /// space FramedPhoto leaves round the photo (its imageInset).
+    /// The outline's line width, in points. The line is centred on the
+    /// item's edge, so half of it falls outside the item, and the inner half
+    /// sits in the space FramedPhoto leaves round the photo (its
+    /// imageInset).
     static let lineWidth: CGFloat = 3
 
     let isSelected: Bool
 
     @Environment(\.controlActiveState) private var controlActiveState
 
-    /// The content with the outline over it while selected in a key window.
+    /// Draw the outline over the content while selected in a key window.
     func body(content: Content) -> some View {
         content.overlay {
             if isSelected, controlActiveState == .key {
@@ -25,7 +26,7 @@ struct SelectionHighlight: ViewModifier {
 }
 
 extension View {
-    /// Outlines this view while it's selected (see SelectionHighlight).
+    /// Outline the view while it's selected (see SelectionHighlight).
     func selectionHighlight(isSelected: Bool) -> some View {
         modifier(SelectionHighlight(isSelected: isSelected))
     }

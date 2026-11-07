@@ -6,7 +6,7 @@ import Foundation
 ///
 /// A boundary is the index of the first photo after it, so a boundary equal
 /// to the photo count closes the final group. The folder always starts a
-/// group at photo 0. Photos after the last boundary are not in any group yet.
+/// group at photo 0. Photos after the last boundary are not in any group.
 nonisolated struct GroupLayout {
     /// One cell in the grid: a single photo, or a collapsed group shown as
     /// one cell.
@@ -32,7 +32,10 @@ nonisolated struct GroupLayout {
         }
     }
 
+    /// How many photos the folder has.
     let photoCount: Int
+
+    /// The boundaries, each the index of the photo just after it.
     let boundaries: Set<Int>
 
     /// The groups, in folder order.
@@ -41,6 +44,7 @@ nonisolated struct GroupLayout {
     /// The cells the sort screen's grid shows, in order.
     let cells: [Cell]
 
+    /// Work out the groups and cells for a folder of `photoCount` photos.
     /// `collapsedUpTo` is the photo index at which collapsing stops: groups
     /// ending at or before it are collapsed, and later ones aren't.
     /// `doneGroupStarts` names the done groups by their first photos; once
@@ -57,9 +61,9 @@ nonisolated struct GroupLayout {
         )
     }
 
-    /// The photo index that a gap between cells corresponds to: the first
-    /// photo of the cell after the gap, or the photo count for the gap after
-    /// the last cell.
+    /// Return the photo index that a gap between cells corresponds to: the
+    /// first photo of the cell after the gap, or the photo count for the gap
+    /// after the last cell.
     func photoIndex(forGap gapIndex: Int) -> Int {
         cells.indices.contains(gapIndex) ? cells[gapIndex].photoRange.lowerBound : photoCount
     }
@@ -71,35 +75,37 @@ nonisolated struct GroupLayout {
         photoCount - cells.count
     }
 
-    /// Whether there is a boundary at the gap before the given cell.
+    /// Return whether there is a boundary at the gap before the given cell.
     func hasBoundary(atGap gapIndex: Int) -> Bool {
         gapIndex > 0 && boundaries.contains(photoIndex(forGap: gapIndex))
     }
 
-    /// Whether the boundary at a gap can be toggled. Collapsed groups are
-    /// finished, so the gaps on either side of one are locked, as is the gap
-    /// before the first cell, where a group always starts.
+    /// Return whether the boundary at a gap can be toggled. Collapsed groups
+    /// are finished, so the gaps on either side of one are locked, as is the
+    /// gap before the first cell, where a group always starts.
     func isGapEditable(_ gapIndex: Int) -> Bool {
         guard gapIndex > 0 else { return false }
         let neighbours = [gapIndex - 1, gapIndex].filter { cells.indices.contains($0) }
         return !neighbours.contains { cells[$0].isCollapsed }
     }
 
-    /// The index of the cell that shows the given photo.
+    /// Return the index of the cell that shows the given photo, or nil for a
+    /// photo of a done group, which has no cell.
     func cellIndex(containing photoIndex: Int) -> Int? {
         cells.firstIndex { $0.photoRange.contains(photoIndex) }
     }
 
-    /// The groups, in order. Boundaries outside the folder, or at its
-    /// very start, are ignored.
+    /// Split the folder into groups, in order. Boundaries outside the folder,
+    /// or at its very start, are ignored.
     private static func groups(photoCount: Int, boundaries: Set<Int>) -> [Range<Int>] {
         let ends = boundaries.filter { $0 >= 1 && $0 <= photoCount }.sorted()
         let starts = [0] + ends.dropLast()
         return zip(starts, ends).map { start, end in start ..< end }
     }
 
-    /// The grid cells: groups up to the collapse point collapsed, except done
-    /// ones, which are left out, and everything else as individual photos.
+    /// Make the grid cells: groups up to the collapse point collapsed, except
+    /// done ones, which are left out, and everything else as individual
+    /// photos.
     private static func cells(
         photoCount: Int,
         groups: [Range<Int>],

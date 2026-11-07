@@ -6,6 +6,8 @@ import SwiftUI
 struct PhotoPositionLabel: View {
     /// The shown photo's index among the photos, counting from zero.
     let index: Int
+
+    /// How many photos the user is stepping through.
     let count: Int
 
     var body: some View {

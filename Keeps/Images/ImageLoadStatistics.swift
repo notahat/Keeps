@@ -23,13 +23,16 @@ nonisolated struct ImageLoadStatistics {
     /// How many steps the figures cover.
     static let recentStepLimit = 50
 
+    /// How many lookups found their image cached.
     private(set) var hitCount = 0
+
+    /// How many lookups found their image missing from the cache.
     private(set) var missCount = 0
 
     /// The most recent steps, oldest first.
     private var recentSteps: [StepOutcome] = []
 
-    /// Counts a view asking for an image, and whether it was cached.
+    /// Count a view asking for an image, and whether the image was cached.
     mutating func recordLookup(isHit: Bool) {
         if isHit {
             hitCount += 1
@@ -38,8 +41,8 @@ nonisolated struct ImageLoadStatistics {
         }
     }
 
-    /// Adds a step, forgetting the oldest once there are more than the
-    /// limit.
+    /// Add a step, forgetting the oldest once there are more than
+    /// recentStepLimit.
     mutating func recordStep(_ outcome: StepOutcome) {
         recentSteps.append(outcome)
         if recentSteps.count > Self.recentStepLimit {

@@ -16,9 +16,10 @@ nonisolated enum FolderSection {
         }
     }
 
-    /// This section, or the to-go section when this one has nothing left to
-    /// show. The sidebar hides the pile for an empty section, so without
-    /// this the user would be left on a screen with no pile to leave it by.
+    /// Return this section, or the to-go section when this one has nothing
+    /// left to show. The sidebar hides the pile for an empty section, so
+    /// otherwise the user would be left on a screen with no pile to leave it
+    /// by.
     func availableSection(hasDoneGroups: Bool, hasKeepers: Bool) -> FolderSection {
         switch self {
         case .toGo: .toGo

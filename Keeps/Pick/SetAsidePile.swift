@@ -6,7 +6,7 @@ import SwiftUI
 struct SetAsidePile: View {
     let photos: [PhotoItem]
 
-    /// The width and height of the square the pile fills.
+    /// The width and height in points of the square the pile fills.
     let length: CGFloat
 
     /// The group's common photo shape (see PrintPile).

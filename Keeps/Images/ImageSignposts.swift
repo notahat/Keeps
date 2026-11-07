@@ -18,14 +18,17 @@ import os
 ///   event instead.
 ///
 /// Signposts cost next to nothing when nothing is recording, so they stay
-/// in release builds. This only marks; ImageLoadStatistics keeps the figures the
-/// debug overlay shows.
+/// in release builds. ImageSignposts only marks; ImageLoadStatistics keeps
+/// the figures the debug overlay shows.
 nonisolated enum ImageSignposts {
+    /// Where every mark goes: the Keeps subsystem's "Image loading"
+    /// category.
     private static let signposter = OSSignposter(subsystem: "com.notahat.Keeps", category: "Image loading")
 
-    /// Runs a read of an image, marking it as an interval. The queue wait
-    /// is a label rather than an interval of its own, because a read that's
-    /// cancelled while queued never runs to end one.
+    /// Run a read of an image, marking the read as an interval, and return
+    /// what the read returned. The queue wait is a label rather than an
+    /// interval of its own, because a read that's cancelled while queued
+    /// never runs to end one.
     static func markRead(
         of size: ImageSize,
         queuedSince enqueueTime: ContinuousClock.Instant,
@@ -42,7 +45,8 @@ nonisolated enum ImageSignposts {
         return image
     }
 
-    /// Marks a view asking the cache for an image, and whether it was there.
+    /// Mark a view asking the cache for an image, and whether the image was
+    /// there.
     static func markLookup(of size: ImageSize, isHit: Bool) {
         if isHit {
             signposter.emitEvent("Cache hit", "\(size.description, privacy: .public)")
@@ -51,23 +55,23 @@ nonisolated enum ImageSignposts {
         }
     }
 
-    /// Marks the cache evicting an image.
+    /// Mark the cache evicting an image.
     static func markEviction(of size: ImageSize) {
         signposter.emitEvent("Cache eviction", "\(size.description, privacy: .public)")
     }
 
-    /// Marks a step to a photo whose full image is already cached.
+    /// Mark a step to a photo whose full image is already cached.
     static func markSharpStep(to stem: String) {
         signposter.emitEvent("Step sharp at once", "\(stem, privacy: .public)")
     }
 
-    /// Begins the interval of a step to a photo whose full image is still
-    /// loading. End it with endStep.
+    /// Begin the interval of a step to a photo whose full image is still
+    /// loading. Pass the returned state to endStep to end the interval.
     static func beginStep(to stem: String) -> OSSignpostIntervalState {
         signposter.beginInterval("Step", id: signposter.makeSignpostID(), "\(stem, privacy: .public)")
     }
 
-    /// Ends a step's interval, saying whether the image turned sharp or the
+    /// End a step's interval, saying whether the image turned sharp or the
     /// user moved on first.
     static func endStep(_ state: OSSignpostIntervalState, isSharp: Bool) {
         signposter.endInterval("Step", state, "\(isSharp ? "sharp" : "moved on", privacy: .public)")

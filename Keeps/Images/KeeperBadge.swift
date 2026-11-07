@@ -6,6 +6,8 @@ struct KeeperBadge: View {
     /// The colour that stands for keepers.
     static let color = Color.green
 
+    /// The font size, in points, of the checkmark symbol, which sets how
+    /// large the badge is drawn.
     var size: CGFloat = 28
 
     var body: some View {

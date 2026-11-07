@@ -11,13 +11,16 @@ import Observation
 /// work that would be lost by writing over it. Call stopAutoSaving() when
 /// the folder's view goes away, such as when its window closes.
 ///
-/// It doesn't manage sandbox access to the folder, and it doesn't convert
-/// between the saved form and the live grouping; Grouping does that.
+/// KeepsFile doesn't manage sandbox access to the folder, and doesn't
+/// convert between the saved form and the live grouping; Grouping does that.
 final class KeepsFile {
     /// Thrown when keeps.json is there but can't be restored. Its message
     /// tells the user what went wrong and that changes won't be saved.
     nonisolated struct UnreadableFileError: LocalizedError {
+        /// The name of the folder holding the keeps.json, for the message.
         let folderName: String
+
+        /// Why the file couldn't be restored.
         let underlyingError: Error
 
         var errorDescription: String? {
@@ -32,6 +35,7 @@ final class KeepsFile {
     /// Thrown inside UnreadableFileError when keeps.json names a format this
     /// version doesn't know, such as one written by a later version.
     nonisolated struct UnknownFormatError: LocalizedError {
+        /// The format name the file gives.
         let formatName: String
 
         var errorDescription: String? {
@@ -61,19 +65,20 @@ final class KeepsFile {
         }
     }
 
+    /// Where keeps.json is, whether or not it exists.
     private let fileURL: URL
 
     /// Whether stopAutoSaving() has been called, after which nothing more is
     /// saved.
     private var isStopped = false
 
-    /// Makes a KeepsFile for the keeps.json in a photo folder, without
+    /// Make a KeepsFile for the keeps.json in a photo folder, without
     /// reading or writing it.
     init(folderURL: URL) {
         fileURL = folderURL.appendingPathComponent("keeps.json")
     }
 
-    /// Returns the saved grouping, or nil when there's no keeps.json. Throws
+    /// Return the saved grouping, or nil when there's no keeps.json. Throw
     /// UnreadableFileError when there is one but it can't be read, isn't
     /// valid, or is in a format this version of Keeps doesn't know.
     func restore() throws -> SavedGrouping? {
@@ -86,7 +91,7 @@ final class KeepsFile {
         }
     }
 
-    /// Decodes the saved grouping from the file's contents, checking the
+    /// Decode the saved grouping from the file's contents, checking the
     /// format name first.
     private static func decodeGrouping(from data: Data) throws -> SavedGrouping {
         let decoder = JSONDecoder()
@@ -97,9 +102,9 @@ final class KeepsFile {
         return try decoder.decode(Contents.self, from: data).state
     }
 
-    /// Writes the grouping to keeps.json. Throws if it cannot be encoded or
-    /// written; callers are expected to surface the failure rather than
-    /// swallow it, so the user knows their work is at risk.
+    /// Write the grouping to keeps.json. Throw if the grouping cannot be
+    /// encoded or written; callers are expected to surface the failure
+    /// rather than swallow it, so the user knows their work is at risk.
     func save(_ savedGrouping: SavedGrouping) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -107,12 +112,13 @@ final class KeepsFile {
         try encoder.encode(contents).write(to: fileURL)
     }
 
-    /// Stops auto-saving.
+    /// Stop auto-saving, so nothing more is saved, including a change already
+    /// waiting to be saved.
     func stopAutoSaving() {
         isStopped = true
     }
 
-    /// Begins observing whatever observable state `snapshot` reads, writing
+    /// Begin observing whatever observable state `snapshot` reads, writing
     /// a fresh snapshot to disk whenever it changes. Save failures are passed
     /// to onSaveError so the UI can alert the user.
     ///

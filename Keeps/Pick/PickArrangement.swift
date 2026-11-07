@@ -10,7 +10,8 @@ nonisolated struct PickArrangement {
     /// The photos on the pile, in folder order.
     let pilePhotos: [Int]
 
-    /// `keepers` may include photos outside the group, which are ignored.
+    /// Arrange a group's photos. `keepers` may include photos outside the
+    /// group, which are ignored.
     init(group: Range<Int>, keepers: Set<Int>, isDone: Bool) {
         let photos = Array(group)
         guard isDone else {
@@ -22,9 +23,9 @@ nonisolated struct PickArrangement {
         pilePhotos = photos.filter { !keepers.contains($0) }
     }
 
-    /// The tile to select in place of a photo: that photo's own tile, or the
-    /// nearest tile before it, or the first tile. Nil when there are no
-    /// tiles.
+    /// Return the tile to select in place of a photo: that photo's own tile,
+    /// or the nearest tile before the photo, or the first tile. Return nil
+    /// when there are no tiles.
     func tileIndex(nearestPhoto photoIndex: Int) -> Int? {
         guard !tilePhotos.isEmpty else { return nil }
         return tilePhotos.lastIndex { $0 <= photoIndex } ?? 0

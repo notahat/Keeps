@@ -16,12 +16,14 @@ struct DoneScreen: View {
     /// Whether the screen has keyboard focus, so that Return reaches it.
     @FocusState private var hasKeyboardFocus: Bool
 
-    /// The width and height of each pile.
+    /// The width and height of each pile in points.
     private static let pileLength = CGFloat(FramedPhoto.standardFrameLength)
+
+    /// The space in points between piles and around the grid.
     private static let spacing = FramedPhoto.gridSpacing
 
-    /// Starts with the group last opened selected, if it's done, so coming
-    /// back from the pick screen leaves the selection where it was.
+    /// Start with the group last opened selected, if that group is done, so
+    /// coming back from the pick screen leaves the selection where it was.
     init(grouping: Grouping) {
         self.grouping = grouping
         let lastOpened = grouping.lastOpenedGroup
@@ -48,7 +50,7 @@ struct DoneScreen: View {
         }
     }
 
-    /// The done groups as a grid of piles, as many columns as fit.
+    /// Build the done groups as a grid of piles, as many columns as fit.
     private func grid(of groups: [Range<Int>]) -> some View {
         let columns = [GridItem(.adaptive(minimum: Self.pileLength, maximum: Self.pileLength), spacing: Self.spacing)]
         return LazyVGrid(columns: columns, spacing: Self.spacing) {
@@ -59,8 +61,8 @@ struct DoneScreen: View {
         .padding(Self.spacing)
     }
 
-    /// One done group: its pile, how many were kept, and the selection
-    /// highlight, with click handling.
+    /// Build one done group's pile, with how many of its photos were kept,
+    /// the selection highlight, and click handling.
     private func pile(of group: Range<Int>) -> some View {
         let pileOrder = Pile(group: group, folderPhotos: grouping.photos, keepers: grouping.keepers)
         return PrintPile(photos: pileOrder.photos, length: Self.pileLength, borderWidth: PrintPile.standardFrameBorderWidth)
@@ -77,8 +79,8 @@ struct DoneScreen: View {
             }
     }
 
-    /// Opens the selected group on the pick screen when Return is pressed.
-    /// Returns whether the key press was handled.
+    /// Open the selected group on the pick screen when Return is pressed.
+    /// Return whether the key press was handled.
     private func handleKeyPress(_ press: KeyPress) -> Bool {
         guard press.key == .return, let selectedGroup else { return false }
         grouping.open(selectedGroup)
