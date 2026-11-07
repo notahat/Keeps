@@ -103,7 +103,7 @@ struct FolderView: View {
         }
         grouping = newGrouping
         keepsFile = newKeepsFile
-        ImagePipeline.shared.prefetchImages(for: session.items, size: FramedPhoto.thumbnailSize)
+        ImagePipeline.shared.prefetchImages(for: session.items, size: .thumbnail)
     }
 }
 

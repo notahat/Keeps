@@ -106,11 +106,13 @@ commit.
    selection is almost always lost. Test first: Grouping remembers the
    last opened group after it closes. Then `Grouping.lastOpenedGroup`,
    kept in memory only, and `DoneScreen` uses it.
-3. **Image sizes out of `FramedPhoto`.** The thumbnail and medium image
-   sizes, the choice between them, and the aspect ratio helpers move
-   from the view to `ImageSize.swift`. The benchmark uses the real
-   values instead of copies of 520 and 1932, and `FramedPhotoTests`
-   becomes `ImageSizeTests` without `@MainActor`.
+3. ✅ **Image sizes out of `FramedPhoto`.** The thumbnail and medium image
+   sizes and the choice between them move from the view to
+   `ImageSize.swift`. The benchmark uses the real values instead of
+   copies of 520 and 1932, and `FramedPhotoTests` becomes
+   `ImageSizeTests` without `@MainActor`. (The aspect ratio helpers stay
+   on `FramedPhoto` until step 6: `commonAspectRatio` reads the image
+   cache, which the benchmark doesn't compile.)
 4. **Full image priorities.** Tiles request `.full` images at the same
    top priority as the photo shown full size. Decide with the user
    whether a tile's full image should rank lower, change the code if so,
@@ -124,6 +126,8 @@ commit.
    view in Images, `ScrollingTiles`. Stepping at full size, clamped to
    the ends, becomes a pure function on `TileLayout`, tested. The shared
    grid spacing and pile border width get one definition each.
+   `FramedPhoto.commonAspectRatio` moves to `ScrollingTiles`, its only
+   user.
 7. **Scrolling decisions out of `GridScrolling`.** Whether a change holds
    position, follows the selection, or does nothing becomes a pure,
    tested function returning an enum. `PhotoGridMetrics.

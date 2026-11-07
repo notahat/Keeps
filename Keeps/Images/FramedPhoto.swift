@@ -5,7 +5,7 @@ import SwiftUI
 /// a placeholder until its thumbnail loads. Cells, tiles, and piles all
 /// show their photos with it.
 ///
-/// It chooses which image to show by the frame's size in pixels: the
+/// It shows the image ImageSize chooses for the frame's size in pixels: the
 /// thumbnail, the medium image, or the full image. It always loads the
 /// thumbnail, which stands in until a larger image arrives.
 ///
@@ -55,40 +55,9 @@ struct FramedPhoto: View {
     }
 
     /// The width and height, in points, of the usual frame: a cell on the
-    /// sort and done screens.
-    static let standardFrameLength: Int = 260
-
-    /// The longest side of a thumbnail, in pixels: twice the standard
-    /// frame's length, so thumbnails are sharp in it on Retina screens.
-    static let thumbnailLongestSideLength: Int = standardFrameLength * 2
-
-    /// The size thumbnails are read and cached at.
-    static let thumbnailSize: ImageSize = .scaled(longestSideLength: thumbnailLongestSideLength)
-
-    /// The longest side of the medium image, in pixels. 1932 px is a
-    /// quarter of a Fuji X-T5 JPEG file's longest side, which the JPEG
-    /// decoder reads more cheaply than any other size. Reading a RAW file
-    /// at this size costs no more than at 2048 px. A frame larger than this
-    /// shows the full image, which reads more cheaply than any size in
-    /// between.
-    static let mediumImageLongestSideLength: Int = 1932
-
-    /// The size medium images are read and cached at, for frames larger
-    /// than a thumbnail but no longer than the medium image.
-    static let mediumImageSize: ImageSize = .scaled(longestSideLength: mediumImageLongestSideLength)
-
-    /// Choose the image to show in a frame whose longest side is this many
-    /// pixels long: the smallest of the thumbnail, the medium image, and the
-    /// full image that's at least that long.
-    static func chooseImageSize(forLongestSideLength length: CGFloat) -> ImageSize {
-        if length <= CGFloat(thumbnailLongestSideLength) {
-            thumbnailSize
-        } else if length <= CGFloat(mediumImageLongestSideLength) {
-            mediumImageSize
-        } else {
-            .full
-        }
-    }
+    /// sort and done screens. Half a thumbnail's length, so thumbnails are
+    /// sharp in it on Retina screens.
+    static let standardFrameLength = ImageSize.thumbnailLongestSideLength / 2
 
     /// The shape of most camera sensors, width over height, for laying out
     /// photos before their thumbnails have loaded, or piles whose photos
@@ -106,7 +75,7 @@ struct FramedPhoto: View {
     /// their tiles.
     static func commonAspectRatio(of photos: some Sequence<PhotoItem>) -> CGFloat {
         let ratios = photos.compactMap { photo -> CGFloat? in
-            guard let size = ImagePipeline.shared.cachedImage(for: photo, size: thumbnailSize)?.size,
+            guard let size = ImagePipeline.shared.cachedImage(for: photo, size: .thumbnail)?.size,
                   size.height > 0
             else { return nil }
             return size.width / size.height
@@ -129,8 +98,8 @@ struct FramedPhoto: View {
     /// frame is no larger than a thumbnail.
     private var largerImageSize: ImageSize? {
         let longestSideLength = max(frameSize.width, frameSize.height) * displayScale
-        let size = Self.chooseImageSize(forLongestSideLength: longestSideLength)
-        return size == Self.thumbnailSize ? nil : size
+        let size = ImageSize.choose(forLongestSideLength: longestSideLength)
+        return size == .thumbnail ? nil : size
     }
 
     var body: some View {
@@ -144,11 +113,11 @@ struct FramedPhoto: View {
         .onAppear {
             // The thumbnail is asked for first, so it's read first and can
             // stand in while the larger image loads.
-            thumbnail = loadImage(size: Self.thumbnailSize)
+            thumbnail = loadImage(size: .thumbnail)
             largerImage = largerImageSize.map { loadImage(size: $0) }
         }
         .onDisappear {
-            ImagePipeline.shared.deprioritizeImage(for: item, size: Self.thumbnailSize)
+            ImagePipeline.shared.deprioritizeImage(for: item, size: .thumbnail)
             if let largerImageSize {
                 ImagePipeline.shared.deprioritizeImage(for: item, size: largerImageSize)
             }

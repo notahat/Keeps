@@ -128,15 +128,12 @@ struct Read: Sendable {
     let perform: @Sendable (URL) -> CGImage?
 
     /// The reads the app makes, then a decode of the whole image, which
-    /// the app doesn't do yet but 100% zoom would need, then reads at the
-    /// steps a JPEG decoder takes cheaply. The thumbnail and medium image
-    /// sizes are FramedPhoto's thumbnailLongestSideLength and
-    /// mediumImageLongestSideLength, written out here because the benchmark
-    /// doesn't compile that view.
+    /// 100% zoom would need, then reads at the steps a JPEG decoder takes
+    /// cheaply.
     static let all: [Read] = [
         app("Full size view", size: .full),
-        app("Thumbnail, 520 px", size: .scaled(longestSideLength: 520)),
-        app("Medium image, 1932 px", size: .scaled(longestSideLength: 1932)),
+        app("Thumbnail, \(ImageSize.thumbnail)", size: .thumbnail),
+        app("Medium image, \(ImageSize.mediumImage)", size: .mediumImage),
         Read(name: "Whole image decoded") { decodeWholeImage(from: $0) },
     ] + decoderSteps
 

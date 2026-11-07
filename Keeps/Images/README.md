@@ -2,8 +2,9 @@
 
 Loading, caching, and showing photos.
 
-`ImageReader` decodes files into images, scaled to the size asked for
-(`ImageSize`). There are three sizes of image:
+`ImageReader` decodes files into images, scaled to the size asked for.
+`ImageSize` names the three sizes of image, and chooses which of them a
+frame shows:
 
 - a **thumbnail**, 520 pixels long, for the sort screen's cells, piles,
   and drag images, and to stand in while a larger image loads;
@@ -25,10 +26,8 @@ image keeps its `WatchedImage`, which redraws only that view when the
 image arrives.
 
 `FramedPhoto` shows a photo in a fixed frame, for cells, tiles, and
-piles. It chooses the image by the frame's size in pixels: the thumbnail,
-the medium image, or for the largest tiles the full image, which a JPEG's
-and a RAW's decoders read more cheaply than any size in between. The
-thumbnail stands in until a larger image loads. `FullSizeImage` shows a photo
+piles. It shows the image `ImageSize` chooses for the frame's size in
+pixels, with the thumbnail standing in until a larger image loads. `FullSizeImage` shows a photo
 full size, with its thumbnail standing in until it loads and its
 neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
 far the current burst of loading has got.
