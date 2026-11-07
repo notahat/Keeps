@@ -116,11 +116,11 @@ struct PickScreen: View {
     /// The line above the tiles: which group this is among all the groups,
     /// whether it's done, and how many of its photos are kept.
     private var header: some View {
-        let groups = grouping.layout.groups
-        let groupNumber = (groups.firstIndex(of: group) ?? 0) + 1
+        let groupNumber = grouping.groupNumber(of: group)
+        let groupCount = grouping.layout.groups.count
         let keptCount = grouping.keptCount(in: group)
         let doneLabel = grouping.isDone(group) ? "Done · " : ""
-        return Text("Group \(groupNumber) of \(groups.count) · \(doneLabel)\(keptCount) of \(group.count) kept")
+        return Text("Group \(groupNumber) of \(groupCount) · \(doneLabel)\(keptCount) of \(group.count) kept")
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding(.top, Self.spacing)

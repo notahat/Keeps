@@ -137,11 +137,14 @@ commit.
    tested function returning an enum. `PhotoGridMetrics.
    scrollOffsetHoldingItem`'s seven parameters become a before and an
    after value.
-8. **Step timing out of `FullSizeImage`.** The rules for a step that's
+8. ~~**Step timing out of `FullSizeImage`.** The rules for a step that's
    moved on from and a step that's sharp at once become a pure value,
    tested like `ImageLoadStats`, with the view making the signpost and
-   pipeline calls.
-9. **The group number from Grouping.** `PickScreen.header` stops working
+   pipeline calls.~~ Skipped: the pending step carries its signpost, so a
+   pure timer would have to be generic over it, with the view still
+   deciding each case. That's harder to follow than the 25 lines it
+   would replace.
+9. ✅ **The group number from Grouping.** `PickScreen.header` stops working
    out the group number itself, and with it the `?? 0` that would show
    "Group 1" for a missing group. Grouping provides it, tested.
 10. **Fail loudly.**

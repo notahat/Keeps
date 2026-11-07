@@ -317,6 +317,13 @@ struct GroupingTests {
         #expect(grouping.lastOpenedGroup == 0 ..< 3)
     }
 
+    @Test("A group's number is its place among the groups, counting from one")
+    func groupNumber() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+
+        #expect(grouping.groupNumber(of: 3 ..< 5) == 2)
+    }
+
     @Test("A done group leaves the grid")
     func doneGroupLeavesGrid() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])

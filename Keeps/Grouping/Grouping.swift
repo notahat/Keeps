@@ -208,6 +208,15 @@ class Grouping {
         doneGroupStarts.contains(group.lowerBound)
     }
 
+    /// Return a group's place among all the groups, counting from one, for
+    /// showing to the user. Stops the app if it isn't a group.
+    func groupNumber(of group: Range<Int>) -> Int {
+        guard let index = layout.groups.firstIndex(of: group) else {
+            preconditionFailure("\(group) isn't a group")
+        }
+        return index + 1
+    }
+
     /// How many of a group's photos are keepers.
     func keptCount(in group: Range<Int>) -> Int {
         group.count { keepers.contains($0) }
