@@ -10,4 +10,5 @@ Escape or Space goes back.
 
 It only shows the keepers. The user changes them on the pick screen.
 
-Uses Grouping, Images, Folder, and Keys, and never Sort, Pick, or Done.
+This folder uses Grouping, Images, Folder, and Keys, and never another
+screen's folder: Sort, Pick, Done, and Keepers don't use each other.

@@ -10,4 +10,6 @@ and its `stem`, used in keeps.json so saved work survives relaunches and
 folder moves.
 
 The code here doesn't load image data, hold the grouping, or manage
-sandbox access, and it uses no other code folder.
+sandbox access.
+
+This folder uses no other folder.

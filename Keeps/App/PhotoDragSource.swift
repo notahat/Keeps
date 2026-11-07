@@ -35,7 +35,7 @@ struct PhotoDragSource: NSViewRepresentable {
 /// The AppKit view behind PhotoDragSource, which starts a drag with one item
 /// per photo, since SwiftUI's drag modifiers hand over only one.
 final class PhotoDragView: NSView, NSDraggingSource {
-    /// The photos whose files a drag carries; with none, no drag starts.
+    /// The photos whose files a drag carries.
     var photos: [PhotoItem] = []
 
     /// Called when a press ends without starting a drag.
@@ -74,7 +74,7 @@ final class PhotoDragView: NSView, NSDraggingSource {
     override func mouseDragged(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
         let distance = hypot(location.x - pressLocation.x, location.y - pressLocation.y)
-        guard !hasStartedDrag, !photos.isEmpty, distance >= Self.dragThreshold else { return }
+        guard !hasStartedDrag, distance >= Self.dragThreshold else { return }
         hasStartedDrag = true
         let items = photos.map { makeDraggingItem(for: $0, at: location) }
         let session = beginDraggingSession(with: items, event: event, source: self)

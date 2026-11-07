@@ -16,4 +16,4 @@ the keepers, needs nothing more: older files simply lack it. Any other
 change to the format must add a new name in the file's `"workflow"` field
 and convert the old format on load.
 
-The code here uses no other code folder.
+This folder uses no other folder.

@@ -221,7 +221,7 @@ commit.
     `makePhotos`' URLs now match their stems. Tests whose checks together
     describe one result, such as a round trip or a tile's width and
     height, stay whole.)
-15. **Small things.**
+15. ✅ **Small things.**
     - `isPlainLetter` moves out of `MoveDirection.swift`.
     - `PileLabel` gets its own file.
     - `placedInPile` becomes private.
@@ -231,3 +231,6 @@ commit.
     - `PhotoDragSource`'s empty guard goes.
     - The folder READMEs catch up with their folders and state the
       screens' layering rule the same way.
+    (`isPlainLetter` is in `Keys/PlainLetter.swift`, with its tests in
+    `PlainLetterTests`. Every README now ends with what its folder uses,
+    in the same words.)

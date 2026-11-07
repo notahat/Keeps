@@ -102,7 +102,11 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
         }
         return grouped
             .map { size, entries in
-                ImageCache.Contents(size: size, imageCount: entries.count, byteCount: entries.sum(of: \.byteCount))
+                ImageCache.Contents(
+                    size: size,
+                    imageCount: entries.count,
+                    byteCount: entries.reduce(0) { total, entry in total + entry.byteCount }
+                )
             }
             .sorted { $0.size.sortOrder < $1.size.sortOrder }
     }
@@ -112,13 +116,6 @@ private final nonisolated class CacheTally: NSObject, NSCacheDelegate, Sendable 
     private static func byteCount(of image: NSImage) -> Int {
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return 0 }
         return cgImage.width * cgImage.height * 4
-    }
-}
-
-private nonisolated extension Array {
-    /// Return the total of a number taken from each element.
-    func sum(of value: (Element) -> Int) -> Int {
-        reduce(0) { $0 + value($1) }
     }
 }
 

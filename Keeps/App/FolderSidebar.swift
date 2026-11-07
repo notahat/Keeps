@@ -26,7 +26,10 @@ struct FolderSidebar: View {
     private static let spacing: CGFloat = 12
 
     /// Room around each pile, inside its highlight, in points.
-    private static let highlightPadding: CGFloat = 8
+    fileprivate static let highlightPadding: CGFloat = 8
+
+    /// The corner radius of a pile's highlight, in points.
+    fileprivate static let highlightCornerRadius: CGFloat = 12
 
     var body: some View {
         // Each is worked out once per render, since each walks the folder.
@@ -42,7 +45,7 @@ struct FolderSidebar: View {
                 // The drag source takes the clicks as well as the drags, so
                 // it selects the section itself.
                 pile(of: keepers, label: keepersLabel, color: KeeperBadge.color)
-                    .sectionHighlight(.keepers, selection: section, padding: Self.highlightPadding)
+                    .sectionHighlight(.keepers, selection: section)
                     .overlay {
                         PhotoDragSource(photos: keepers.map { grouping.photos[$0] }) {
                             section = .keepers
@@ -52,10 +55,10 @@ struct FolderSidebar: View {
             }
             if !toGo.isEmpty {
                 pile(of: toGo, label: "\(toGo.count) to go")
-                    .sectionItem(.toGo, selection: $section, padding: Self.highlightPadding)
+                    .sectionItem(.toGo, selection: $section)
             }
             pile(of: setAside, label: "\(setAside.count) set aside")
-                .sectionItem(.done, selection: $section, padding: Self.highlightPadding)
+                .sectionItem(.done, selection: $section)
         }
     }
 
@@ -75,20 +78,19 @@ struct FolderSidebar: View {
 
 private extension View {
     /// Make a pile select its section when clicked, sitting on a highlight
-    /// while that section is showing. `padding` is in points.
-    func sectionItem(_ itemSection: FolderSection, selection: Binding<FolderSection>, padding: CGFloat) -> some View {
-        sectionHighlight(itemSection, selection: selection.wrappedValue, padding: padding)
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+    /// while that section is showing.
+    func sectionItem(_ itemSection: FolderSection, selection: Binding<FolderSection>) -> some View {
+        sectionHighlight(itemSection, selection: selection.wrappedValue)
+            .contentShape(RoundedRectangle(cornerRadius: FolderSidebar.highlightCornerRadius))
             .onTapGesture { selection.wrappedValue = itemSection }
     }
 
-    /// Pad a pile by `padding` points and sit it on a highlight while its
-    /// section is showing.
-    func sectionHighlight(_ itemSection: FolderSection, selection: FolderSection, padding: CGFloat) -> some View {
-        self.padding(padding)
+    /// Pad a pile and sit it on a highlight while its section is showing.
+    func sectionHighlight(_ itemSection: FolderSection, selection: FolderSection) -> some View {
+        padding(FolderSidebar.highlightPadding)
             .background {
                 if selection == itemSection {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: FolderSidebar.highlightCornerRadius)
                         .fill(Color.accentColor.opacity(0.25))
                 }
             }

@@ -18,4 +18,7 @@ The logic is in pure, tested helpers: `PhotoGridMetrics` for rows, slots,
 scroll offsets, and where the movement keys go, `GridHitTarget` for
 whether a click landed on a photo or a gap, and `GridScrollResponse` for
 whether a change holds the view still, follows the selection, or leaves
-it. Uses Grouping, Images, Folder, and Keys, and never Pick.
+it.
+
+This folder uses Grouping, Images, Folder, and Keys, and never another
+screen's folder: Sort, Pick, Done, and Keepers don't use each other.

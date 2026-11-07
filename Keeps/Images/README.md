@@ -29,8 +29,10 @@ image arrives.
 piles. It shows the image `ImageSize` chooses for the frame's size in
 pixels, with the thumbnail standing in until a larger image loads.
 `FullSizePhoto` shows a photo's full image, with its thumbnail standing in
-until it loads and its neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
-far the current burst of loading has got.
+until it loads and its neighbours preloaded, and `PhotoPositionLabel`
+says where it sits among the photos, such as "3 / 12".
+`LoadProgressView` is the toolbar ring showing how far the current burst
+of loading has got, which `LoadProgress` works out.
 
 `ScrollingTiles` is the pick and keepers screens' grid of tiles: it lays
 them out, scrolls them when they don't fit, and handles clicks and the
@@ -61,6 +63,8 @@ outside a preview may use it.
 photo or pile, and `KeeperBadge` marks a keeper; its colour stands for the
 keepers wherever they're shown.
 
-Images uses Folder, for `PhotoItem`, and Keys, for `ScrollingTiles`' input.
-It knows nothing about groups: the screens track which photo is selected and
-draw the sort screen's boundary bars themselves.
+The code here knows nothing about groups: the screens track which photo is
+selected and draw the sort screen's boundary bars themselves.
+
+This folder uses Folder, for `PhotoItem`, and Keys, for `ScrollingTiles`'
+input.

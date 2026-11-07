@@ -23,9 +23,13 @@ keepers screen, the to-go pile for the sort screen, or the set-aside pile
 for the done groups. The pile for the section showing sits on a
 highlight. The user can also drag the keepers pile: `PhotoDragSource`
 hands over the keepers' files (the RAW where there is one), the same as
-dragging them from Finder, for dropping into Lightroom or a folder. `FolderWindowController` adds the section's name to
-the window title. The document itself never saves. In debug builds,
-`MainMenu` adds a Debug menu, which shows the image statistics overlay.
+dragging them from Finder, for dropping into Lightroom or a folder.
+`FolderWindowController` adds the section's name to the window title. The
+document itself never saves.
 
-The code here uses every other code folder, and no other code folder uses
-it.
+`MainMenu` builds the menu bar: the app menu, File, and Window, and in
+debug builds a Debug menu, which shows the image statistics overlay.
+`AppDelegate` and `FolderDocumentController` make the Open panel choose
+folders and show in place of an untitled document.
+
+This folder uses every other folder, and no other folder uses it.
