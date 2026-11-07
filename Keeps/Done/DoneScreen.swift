@@ -20,13 +20,11 @@ struct DoneScreen: View {
     private static let spacing: CGFloat = 12
 
     /// Starts with the group last opened selected, if it's done, so coming
-    /// back from the pick screen leaves the selection where it was. Opening
-    /// a group selects its first photo (see Grouping.open(_:)), which is how
-    /// the last opened group is found.
+    /// back from the pick screen leaves the selection where it was.
     init(grouping: Grouping) {
         self.grouping = grouping
-        let lastOpened = grouping.selectedPhotoIndex
-        _selectedGroup = State(initialValue: grouping.doneGroups.first { $0.lowerBound == lastOpened })
+        let lastOpened = grouping.lastOpenedGroup
+        _selectedGroup = State(initialValue: grouping.doneGroups.first { $0 == lastOpened })
     }
 
     var body: some View {

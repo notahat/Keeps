@@ -100,7 +100,7 @@ commit.
    Delete the nine finished plans and the measuring plan's done design
    sections, keeping its goal, what to measure, scenarios, what good
    looks like, and its open steps. Git keeps the history.
-2. **The done screen keeps its selection (bug).** `DoneScreen` finds the
+2. ✅ **The done screen keeps its selection (bug).** `DoneScreen` finds the
    last opened group through `selectedPhotoIndex`, but closing a done
    group moves the selection to the next group that isn't done, so the
    selection is almost always lost. Test first: Grouping remembers the

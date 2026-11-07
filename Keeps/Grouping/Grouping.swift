@@ -12,12 +12,12 @@ import Observation
 /// and marks it done. Closing the open group means leaving the pick screen.
 ///
 /// Grouping holds the boundaries, the collapse point, the selection, the
-/// sort screen's scroll position, the open group, the keepers, and the done
-/// groups. The sort screen shows cells, not photos, so Grouping translates
-/// between cell indices, which the screen uses, and photo indices, which
-/// boundaries are made of; GroupLayout derives the cells. Grouping converts
-/// itself to and from SavedGrouping for saving, but doesn't scan the
-/// folder, load images, or write files.
+/// sort screen's scroll position, the open and last opened groups, the
+/// keepers, and the done groups. The sort screen shows cells, not photos,
+/// so Grouping translates between cell indices, which the screen uses, and
+/// photo indices, which boundaries are made of; GroupLayout derives the
+/// cells. Grouping converts itself to and from SavedGrouping for saving,
+/// but doesn't scan the folder, load images, or write files.
 @Observable
 class Grouping {
     /// The folder's photos, in folder order. Every photo index refers to
@@ -48,6 +48,11 @@ class Grouping {
     /// The group shown on the pick screen, or nil while the sort screen is
     /// showing. Always collapsed, so its photos can't change while it's open.
     private(set) var openGroup: Range<Int>?
+
+    /// The group most recently opened, kept after it closes so the done
+    /// screen can show it selected when the user comes back. Not saved:
+    /// nil when no group has been opened since the folder was opened.
+    private(set) var lastOpenedGroup: Range<Int>?
 
     /// The photos picked to keep.
     private(set) var keepers: Set<Int> = []
@@ -160,6 +165,7 @@ class Grouping {
         guard layout.groups.contains(group) else { return }
         collapsedUpTo = max(collapsedUpTo, group.upperBound)
         openGroup = group
+        lastOpenedGroup = group
         selectedPhotoIndex = group.lowerBound
     }
 

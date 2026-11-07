@@ -29,8 +29,8 @@ folder needs adding to that exception list.
   `FramedPhoto`, `FullSizeImage`, load progress, `PileJitter`), and
   `TileLayout`, the pure, tested tile grid the screens share.
 - `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
-  selection, scroll position, open group, keepers, and done groups, and
-  `GroupLayout` derives the cells.
+  selection, scroll position, open and last opened groups, keepers, and
+  done groups, and `GroupLayout` derives the cells.
 - `Saving/` — keeps.json: `KeepsFile` reads and writes it, and
   `SavedGrouping` is its format.
 - `Sort/` — the sort screen. `SortScreen` draws cells and handles input;

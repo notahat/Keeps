@@ -306,6 +306,17 @@ struct GroupingTests {
         #expect(grouping.selectedPhotoIndex == nil)
     }
 
+    @Test("Closing a done group remembers it as the last opened")
+    func closingDoneGroupRemembersIt() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.lastOpenedGroup == 0 ..< 3)
+    }
+
     @Test("A done group leaves the grid")
     func doneGroupLeavesGrid() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
