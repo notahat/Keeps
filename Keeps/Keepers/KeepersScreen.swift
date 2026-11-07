@@ -67,10 +67,9 @@ struct KeepersScreen: View {
 
     /// The selected keeper full size, with its place among the keepers.
     private func fullSize(of keepers: [PhotoItem]) -> some View {
-        let index = min(selectedIndex, keepers.count - 1)
-        return FullSizeImage(items: keepers, index: index)
+        FullSizeImage(items: keepers, index: selectedIndex)
             .overlay(alignment: .bottomTrailing) {
-                PhotoPositionLabel(index: index, count: keepers.count)
+                PhotoPositionLabel(index: selectedIndex, count: keepers.count)
                     .padding(12)
             }
             .padding(FramedPhoto.gridSpacing)

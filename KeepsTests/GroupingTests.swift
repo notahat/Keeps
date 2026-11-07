@@ -33,16 +33,6 @@ struct GroupingTests {
         #expect(grouping.boundaries.isEmpty)
     }
 
-    @Test("Boundaries before the first photo or past the end of the folder are ignored")
-    func outOfRangeBoundariesIgnored() {
-        let grouping = makeGrouping(photoCount: 10)
-
-        grouping.toggleBoundary(atPhoto: 0)
-        grouping.toggleBoundary(atPhoto: 11)
-
-        #expect(grouping.boundaries.isEmpty)
-    }
-
     @Test("The working point is the photo just after the last boundary")
     func workingPointFollowsLastBoundary() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 6])
@@ -240,15 +230,6 @@ struct GroupingTests {
         #expect(grouping.layout.cells.first == .collapsedGroup(0 ..< 3))
     }
 
-    @Test("Marking done with no group open marks nothing")
-    func markingDoneWithNothingOpen() {
-        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
-
-        grouping.markOpenGroupDone()
-
-        #expect(!grouping.isDone(0 ..< 3))
-    }
-
     @Test("Closing a group leaves it not done")
     func closingLeavesGroupNotDone() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])
@@ -407,15 +388,6 @@ struct GroupingTests {
         grouping.open(0 ..< 3)
 
         #expect(grouping.openGroup == 0 ..< 3)
-    }
-
-    @Test("Opening something that isn't a group opens nothing")
-    func openingNonGroup() {
-        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
-
-        grouping.open(1 ..< 4)
-
-        #expect(grouping.openGroup == nil)
     }
 
     @Test("Done groups are counted")

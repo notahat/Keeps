@@ -45,16 +45,22 @@ enum DecodeBenchmark {
         }
     }
 
-    /// The photos at a path: the file itself, or the photos in a folder,
-    /// sorted by name.
+    /// Return the photos at a path: the file itself, or the photos in a
+    /// folder, sorted by name. Stops the benchmark if nothing is there or a
+    /// folder can't be read.
     static func photoURLs(at url: URL) -> [URL] {
-        let contents = try? FileManager.default.contentsOfDirectory(
-            at: url, includingPropertiesForKeys: nil
-        )
-        guard let contents else { return [url] }
-        return contents
-            .filter { photoExtensions.contains($0.pathExtension.lowercased()) }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        var isFolder: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isFolder) else {
+            fatalError("Nothing is at \(url.path).")
+        }
+        guard isFolder.boolValue else { return [url] }
+        do {
+            return try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
+                .filter { photoExtensions.contains($0.pathExtension.lowercased()) }
+                .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        } catch {
+            fatalError("Couldn't read \(url.path): \(error.localizedDescription)")
+        }
     }
 
     /// Times each read of one photo, and prints a table of them.

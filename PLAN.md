@@ -147,7 +147,7 @@ commit.
 9. ✅ **The group number from Grouping.** `PickScreen.header` stops working
    out the group number itself, and with it the `?? 0` that would show
    "Group 1" for a missing group. Grouping provides it, tested.
-10. **Fail loudly.**
+10. ✅ **Fail loudly.**
     - `FolderScanner.creationDate` throws rather than giving 1970.
     - `ImagePipeline` logs a failed read with the file's path, and the
       preview loader stops with `fatalError`.

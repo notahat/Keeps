@@ -6,7 +6,8 @@ import Foundation
 ///
 /// Holds the fixed sizes, which cells use to draw boundary bars that line
 /// up with the gaps, and pure functions over them for rows, slots, scroll
-/// offsets, and where the movement keys go.
+/// offsets, and where the movement keys go. Every column count passed in
+/// must be at least 1, as SortScreen ensures when it measures the grid.
 enum PhotoGridMetrics {
     /// Where the grid's cells sit: the photo each cell shows, in order, after
     /// some blank slots.
@@ -49,13 +50,13 @@ enum PhotoGridMetrics {
     /// count: only the remainder by the column count, so at most a partial
     /// row. Pure.
     static func blankSlotCount(for requestedCount: Int, columnCount: Int) -> Int {
-        max(0, requestedCount) % max(1, columnCount)
+        requestedCount % columnCount
     }
 
     /// The distance from the top of the grid's content to the top of the
     /// row holding the item at `index`. Pure.
     static func rowTop(forIndex index: Int, columnCount: Int) -> CGFloat {
-        let row = index / max(1, columnCount)
+        let row = index / columnCount
         return spacing + CGFloat(row) * (cellSize + spacing)
     }
 
@@ -109,7 +110,7 @@ enum PhotoGridMetrics {
     /// Pure.
     static func firstSlot(inRowAt height: CGFloat, columnCount: Int) -> Int {
         let row = max(0, Int(((height - spacing) / (cellSize + spacing)).rounded(.down)))
-        return row * max(1, columnCount)
+        return row * columnCount
     }
 
     /// The scroll offset that keeps an item at the same height on screen

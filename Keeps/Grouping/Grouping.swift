@@ -120,16 +120,17 @@ class Grouping {
         toggleBoundary(atPhoto: layout.photoIndex(forGap: gapIndex))
     }
 
-    /// Toggles the boundary before the given photo. The folder always
-    /// starts a group, so there is no boundary before photo 0.
+    /// Toggles the boundary before the given photo, from 1 to the photo
+    /// count, where a boundary there closes the last group. The folder
+    /// always starts a group, so there is no boundary before photo 0. Stops
+    /// the app for any other index.
     func toggleBoundary(atPhoto photoIndex: Int) {
-        guard photoIndex >= 1, photoIndex <= items.count else { return }
+        precondition(1 ... items.count ~= photoIndex, "No boundary can go before photo \(photoIndex)")
         boundaries.toggle(photoIndex)
     }
 
     /// Selects a cell. A collapsed group is selected via its first photo.
     func selectCell(at cellIndex: Int) {
-        guard layout.cells.indices.contains(cellIndex) else { return }
         selectedPhotoIndex = layout.cells[cellIndex].photoRange.lowerBound
     }
 
@@ -147,7 +148,6 @@ class Grouping {
     /// Photos after the working point aren't in a group, so their cells open
     /// nothing.
     func open(groupAtCell cellIndex: Int) {
-        guard layout.cells.indices.contains(cellIndex) else { return }
         let photoIndex = layout.cells[cellIndex].photoRange.lowerBound
         guard let group = layout.groups.first(where: { $0.contains(photoIndex) }) else { return }
         open(group)
@@ -159,10 +159,9 @@ class Grouping {
     /// Every group up to and including it is collapsed first, so its photos
     /// can't change while it's open; later groups that are already collapsed
     /// stay collapsed. The group is also selected, so the sort screen shows
-    /// it when the user comes back. Anything that isn't a group opens
-    /// nothing.
+    /// it when the user comes back. Stops the app if it isn't a group.
     func open(_ group: Range<Int>) {
-        guard layout.groups.contains(group) else { return }
+        precondition(layout.groups.contains(group), "\(group) isn't a group")
         collapsedUpTo = max(collapsedUpTo, group.upperBound)
         openGroup = group
         lastOpenedGroup = group
@@ -171,20 +170,21 @@ class Grouping {
 
     /// Marks a photo as a keeper, or unmarks it if it already is one.
     func toggleKeeper(atPhoto photoIndex: Int) {
-        guard items.indices.contains(photoIndex) else { return }
+        precondition(items.indices.contains(photoIndex), "There's no photo \(photoIndex)")
         keepers.toggle(photoIndex)
     }
 
-    /// Marks the open group done, leaving it open.
+    /// Marks the open group done, leaving it open. A group must be open.
     func markOpenGroupDone() {
-        guard let openGroup else { return }
+        guard let openGroup else { preconditionFailure("No group is open") }
         doneGroupStarts.insert(openGroup.lowerBound)
     }
 
     /// Marks the open group not done, leaving it open. Once closed, it
-    /// shows on the sort screen's grid again, for the user to work on.
+    /// shows on the sort screen's grid again, for the user to work on. A
+    /// group must be open.
     func markOpenGroupNotDone() {
-        guard let openGroup else { return }
+        guard let openGroup else { preconditionFailure("No group is open") }
         doneGroupStarts.remove(openGroup.lowerBound)
     }
 
@@ -268,10 +268,12 @@ class Grouping {
             boundaries: boundaries.sorted().map(stems.position(beforePhoto:)),
             collapsedUpTo: collapsedUpTo > 0 ? stems.position(beforePhoto: collapsedUpTo) : nil,
             selectedStem: selectedPhotoIndex.map { items[$0].stem },
-            scrollAnchor: scrollAnchor.flatMap { anchor in
-                stems.stem(ofItemID: anchor.itemID).map {
-                    SavedGrouping.ScrollAnchor(stem: $0, offsetFromRowTop: anchor.offsetFromRowTop)
+            scrollAnchor: scrollAnchor.map { anchor in
+                // The grid only anchors to the photos it shows.
+                guard let stem = stems.stem(ofItemID: anchor.itemID) else {
+                    preconditionFailure("The scroll anchor's photo isn't in the folder")
                 }
+                return SavedGrouping.ScrollAnchor(stem: stem, offsetFromRowTop: anchor.offsetFromRowTop)
             },
             keeperStems: stems.stems(ofPhotos: keepers),
             doneGroupStartStems: stems.stems(ofPhotos: doneGroupStarts)

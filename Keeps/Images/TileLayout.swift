@@ -69,9 +69,9 @@ nonisolated struct TileLayout {
     /// The tile a movement key goes to from the given tile. Left and right
     /// step through the tiles in order; up and down go to the horizontally
     /// nearest tile in the next row, the left one when two are equally
-    /// near. Stays put when there is nowhere to go.
+    /// near. Stays put when there is nowhere to go. The index must be one
+    /// of the tiles.
     func target(from index: Int, moving direction: MoveDirection) -> Int {
-        guard tileFrames.indices.contains(index) else { return index }
         let row = index / columnCount
         let midX = tileFrames[index].midX
         return switch direction {
@@ -91,9 +91,9 @@ nonisolated struct TileLayout {
     }
 
     /// Where to scroll so a tile is fully in view, moving only as far as
-    /// needed, or nil when it already is.
+    /// needed, or nil when it already is. The index must be one of the
+    /// tiles.
     func scrollOffset(revealing index: Int, from currentOffset: CGFloat, viewportHeight: CGFloat) -> CGFloat? {
-        guard tileFrames.indices.contains(index) else { return nil }
         let frame = tileFrames[index]
         if frame.minY < currentOffset {
             return frame.minY

@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import os
 
 /// The image of one photo at one size, for a view to show. `image` is nil
 /// until the image has loaded. The view reads `image` in its body, so
@@ -45,6 +46,10 @@ final class ImagePipeline {
     private static let backgroundPrefetchPriority: Operation.QueuePriority = .veryLow
 
     private let cache = ImageCache()
+
+    /// Where reads that fail are logged. A file that can't be read leaves
+    /// its view showing a placeholder, so the log says why.
+    private static let logger = Logger(subsystem: "com.notahat.Keeps", category: "Image loading")
 
     /// The images views are watching, by read key. Each one is held weakly,
     /// so it goes once no view holds it. Holding them strongly would keep
@@ -158,9 +163,12 @@ final class ImagePipeline {
 
     /// Reads an image and caches it straight away, blocking until it's
     /// loaded. Only for SwiftUI previews, which are drawn before a background
-    /// read would finish; in the app it would stall the main thread.
+    /// read would finish; in the app it would stall the main thread. Stops
+    /// the preview if the file can't be read.
     func loadImageImmediately(for item: PhotoItem, size: ImageSize) {
-        guard let cgImage = ImageReader.image(from: item.sourceURL, size: size) else { return }
+        guard let cgImage = ImageReader.image(from: item.sourceURL, size: size) else {
+            fatalError("Couldn't read the preview photo \(item.sourceURL.lastPathComponent)")
+        }
         store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
     }
 
@@ -220,11 +228,13 @@ final class ImagePipeline {
         readQueue.addOperation(read)
     }
 
-    /// Stores a finished read's image, if the file gave one, and stops
-    /// tracking the read.
+    /// Stores a finished read's image, or logs that the file gave none, and
+    /// stops tracking the read.
     private func finishRead(of item: PhotoItem, size: ImageSize, key: String, cgImage: CGImage?) {
         if let cgImage {
             store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+        } else {
+            Self.logger.error("Couldn't read \(item.sourceURL.path, privacy: .public) at \(size, privacy: .public)")
         }
         readsInFlight.removeValue(forKey: key)
     }

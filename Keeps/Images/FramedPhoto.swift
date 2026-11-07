@@ -20,10 +20,9 @@ import SwiftUI
 struct FramedPhoto: View {
     let item: PhotoItem
 
-    /// A border drawn around the image itself, following its shape rather
-    /// than the frame's. Zero for none.
+    /// The width, in points, of a white border drawn around the image
+    /// itself, following its shape rather than the frame's. Zero for none.
     var borderWidth: CGFloat = 0
-    var borderColor: Color = .white
 
     /// When true, the image is queued at background priority even while on
     /// screen, as if it were off-screen — for images that are mostly hidden,
@@ -45,9 +44,8 @@ struct FramedPhoto: View {
         /// A neutral square filling the frame.
         case square
 
-        /// A card of a guessed width-to-height ratio, drawn in the border
-        /// colour with a grey patch where the image will go, like paper
-        /// awaiting its print.
+        /// A white card of a guessed width-to-height ratio with a grey patch
+        /// where the image will go, like paper awaiting its print.
         case paper(aspectRatio: CGFloat)
 
         /// Nothing, for images that should simply appear once ready.
@@ -109,7 +107,6 @@ struct FramedPhoto: View {
         FramedPhotoContent(
             image: largerImage?.image ?? thumbnail?.image,
             borderWidth: borderWidth,
-            borderColor: borderColor,
             placeholder: placeholder,
             frameSize: frameSize
         )
@@ -163,7 +160,6 @@ struct FramedPhoto: View {
 private struct FramedPhotoContent: View {
     let image: NSImage?
     let borderWidth: CGFloat
-    let borderColor: Color
     let placeholder: FramedPhoto.Placeholder
     let frameSize: CGSize
 
@@ -191,16 +187,16 @@ private struct FramedPhotoContent: View {
         case .square:
             Color(nsColor: .quaternaryLabelColor)
         case let .paper(aspectRatio):
-            BlankPrint(aspectRatio: aspectRatio, borderWidth: borderWidth, borderColor: borderColor)
+            BlankPrint(aspectRatio: aspectRatio, borderWidth: borderWidth)
         case .none:
             EmptyView()
         }
     }
 
-    /// What fills the border around the image: the border colour, or
-    /// nothing when there's no border.
+    /// What fills the border around the image: white, or nothing when
+    /// there's no border.
     private var borderFill: Color {
-        borderWidth > 0 ? borderColor : .clear
+        borderWidth > 0 ? .white : .clear
     }
 }
 
@@ -213,7 +209,7 @@ private let previewFrameSize = CGSize(
 #Preview("Landscape photo, no border") {
     FramedPhotoContent(
         image: NSImage(contentsOf: PreviewPhotos.landscape.sourceURL),
-        borderWidth: 0, borderColor: .white,
+        borderWidth: 0,
         placeholder: .square, frameSize: previewFrameSize
     )
     .padding()
@@ -223,7 +219,7 @@ private let previewFrameSize = CGSize(
 #Preview("Portrait photo, white border") {
     FramedPhotoContent(
         image: NSImage(contentsOf: PreviewPhotos.portrait.sourceURL),
-        borderWidth: 6, borderColor: .white,
+        borderWidth: 6,
         placeholder: .square, frameSize: previewFrameSize
     )
     .padding()
@@ -232,7 +228,7 @@ private let previewFrameSize = CGSize(
 
 #Preview("Loading, square placeholder") {
     FramedPhotoContent(
-        image: nil, borderWidth: 0, borderColor: .white,
+        image: nil, borderWidth: 0,
         placeholder: .square, frameSize: previewFrameSize
     )
     .padding()
@@ -241,7 +237,7 @@ private let previewFrameSize = CGSize(
 
 #Preview("Loading, blank paper placeholder") {
     FramedPhotoContent(
-        image: nil, borderWidth: 6, borderColor: .white,
+        image: nil, borderWidth: 6,
         placeholder: .paper(aspectRatio: FramedPhoto.typicalAspectRatio), frameSize: previewFrameSize
     )
     .padding()
