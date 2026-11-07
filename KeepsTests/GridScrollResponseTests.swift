@@ -5,7 +5,7 @@ import Testing
 struct GridScrollResponseTests {
     private let photoIDs = (0 ..< 6).map { _ in UUID() }
 
-    /// Cells showing some of the photos, by their indices in photoIDs.
+    /// Make cells showing some of the photos, by their indices in photoIDs.
     private func makeCells(
         showing photoIndices: [Int],
         selected selectedIndex: Int? = nil,

@@ -2,11 +2,9 @@
 import Testing
 
 struct FolderSectionTests {
-    @Test("Every section shows while there are done groups and keepers")
-    func everySectionShowsWhenAvailable() {
-        for section in [FolderSection.toGo, .done, .keepers] {
-            #expect(section.availableSection(hasDoneGroups: true, hasKeepers: true) == section)
-        }
+    @Test("Every section shows while there are done groups and keepers", arguments: [FolderSection.toGo, .done, .keepers])
+    func everySectionShowsWhenAvailable(section: FolderSection) {
+        #expect(section.availableSection(hasDoneGroups: true, hasKeepers: true) == section)
     }
 
     @Test("The done section goes back to the sort screen once there are no done groups")

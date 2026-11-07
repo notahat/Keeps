@@ -25,7 +25,7 @@ nonisolated enum GridHitTarget: Equatable {
     static let edgeFraction: CGFloat = 0.2
 
     /// Resolve a horizontal offset, in points from the left of the cell at
-    /// `index`, to a target. Pure.
+    /// `index`, to a target.
     static func resolve(offset: CGFloat, cellWidth: CGFloat, index: Int) -> GridHitTarget {
         let edgeWidth = cellWidth * edgeFraction
         if offset < edgeWidth, index > 0 {

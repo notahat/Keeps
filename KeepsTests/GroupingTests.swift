@@ -21,15 +21,21 @@ struct GroupingTests {
         #expect(grouping.selectedPhotoIndex == nil)
     }
 
-    @Test("Toggling a gap places a boundary, and toggling it again removes it")
-    func toggleGapAddsThenRemovesBoundary() {
+    @Test("Toggling a gap places a boundary there")
+    func toggleGapAddsBoundary() {
         let grouping = makeGrouping(photoCount: 10)
 
         grouping.toggleBoundary(atGap: 3)
-        let afterFirstToggle = grouping.boundaries
+
+        #expect(grouping.boundaries == [3])
+    }
+
+    @Test("Toggling a gap with a boundary removes the boundary")
+    func toggleGapRemovesBoundary() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+
         grouping.toggleBoundary(atGap: 3)
 
-        #expect(afterFirstToggle == [3])
         #expect(grouping.boundaries.isEmpty)
     }
 
@@ -40,13 +46,18 @@ struct GroupingTests {
         #expect(grouping.workingPointPhotoIndex == 6)
     }
 
-    @Test("There is no working point before any boundary is placed or after the last photo is grouped")
-    func noWorkingPoint() {
-        let ungrouped = makeGrouping(photoCount: 10)
-        let finished = makeGrouping(photoCount: 10, boundaries: [4, 10])
+    @Test("There is no working point before any boundary is placed")
+    func noWorkingPointBeforeBoundaries() {
+        let grouping = makeGrouping(photoCount: 10)
 
-        #expect(ungrouped.workingPointPhotoIndex == nil)
-        #expect(finished.workingPointPhotoIndex == nil)
+        #expect(grouping.workingPointPhotoIndex == nil)
+    }
+
+    @Test("There is no working point once the last photo is grouped")
+    func noWorkingPointWhenAllGrouped() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [4, 10])
+
+        #expect(grouping.workingPointPhotoIndex == nil)
     }
 
     @Test("Placing boundaries collapses nothing by itself")
@@ -104,14 +115,23 @@ struct GroupingTests {
         #expect(grouping.boundaries == [3, 5, 8])
     }
 
-    @Test("Selecting a collapsed group selects its first photo and leaves it collapsed")
-    func selectingCollapsedGroupKeepsItCollapsed() {
+    @Test("Selecting a collapsed group selects its first photo")
+    func selectingCollapsedGroupSelectsFirstPhoto() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3], boundaries: [5, 8])
         grouping.selectCell(at: 3)
 
         grouping.selectCell(at: 0)
 
         #expect(grouping.selectedPhotoIndex == 0)
+    }
+
+    @Test("Selecting a collapsed group leaves it collapsed")
+    func selectingCollapsedGroupKeepsItCollapsed() {
+        let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3], boundaries: [5, 8])
+        grouping.selectCell(at: 3)
+
+        grouping.selectCell(at: 0)
+
         #expect(grouping.layout.cells.first == .collapsedGroup(0 ..< 3))
     }
 
@@ -129,8 +149,17 @@ struct GroupingTests {
     func cellPhotosAreFirstPhotos() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3], boundaries: [5, 8])
 
-        #expect(grouping.cellPhotos.first?.id == grouping.photos[0].id)
-        #expect(grouping.cellPhotos.count == 8)
+        // Cells: [collapsed 0..<3], 3, 4, ... 9.
+        #expect(grouping.cellPhotos.map(\.id) == ([0] + Array(3 ..< 10)).map { grouping.photos[$0].id })
+    }
+
+    @Test("Opening a cell opens the group holding its photo")
+    func openingOpensGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+
+        grouping.open(groupAtCell: 4)
+
+        #expect(grouping.openGroup == 3 ..< 5)
     }
 
     @Test("Opening a group collapses every group up to and including it")
@@ -139,7 +168,6 @@ struct GroupingTests {
 
         grouping.open(groupAtCell: 4)
 
-        #expect(grouping.openGroup == 3 ..< 5)
         #expect(grouping.layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
     }
 
@@ -158,7 +186,6 @@ struct GroupingTests {
 
         grouping.open(groupAtCell: 0)
 
-        #expect(grouping.openGroup == 0 ..< 3)
         #expect(grouping.layout.cells == [.collapsedGroup(0 ..< 3), .collapsedGroup(3 ..< 5)] + (5 ..< 10).map { .photo($0) })
     }
 
@@ -169,18 +196,33 @@ struct GroupingTests {
         grouping.open(groupAtCell: 5)
 
         #expect(grouping.openGroup == nil)
+    }
+
+    @Test("Trying to open photos after the working point collapses nothing")
+    func ungroupedPhotosCollapseNothing() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+
+        grouping.open(groupAtCell: 5)
+
         #expect(grouping.layout.cells.allSatisfy { !$0.isCollapsed })
     }
 
-    @Test("Toggling a keeper marks the photo, and toggling it again unmarks it")
-    func toggleKeeper() {
+    @Test("Toggling a photo that isn't a keeper makes it one")
+    func toggleKeeperAdds() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])
 
         grouping.toggleKeeper(atPhoto: 1)
-        let afterFirstToggle = grouping.keepers
+
+        #expect(grouping.keepers == [1])
+    }
+
+    @Test("Toggling a keeper makes it not a keeper")
+    func toggleKeeperRemoves() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
         grouping.toggleKeeper(atPhoto: 1)
 
-        #expect(afterFirstToggle == [1])
+        grouping.toggleKeeper(atPhoto: 1)
+
         #expect(grouping.keepers.isEmpty)
     }
 
@@ -196,6 +238,16 @@ struct GroupingTests {
         #expect(keptCount == 2)
     }
 
+    @Test("Marking the open group done makes it done")
+    func markingDone() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
+        grouping.open(groupAtCell: 0)
+
+        grouping.markOpenGroupDone()
+
+        #expect(grouping.isDone(0 ..< 3))
+    }
+
     @Test("Marking the open group done leaves it open")
     func markingDoneLeavesGroupOpen() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5, 8])
@@ -203,11 +255,10 @@ struct GroupingTests {
 
         grouping.markOpenGroupDone()
 
-        #expect(grouping.isDone(0 ..< 3))
         #expect(grouping.openGroup == 0 ..< 3)
     }
 
-    @Test("Un-marking the open group leaves it open and not done")
+    @Test("Un-marking the open group makes it not done")
     func unmarkingDone() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
         grouping.open(groupAtCell: 0)
@@ -216,6 +267,16 @@ struct GroupingTests {
         grouping.markOpenGroupNotDone()
 
         #expect(!grouping.isDone(0 ..< 3))
+    }
+
+    @Test("Un-marking the open group leaves it open")
+    func unmarkingDoneLeavesGroupOpen() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3, 5])
+        grouping.open(groupAtCell: 0)
+        grouping.markOpenGroupDone()
+
+        grouping.markOpenGroupNotDone()
+
         #expect(grouping.openGroup == 0 ..< 3)
     }
 
@@ -230,6 +291,16 @@ struct GroupingTests {
         #expect(grouping.layout.cells.first == .collapsedGroup(0 ..< 3))
     }
 
+    @Test("Closing the open group leaves no group open")
+    func closingClosesGroup() {
+        let grouping = makeGrouping(photoCount: 10, boundaries: [3])
+        grouping.open(groupAtCell: 0)
+
+        grouping.closeOpenGroup()
+
+        #expect(grouping.openGroup == nil)
+    }
+
     @Test("Closing a group leaves it not done")
     func closingLeavesGroupNotDone() {
         let grouping = makeGrouping(photoCount: 10, boundaries: [3])
@@ -237,7 +308,6 @@ struct GroupingTests {
 
         grouping.closeOpenGroup()
 
-        #expect(grouping.openGroup == nil)
         #expect(!grouping.isDone(0 ..< 3))
     }
 
@@ -400,8 +470,8 @@ struct GroupingTests {
         #expect(grouping.doneGroupCount == 2)
     }
 
-    /// Opens the group of the grid's first cell, marks it done, and closes
-    /// it, as the screens would.
+    /// Open the group of the grid's first cell, mark it done, and close it,
+    /// as the screens would.
     private func finishFirstGroupInGrid(of grouping: Grouping) {
         grouping.open(groupAtCell: 0)
         grouping.markOpenGroupDone()

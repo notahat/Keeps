@@ -39,9 +39,20 @@ struct GridHitTargetTests {
         #expect(target == .cell(0))
     }
 
-    @Test("A click just inside the edge zone boundary targets the cell")
-    func justInsideEdgeZoneTargetsCell() {
-        let target = GridHitTarget.resolve(offset: 53, cellWidth: 260, index: 3)
+    @Test("A click just inside the left edge zone's boundary targets the cell")
+    func justInsideLeftEdgeZoneTargetsCell() {
+        let edgeWidth = 260 * GridHitTarget.edgeFraction
+
+        let target = GridHitTarget.resolve(offset: edgeWidth + 1, cellWidth: 260, index: 3)
+
+        #expect(target == .cell(3))
+    }
+
+    @Test("A click just inside the right edge zone's boundary targets the cell")
+    func justInsideRightEdgeZoneTargetsCell() {
+        let edgeWidth = 260 * GridHitTarget.edgeFraction
+
+        let target = GridHitTarget.resolve(offset: 260 - edgeWidth - 1, cellWidth: 260, index: 3)
 
         #expect(target == .cell(3))
     }

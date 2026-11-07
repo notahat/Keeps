@@ -23,10 +23,11 @@ func makeFile(named name: String, in folder: URL) throws {
 /// creation dates increase with the stem's number.
 func makePhotos(count: Int) -> [PhotoItem] {
     (1 ... count).map { index in
-        PhotoItem(
+        let stem = String(format: "IMG_%04d", index)
+        return PhotoItem(
             id: UUID(),
-            stem: String(format: "IMG_%04d", index),
-            rawURL: URL(fileURLWithPath: "/tmp/IMG_\(index).CR3"),
+            stem: stem,
+            rawURL: URL(fileURLWithPath: "/tmp/\(stem).CR3"),
             jpegURL: nil,
             fileCreationDate: Date(timeIntervalSince1970: TimeInterval(index))
         )

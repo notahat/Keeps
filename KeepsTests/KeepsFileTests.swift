@@ -9,7 +9,7 @@ private final class ObservableSelection {
     var selectedStem: String?
 }
 
-/// Makes a saved grouping that differs only in its selection, which is enough
+/// Make a saved grouping that differs only in its selection, which is enough
 /// to tell one save from another.
 private func makeSavedGrouping(selectedStem: String?) -> SavedGrouping {
     SavedGrouping(boundaries: [], collapsedUpTo: nil, selectedStem: selectedStem, scrollAnchor: nil)

@@ -207,7 +207,7 @@ commit.
     - Remove words that point to the future, such as "yet".
     - Drop `PhotoGridMetrics`' repeated "Pure.".
     - Name the preload window's 2 back and 4 ahead as constants.
-14. **Tests.**
+14. ✅ **Tests.**
     - Give the scanner and session tests sentence names.
     - Split, or use `@Test(arguments:)` for, tests that check several
       things.
@@ -216,6 +216,11 @@ commit.
     - Delete the reader tests' temporary files.
     - Derive the hit target threshold from `edgeFraction` and test the
       right edge.
+    (The source URL test moved to a new `PhotoItemTests`, with a JPEG
+    case added, and the grid movement tests joined `PhotoGridMetricsTests`.
+    `makePhotos`' URLs now match their stems. Tests whose checks together
+    describe one result, such as a round trip or a tile's width and
+    height, stay whole.)
 15. **Small things.**
     - `isPlainLetter` moves out of `MoveDirection.swift`.
     - `PileLabel` gets its own file.

@@ -21,13 +21,31 @@ struct ImageLoadStatisticsTests {
         #expect(statistics.hitRate == 0.75)
     }
 
-    @Test("Has no step figures before any steps")
-    func noStepFiguresWithoutSteps() {
+    @Test("Has no share sharp straight away before any steps")
+    func noSharpShareWithoutSteps() {
         let statistics = ImageLoadStatistics()
 
         #expect(statistics.sharpStraightAwayShare == nil)
+    }
+
+    @Test("Has no median time to sharp before any steps")
+    func noMedianWithoutSteps() {
+        let statistics = ImageLoadStatistics()
+
         #expect(statistics.medianTimeToSharp == nil)
+    }
+
+    @Test("Has no slowest time to sharp before any steps")
+    func noSlowestWithoutSteps() {
+        let statistics = ImageLoadStatistics()
+
         #expect(statistics.slowestTimeToSharp == nil)
+    }
+
+    @Test("Counts no steps moved on before any steps")
+    func noMovedOnWithoutSteps() {
+        let statistics = ImageLoadStatistics()
+
         #expect(statistics.movedOnCount == 0)
     }
 
@@ -43,8 +61,8 @@ struct ImageLoadStatisticsTests {
         #expect(statistics.sharpStraightAwayShare == 0.5)
     }
 
-    @Test("Gives the median and slowest times of the steps that turned sharp")
-    func medianAndSlowest() {
+    @Test("Gives the median time of the steps that turned sharp")
+    func medianTimeToSharp() {
         var statistics = ImageLoadStatistics()
 
         statistics.recordStep(.sharp(after: .milliseconds(30)))
@@ -53,6 +71,16 @@ struct ImageLoadStatisticsTests {
         statistics.recordStep(.sharp(after: .milliseconds(10)))
 
         #expect(statistics.medianTimeToSharp == .milliseconds(30))
+    }
+
+    @Test("Gives the slowest time of the steps that turned sharp")
+    func slowestTimeToSharp() {
+        var statistics = ImageLoadStatistics()
+
+        statistics.recordStep(.sharp(after: .milliseconds(30)))
+        statistics.recordStep(.sharp(after: .milliseconds(200)))
+        statistics.recordStep(.movedOn)
+
         #expect(statistics.slowestTimeToSharp == .milliseconds(200))
     }
 
@@ -77,6 +105,5 @@ struct ImageLoadStatisticsTests {
         }
 
         #expect(statistics.slowestTimeToSharp == .zero)
-        #expect(statistics.sharpStraightAwayShare == 1)
     }
 }

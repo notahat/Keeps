@@ -17,11 +17,12 @@ struct PhotoGridMetricsTests {
         #expect(top == PhotoGridMetrics.spacing + 2 * rowHeight)
     }
 
-    @Test("Only a partial row of blank slots is ever shown")
-    func blankSlotsWrapAtColumnCount() {
-        #expect(PhotoGridMetrics.blankSlotCount(for: 3, columnCount: 4) == 3)
-        #expect(PhotoGridMetrics.blankSlotCount(for: 9, columnCount: 4) == 1)
-        #expect(PhotoGridMetrics.blankSlotCount(for: 8, columnCount: 4) == 0)
+    @Test(
+        "Only a partial row of blank slots is ever shown",
+        arguments: [(hiddenCount: 3, blankCount: 3), (hiddenCount: 9, blankCount: 1), (hiddenCount: 8, blankCount: 0)]
+    )
+    func blankSlotsWrapAtColumnCount(hiddenCount: Int, blankCount: Int) {
+        #expect(PhotoGridMetrics.blankSlotCount(for: hiddenCount, columnCount: 4) == blankCount)
     }
 
     @Test("The slot at a height is the first slot of the row there")
@@ -37,37 +38,37 @@ struct PhotoGridMetricsTests {
     }
 
     @Test("A pinned cell that survives a change is pinned itself")
-    func survivingPinnedCell() {
+    func survivingPinnedCell() throws {
         let ids = (0 ..< 6).map { _ in UUID() }
         let newIDs = [ids[0], ids[3], ids[4], ids[5]]
 
-        let survivor = PhotoGridMetrics.survivingCell(from: 3, oldIDs: ids, newIDs: newIDs)
+        let survivor = try #require(PhotoGridMetrics.survivingCell(from: 3, oldIDs: ids, newIDs: newIDs))
 
-        #expect(survivor?.oldIndex == 3)
-        #expect(survivor?.newIndex == 1)
+        #expect(survivor.oldIndex == 3)
+        #expect(survivor.newIndex == 1)
     }
 
     @Test("When the pinned cell goes, the nearest earlier survivor takes its place")
-    func earlierSurvivorPreferred() {
+    func earlierSurvivorPreferred() throws {
         let ids = (0 ..< 6).map { _ in UUID() }
         // Cells 1 to 3 have folded into cell 0, as when a group collapses.
         let newIDs = [ids[0], ids[4], ids[5]]
 
-        let survivor = PhotoGridMetrics.survivingCell(from: 2, oldIDs: ids, newIDs: newIDs)
+        let survivor = try #require(PhotoGridMetrics.survivingCell(from: 2, oldIDs: ids, newIDs: newIDs))
 
-        #expect(survivor?.oldIndex == 0)
-        #expect(survivor?.newIndex == 0)
+        #expect(survivor.oldIndex == 0)
+        #expect(survivor.newIndex == 0)
     }
 
     @Test("When nothing earlier survives, the nearest later survivor is used")
-    func laterSurvivorAsFallback() {
+    func laterSurvivorAsFallback() throws {
         let ids = (0 ..< 6).map { _ in UUID() }
         let newIDs = [ids[4], ids[5]]
 
-        let survivor = PhotoGridMetrics.survivingCell(from: 2, oldIDs: ids, newIDs: newIDs)
+        let survivor = try #require(PhotoGridMetrics.survivingCell(from: 2, oldIDs: ids, newIDs: newIDs))
 
-        #expect(survivor?.oldIndex == 4)
-        #expect(survivor?.newIndex == 0)
+        #expect(survivor.oldIndex == 4)
+        #expect(survivor.newIndex == 0)
     }
 
     @Test("The photo after the last boundary stays put when the groups before it collapse")
@@ -133,36 +134,44 @@ struct PhotoGridMetricsTests {
 
         #expect(offset == 1000)
     }
-}
 
-struct PhotoGridMetricsMovementTests {
-    @Test("Left and right step through the cells, stopping at either end")
-    func leftAndRight() {
-        let targets = [
-            PhotoGridMetrics.targetCell(from: 5, moving: .left, cellCount: 10, columnCount: 4),
-            PhotoGridMetrics.targetCell(from: 5, moving: .right, cellCount: 10, columnCount: 4),
-            PhotoGridMetrics.targetCell(from: 0, moving: .left, cellCount: 10, columnCount: 4),
-            PhotoGridMetrics.targetCell(from: 9, moving: .right, cellCount: 10, columnCount: 4),
-        ]
+    @Test(
+        "Left and right step to the previous and next cell",
+        arguments: [(direction: MoveDirection.left, to: 4), (direction: .right, to: 6)]
+    )
+    func leftAndRight(direction: MoveDirection, to: Int) {
+        let target = PhotoGridMetrics.targetCell(from: 5, moving: direction, cellCount: 10, columnCount: 4)
 
-        #expect(targets == [4, 6, 0, 9])
+        #expect(target == to)
     }
 
-    @Test("Up and down move a whole row")
-    func upAndDown() {
-        let up = PhotoGridMetrics.targetCell(from: 5, moving: .up, cellCount: 10, columnCount: 4)
-        let down = PhotoGridMetrics.targetCell(from: 5, moving: .down, cellCount: 10, columnCount: 4)
+    @Test(
+        "Left and right stop at the first and last cells",
+        arguments: [(from: 0, direction: MoveDirection.left), (from: 9, direction: .right)]
+    )
+    func leftAndRightStopAtEnds(from: Int, direction: MoveDirection) {
+        let target = PhotoGridMetrics.targetCell(from: from, moving: direction, cellCount: 10, columnCount: 4)
 
-        #expect(up == 1)
-        #expect(down == 9)
+        #expect(target == from)
     }
 
-    @Test("Up and down stay put when there's no cell in that direction")
-    func noCellAboveOrBelow() {
-        let up = PhotoGridMetrics.targetCell(from: 2, moving: .up, cellCount: 10, columnCount: 4)
-        let down = PhotoGridMetrics.targetCell(from: 7, moving: .down, cellCount: 10, columnCount: 4)
+    @Test(
+        "Up and down move a whole row",
+        arguments: [(direction: MoveDirection.up, to: 1), (direction: .down, to: 9)]
+    )
+    func upAndDown(direction: MoveDirection, to: Int) {
+        let target = PhotoGridMetrics.targetCell(from: 5, moving: direction, cellCount: 10, columnCount: 4)
 
-        #expect(up == 2)
-        #expect(down == 7)
+        #expect(target == to)
+    }
+
+    @Test(
+        "Up and down stay put when there's no cell in that direction",
+        arguments: [(from: 2, direction: MoveDirection.up), (from: 7, direction: .down)]
+    )
+    func noCellAboveOrBelow(from: Int, direction: MoveDirection) {
+        let target = PhotoGridMetrics.targetCell(from: from, moving: direction, cellCount: 10, columnCount: 4)
+
+        #expect(target == from)
     }
 }

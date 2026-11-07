@@ -66,15 +66,22 @@ struct SavedGroupingTests {
         ))
     }
 
-    @Test("Positions are written readably and read back")
-    func positionJSON() throws {
+    @Test("Positions are written readably")
+    func positionsEncode() throws {
         let positions: [SavedGrouping.Position] = [.beforePhoto("IMG_0042"), .end]
 
         let json = try String(decoding: JSONEncoder().encode(positions), as: UTF8.self)
-        let decoded = try JSONDecoder().decode([SavedGrouping.Position].self, from: Data(json.utf8))
 
         #expect(json == #"[{"before":"IMG_0042"},"end"]"#)
-        #expect(decoded == positions)
+    }
+
+    @Test("Positions are read back as they were written")
+    func positionsDecode() throws {
+        let json = #"[{"before":"IMG_0042"},"end"]"#
+
+        let positions = try JSONDecoder().decode([SavedGrouping.Position].self, from: Data(json.utf8))
+
+        #expect(positions == [.beforePhoto("IMG_0042"), .end])
     }
 
     /// The fixture is written out by hand rather than produced by the encoder,

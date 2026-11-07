@@ -3,11 +3,17 @@ import Foundation
 import Testing
 
 struct GroupLayoutTests {
-    @Test("With no boundaries there are no groups and every photo is shown")
-    func noBoundaries() {
+    @Test("With no boundaries there are no groups")
+    func noBoundariesNoGroups() {
         let layout = GroupLayout(photoCount: 5, boundaries: [])
 
         #expect(layout.groups.isEmpty)
+    }
+
+    @Test("With no boundaries every photo has its own cell")
+    func noBoundariesEveryPhotoShown() {
+        let layout = GroupLayout(photoCount: 5, boundaries: [])
+
         #expect(layout.cells == (0 ..< 5).map { .photo($0) })
     }
 
@@ -70,13 +76,25 @@ struct GroupLayoutTests {
     }
 
     @Test("A gap has a boundary when the photo after it starts a group")
-    func gapBoundaryLookup() {
+    func gapHasBoundary() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8, 10], collapsedUpTo: 5)
 
         #expect(layout.hasBoundary(atGap: 1))
+    }
+
+    @Test("A gap inside a group has no boundary")
+    func gapInsideGroupHasNoBoundary() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8, 10], collapsedUpTo: 5)
+
         // Cells: [collapsed 0..<3], [collapsed 3..<5], 5, 6, ... so gap 3
         // sits before photo 6.
         #expect(!layout.hasBoundary(atGap: 3))
+    }
+
+    @Test("The gap after the last cell has a boundary when one ends the folder")
+    func trailingGapHasBoundary() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8, 10], collapsedUpTo: 5)
+
         #expect(layout.hasBoundary(atGap: layout.cells.count))
     }
 
@@ -108,6 +126,14 @@ struct GroupLayoutTests {
         // Cells: [collapsed 0..<3], 3, 4, ... so gap 1 sits right after the
         // collapsed group.
         #expect(!layout.isGapEditable(1))
+    }
+
+    @Test("Gaps between photos that aren't collapsed can be edited")
+    func gapsBetweenPhotosAreEditable() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
+
+        // Cells: [collapsed 0..<3], 3, 4, ... so gap 2 sits between photos 3
+        // and 4.
         #expect(layout.isGapEditable(2))
     }
 
@@ -125,19 +151,29 @@ struct GroupLayoutTests {
         #expect(layout.isGapEditable(layout.cells.count))
     }
 
-    @Test("The cell showing a photo is found whether or not its group is collapsed")
-    func findsCellContainingPhoto() {
+    // Cells: [collapsed 0..<3], 3, 4, ... so photo 1 is in the collapsed
+    // group's cell, and photo 4 has a cell of its own.
+    @Test(
+        "The cell showing a photo is found whether or not its group is collapsed",
+        arguments: [(photo: 1, cell: 0), (photo: 4, cell: 2)]
+    )
+    func findsCellContainingPhoto(photo: Int, cell: Int) {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 3)
 
-        #expect(layout.cellIndex(containing: 1) == 0)
-        #expect(layout.cellIndex(containing: 4) == 2)
+        #expect(layout.cellIndex(containing: photo) == cell)
     }
 
-    @Test("Done groups leave the grid, but are still groups")
+    @Test("Done groups leave the grid")
     func doneGroupsLeaveGrid() {
         let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0])
 
         #expect(layout.cells.prefix(2) == [.collapsedGroup(3 ..< 5), .photo(5)])
+    }
+
+    @Test("Done groups are still groups")
+    func doneGroupsAreStillGroups() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0])
+
         #expect(layout.groups == [0 ..< 3, 3 ..< 5, 5 ..< 8])
     }
 
@@ -149,15 +185,28 @@ struct GroupLayoutTests {
         #expect(layout.hiddenPhotoCount == 4)
     }
 
-    @Test("The gaps where done groups were stay locked")
-    func gapsWhereDoneGroupsWereStayLocked() {
-        let afterCollapsed = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [3])
-        let atStart = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0, 3])
+    @Test("The gap where a done group was, after a collapsed group, stays locked")
+    func gapWhereDoneGroupWasStaysLocked() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [3])
 
-        // Cells: [collapsed 0..<3], 5, 6, ... and then 5, 6, ...
-        #expect(!afterCollapsed.isGapEditable(1))
-        #expect(!atStart.isGapEditable(0))
-        #expect(atStart.isGapEditable(1))
+        // Cells: [collapsed 0..<3], 5, 6, ...
+        #expect(!layout.isGapEditable(1))
+    }
+
+    @Test("The gap where done groups were, at the start of the grid, stays locked")
+    func gapWhereDoneGroupsWereAtStartStaysLocked() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0, 3])
+
+        // Cells: 5, 6, ...
+        #expect(!layout.isGapEditable(0))
+    }
+
+    @Test("The gap after the first photo past the done groups can be edited")
+    func gapPastDoneGroupsIsEditable() {
+        let layout = GroupLayout(photoCount: 10, boundaries: [3, 5, 8], collapsedUpTo: 5, doneGroupStarts: [0, 3])
+
+        // Cells: 5, 6, ... so gap 1 sits between photos 5 and 6.
+        #expect(layout.isGapEditable(1))
     }
 
     @Test("A done group that isn't collapsed stays in the grid")

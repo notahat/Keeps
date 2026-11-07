@@ -8,23 +8,26 @@ struct ImageReaderTests {
     @Test("A small scaled JPEG image comes back at the size asked for, upright")
     func readsSmallScaledImageUpright() throws {
         let url = try writeJPEG(width: 400, height: 200, orientation: .right)
+        defer { try? FileManager.default.removeItem(at: url) }
 
-        let image = ImageReader.readImage(from: url, size: .scaled(longestSideLength: 40))
+        let image = try #require(ImageReader.readImage(from: url, size: .scaled(longestSideLength: 40)))
 
-        #expect(image?.width == 20)
-        #expect(image?.height == 40)
+        #expect(image.width == 20)
+        #expect(image.height == 40)
     }
 
-    /// Writes a plain grey JPEG of a given size to a new temporary file,
-    /// tagged with an EXIF orientation, and gives back its URL.
+    /// Write a plain grey JPEG of a given size in pixels to a new temporary
+    /// file, tagged with an EXIF orientation, and return its URL. The caller
+    /// removes the file.
     private func writeJPEG(width: Int, height: Int, orientation: CGImagePropertyOrientation) throws -> URL {
+        let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
         let context = try #require(CGContext(
             data: nil,
             width: width,
             height: height,
             bitsPerComponent: 8,
             bytesPerRow: 0,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
         ))
         context.setFillColor(gray: 0.5, alpha: 1)
@@ -37,7 +40,7 @@ struct ImageReaderTests {
         )
         let properties = [kCGImagePropertyOrientation: orientation.rawValue] as CFDictionary
         CGImageDestinationAddImage(destination, image, properties)
-        #expect(CGImageDestinationFinalize(destination))
+        try #require(CGImageDestinationFinalize(destination))
         return url
     }
 }
