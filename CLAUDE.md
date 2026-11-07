@@ -54,7 +54,7 @@ folder needs adding to that exception list.
 - Grouping uses Saving and Folder, converting itself to and from
   `SavedGrouping`.
 - Images uses Folder, and Keys for `ScrollingTiles`' input.
-- Saving and Keys use nothing.
+- Folder, Saving, and Keys use nothing.
 
 Grouping, Saving, Folder, and Keys have no views (Keys has only
 modifiers), which keeps them testable.
