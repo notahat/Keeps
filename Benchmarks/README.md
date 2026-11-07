@@ -138,3 +138,15 @@ tile's longest side in pixels: the 520-pixel thumbnail, the 1932-pixel
 medium image, or the full image. The medium image isn't simply the full
 image for every tile because preparing a full image for display takes
 35–45 ms, so a group of twenty would cost about a second.
+
+### A small image cache (7 November 2026)
+
+`ImageCache`'s NSCache has no limit, so it evicts only when macOS is
+short of memory. To see how the app copes with eviction, the cache was
+capped at 100 MB of decoded images for a try in the app: room for about
+140 thumbnails, but only one or two full images.
+
+The app stayed usable. Images were read again on switching screens, but
+nothing kept reloading over and over, and stepping and scrolling stayed
+quick. So the cache keeps no limit: eviction under memory pressure costs
+some reads again, not a stuck or broken app.
