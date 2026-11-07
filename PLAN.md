@@ -122,14 +122,16 @@ commit.
 5. ✅ **One click gesture.** The click and double-click handling copied
    into the four screens becomes one modifier in Keys, beside
    `handlesKeys`, with its explanation written once.
-6. **One scrolling tile grid.** The tile grid that `PickScreen` and
+6. ✅ **One scrolling tile grid.** The tile grid that `PickScreen` and
    `KeepersScreen` both build (state, spacing, scroll tracking,
    `reveal`, stepping at full size, the full-size overlay) becomes one
    view in Images, `ScrollingTiles`. Stepping at full size, clamped to
    the ends, becomes a pure function on `TileLayout`, tested. The shared
    grid spacing and pile border width get one definition each.
-   `FramedPhoto.commonAspectRatio` moves to `ScrollingTiles`, its only
-   user.
+   (`FramedPhoto.commonAspectRatio` stays put: `ScrollingTiles` is generic
+   over its tile view, so a static on it would be awkward to call. The
+   keepers screen's full-size view is now inset by the grid spacing, as
+   the pick screen's is, rather than nearly twice that.)
 7. **Scrolling decisions out of `GridScrolling`.** Whether a change holds
    position, follows the selection, or does nothing becomes a pure,
    tested function returning an enum. `PhotoGridMetrics.

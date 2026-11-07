@@ -143,6 +143,34 @@ struct TileLayoutTests {
         #expect(layout.target(from: 4, moving: .up) == 1)
     }
 
+    @Test("Stepping one at a time goes to the next tile in order, even moving down")
+    func stepForward() {
+        let layout = makeThreeOverTwoLayout()
+
+        #expect(layout.stepTarget(from: 2, moving: .down) == 3)
+    }
+
+    @Test("Stepping one at a time goes to the previous tile in order, even moving up")
+    func stepBack() {
+        let layout = makeThreeOverTwoLayout()
+
+        #expect(layout.stepTarget(from: 3, moving: .up) == 2)
+    }
+
+    @Test("Stepping one at a time stops at the first tile")
+    func stepStopsAtFirst() {
+        let layout = makeThreeOverTwoLayout()
+
+        #expect(layout.stepTarget(from: 0, moving: .left) == 0)
+    }
+
+    @Test("Stepping one at a time stops at the last tile")
+    func stepStopsAtLast() {
+        let layout = makeThreeOverTwoLayout()
+
+        #expect(layout.stepTarget(from: 4, moving: .right) == 4)
+    }
+
     @Test("The most common aspect ratio wins, counting near matches as the same")
     func commonAspectRatio() {
         let ratios: [CGFloat] = [0.667, 1.5, 1.4999, 1.333]

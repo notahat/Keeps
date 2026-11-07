@@ -82,6 +82,14 @@ nonisolated struct TileLayout {
         }
     }
 
+    /// The tile a movement key goes to when the tiles are stepped through
+    /// one at a time, as at full size, where there's no grid to move
+    /// around: the next tile for right and down, the previous for left and
+    /// up. Stays put at either end.
+    func stepTarget(from index: Int, moving direction: MoveDirection) -> Int {
+        max(0, min(tileFrames.count - 1, index + direction.linearStep))
+    }
+
     /// Where to scroll so a tile is fully in view, moving only as far as
     /// needed, or nil when it already is.
     func scrollOffset(revealing index: Int, from currentOffset: CGFloat, viewportHeight: CGFloat) -> CGFloat? {

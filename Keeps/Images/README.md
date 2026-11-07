@@ -32,10 +32,12 @@ full size, with its thumbnail standing in until it loads and its
 neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
 far the current burst of loading has got.
 
-`TileLayout` lays photos out as an even grid of tiles, for the pick and
-keepers screens. It's the pure, tested part: the column count, tile size,
-and positions, where the movement keys go, how far to scroll to reveal a
-tile, and the photos' common aspect ratio.
+`ScrollingTiles` is the pick and keepers screens' grid of tiles: it lays
+them out, scrolls them when they don't fit, and handles clicks and the
+movement keys, while each screen draws its own tiles and handles its
+other keys. `TileLayout` is its pure, tested part: the column count, tile
+size, and positions, where the movement keys go, how far to scroll to
+reveal a tile, and the photos' common aspect ratio.
 
 `ImageStatsOverlay` is a debug panel of figures for tuning loading: the
 app's memory, what `ImageCache` holds at each size, reads in flight, the
@@ -59,6 +61,6 @@ outside a preview may use it.
 photo or pile, and `KeeperBadge` marks a keeper; its colour stands for the
 keepers wherever they're shown.
 
-Images uses Folder, for `PhotoItem`, and Keys, for `MoveDirection`. It
-knows nothing about groups: the screens track which item is selected and
+Images uses Folder, for `PhotoItem`, and Keys, for `ScrollingTiles`' input.
+It knows nothing about groups: the screens track which item is selected and
 draw the sort screen's boundary bars themselves.

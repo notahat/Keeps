@@ -27,7 +27,8 @@ folder needs adding to that exception list.
   `FolderSession`).
 - `Images/` — loading, caching, and showing images (`ImagePipeline`,
   `FramedPhoto`, `FullSizeImage`, load progress, `PileJitter`), and
-  `TileLayout`, the pure, tested tile grid the screens share.
+  `ScrollingTiles`, the tile grid the pick and keepers screens share, with
+  `TileLayout` its pure, tested layout.
 - `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
   selection, scroll position, open and last opened groups, keepers, and
   done groups, and `GroupLayout` derives the cells.
@@ -36,8 +37,8 @@ folder needs adding to that exception list.
 - `Sort/` — the sort screen. `SortScreen` draws cells and handles input;
   `GridScrolling` does the scrolling; the geometry is in pure, tested
   helpers (`PhotoGridMetrics`, `GridHitTarget`).
-- `Pick/` — the pick screen. `PickScreen` draws the open group's tiles and
-  handles input, laying them out with `TileLayout`.
+- `Pick/` — the pick screen. `PickScreen` draws the open group's tiles in
+  `ScrollingTiles` and handles the pick screen's keys.
 - `Done/` — the done screen. `DoneScreen` shows the done groups as piles,
   any of which can be opened on the pick screen.
 - `Keepers/` — the keepers screen. `KeepersScreen` shows the keepers of
@@ -52,7 +53,7 @@ folder needs adding to that exception list.
   and never each other.
 - Grouping uses Saving and Folder, converting itself to and from
   `SavedGrouping`.
-- Images uses Folder, and Keys for `MoveDirection`.
+- Images uses Folder, and Keys for `ScrollingTiles`' input.
 - Saving and Keys use nothing.
 
 Grouping, Saving, Folder, and Keys have no views (Keys has only

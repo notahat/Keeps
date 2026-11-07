@@ -23,6 +23,11 @@ struct PrintPile: View {
     /// A white border so each photo reads as a print on paper.
     var borderWidth: CGFloat = 6
 
+    /// The border for a pile as large as the standard frame, as on the sort
+    /// and done screens: a little wider than the default, to suit the
+    /// larger prints.
+    static let standardFrameBorderWidth: CGFloat = 7
+
     /// How many prints, from the top, show their photos.
     static let photoLayerCount = 5
 

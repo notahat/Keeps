@@ -54,7 +54,7 @@ private struct CollapsedGroup: View {
     let pile: Pile
 
     var body: some View {
-        PrintPile(photos: pile.photos, length: PhotoGridMetrics.cellSize, borderWidth: 7)
+        PrintPile(photos: pile.photos, length: PhotoGridMetrics.cellSize, borderWidth: PrintPile.standardFrameBorderWidth)
             .overlay(alignment: .bottomTrailing) {
                 // Solid colour rather than white, so it stands out from both
                 // the dark window and the white print borders.

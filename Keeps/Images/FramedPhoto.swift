@@ -59,6 +59,9 @@ struct FramedPhoto: View {
     /// sharp in it on Retina screens.
     static let standardFrameLength = ImageSize.thumbnailLongestSideLength / 2
 
+    /// The space, in points, between framed photos in the screens' grids.
+    static let gridSpacing: CGFloat = 12
+
     /// The shape of most camera sensors, width over height, for laying out
     /// photos before their thumbnails have loaded, or piles whose photos
     /// may differ.

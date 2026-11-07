@@ -14,7 +14,7 @@ enum PhotoGridMetrics {
     }
 
     /// The space between cells, horizontally and vertically.
-    static let spacing: CGFloat = 12
+    static let spacing = FramedPhoto.gridSpacing
 
     /// The width each cell occupies: the cell plus half the gap on either
     /// side. Cells own their share of the gap so that clicks and hovers

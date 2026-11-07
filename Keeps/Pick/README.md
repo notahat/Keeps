@@ -18,7 +18,8 @@ zooms. It zooms out of the focused tile and back into it (a fade with
 Reduce Motion on), which shows where you are in the grid on the way back.
 `FullSizeImage`, from Images, loads and draws the photo inside it.
 
-`TileLayout`, from Images, places the tiles and says where the movement
-keys go.
+`ScrollingTiles`, from Images, lays out the tiles, scrolls them when they
+don't fit, and handles clicks and the movement keys, leaving `PickScreen`
+the other keys.
 
 Uses Grouping, Images, Folder, and Keys, and never Sort.

@@ -11,10 +11,11 @@ import SwiftUI
 /// weren't kept sit on a pile (SetAsidePile) in the bottom-right corner.
 /// Then F does nothing.
 ///
-/// PickScreen places the tiles (PickTile) and the pile, shows FullSizeView
-/// over them, and handles input, including the full-size view's. TileLayout
-/// works out where the tiles go, PickArrangement says which photos are tiles,
-/// and Grouping holds the open group, its keepers, and the done groups.
+/// PickScreen draws the tiles (PickTile) in ScrollingTiles, which handles
+/// clicks and the movement keys, places the pile, shows FullSizeView over
+/// them, and handles the other keys, including the full-size view's.
+/// PickArrangement says which photos are tiles, and Grouping holds the open
+/// group, its keepers, and the done groups.
 struct PickScreen: View {
     let grouping: Grouping
     let group: Range<Int>
@@ -36,12 +37,6 @@ struct PickScreen: View {
     /// nothing moves while it's open.
     @State private var aspectRatio: CGFloat
 
-    @State private var scrollPosition = ScrollPosition()
-
-    /// How far the tiles are scrolled, tracked so that revealing a tile
-    /// scrolls only as far as needed.
-    @State private var scrollOffset: CGFloat = 0
-
     /// Whether the tiles have keyboard focus. This is separate from which
     /// tile is focused (`focusedIndex`), which is the one highlighted.
     @FocusState private var hasKeyboardFocus: Bool
@@ -52,15 +47,10 @@ struct PickScreen: View {
 
     private static let zoomAnimation = Animation.snappy(duration: 0.2)
 
-    private static let spacing: CGFloat = 12
-    private static let minimumTileLength: CGFloat = 200
+    private static let spacing = FramedPhoto.gridSpacing
 
     /// The width and height of the pile of photos that weren't kept.
     private static let pileLength: CGFloat = 220
-
-    /// Room around the tiles inside the scroll view, so it doesn't clip
-    /// the half of the highlight that falls outside the outer tiles.
-    private static let edgeRoom: CGFloat = SelectionHighlight.lineWidth
 
     init(grouping: Grouping, group: Range<Int>) {
         self.grouping = grouping
@@ -92,17 +82,14 @@ struct PickScreen: View {
             // handle the full-size view's keys too. Giving the full-size
             // view keyboard focus from code doesn't work: SwiftUI ignores
             // it, and keys reach nothing until the user clicks.
-            GeometryReader { proxy in
-                tilesAndPile(in: proxy.size)
-            }
-            .padding(Self.spacing - Self.edgeRoom)
-            .opacity(fullSizeState == .zoomed ? 0 : 1)
-            .allowsHitTesting(!isFullSize)
-            .overlay {
-                if isFullSize {
-                    fullSize
+            tilesAndPile
+                .opacity(fullSizeState == .zoomed ? 0 : 1)
+                .allowsHitTesting(!isFullSize)
+                .overlay {
+                    if isFullSize {
+                        fullSize
+                    }
                 }
-            }
         }
     }
 
@@ -117,7 +104,7 @@ struct PickScreen: View {
             isZoomed: fullSizeState == .zoomed,
             zoomNamespace: zoomNamespace
         )
-        .padding(Self.edgeRoom)
+        .padding(Self.spacing)
         // Without this, clicking the full-size view would take keyboard
         // focus away from the tiles, and the keys would stop working.
         .onTapGesture { hasKeyboardFocus = true }
@@ -139,104 +126,48 @@ struct PickScreen: View {
             .padding(.top, Self.spacing)
     }
 
-    /// The tiles in the given space, with the pile beside them in the
-    /// bottom-right corner when there is one.
-    private func tilesAndPile(in size: CGSize) -> some View {
+    /// The tiles, with the pile beside them in the bottom-right corner when
+    /// there is one.
+    private var tilesAndPile: some View {
         let arrangement = arrangement
-        let hasPile = !arrangement.pilePhotos.isEmpty
-        let pileRoom = hasPile ? Self.pileLength + Self.spacing : 0
-        let tilesSize = CGSize(width: max(0, size.width - pileRoom), height: size.height)
-        return HStack(alignment: .bottom, spacing: Self.spacing - 2 * Self.edgeRoom) {
-            tiles(of: arrangement.tilePhotos, in: tilesSize)
-                .frame(width: tilesSize.width, height: tilesSize.height)
-            if hasPile {
+        let tilePhotos = arrangement.tilePhotos
+        return HStack(alignment: .bottom, spacing: 0) {
+            ScrollingTiles(
+                photos: photos(tilePhotos),
+                aspectRatio: aspectRatio,
+                selectedIndex: $focusedIndex,
+                isFullSize: isFullSize,
+                hasKeyboardFocus: $hasKeyboardFocus,
+                onDoubleClick: openFullSize,
+                handleOtherKey: handleActionKey
+            ) { index, size in
+                tile(ofPhoto: tilePhotos[index], index: index, size: size)
+            }
+            if !arrangement.pilePhotos.isEmpty {
+                // ScrollingTiles keeps the spacing between the tiles and the
+                // pile.
                 SetAsidePile(
                     photos: photos(arrangement.pilePhotos),
                     length: Self.pileLength,
                     aspectRatio: aspectRatio
                 )
-                .padding(Self.edgeRoom)
+                .padding([.bottom, .trailing], Self.spacing)
             }
         }
     }
 
-    /// The tiles for some of the group's photos, laid out in the given
-    /// space, scrolling only when they don't fit.
-    private func tiles(of photoIndices: [Int], in size: CGSize) -> some View {
-        let tileArea = CGSize(width: size.width - 2 * Self.edgeRoom, height: size.height - 2 * Self.edgeRoom)
-        let layout = TileLayout(
-            tileCount: photoIndices.count,
-            aspectRatio: aspectRatio,
-            availableSize: tileArea,
-            spacing: Self.spacing,
-            minimumTileLength: Self.minimumTileLength
-        )
-        return ScrollView(.vertical) {
-            ZStack(alignment: .topLeading) {
-                ForEach(Array(photoIndices.enumerated()), id: \.element) { index, photoIndex in
-                    tile(ofPhoto: photoIndex, index: index, layout: layout)
-                }
-            }
-            .frame(width: layout.contentSize.width, height: layout.contentSize.height)
-            .padding(Self.edgeRoom)
-        }
-        .scrollDisabled(!layout.needsScrolling)
-        .scrollPosition($scrollPosition)
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
-            scrollOffset = offset
-        }
-        .handlesKeys(hasKeyboardFocus: $hasKeyboardFocus) { press in
-            // Tiles are revealed within the tile area rather than the whole
-            // scroll view, which leaves the edge room above and below for
-            // the highlight, so it isn't cut off.
-            handleKeyPress(press, layout: layout, viewportHeight: tileArea.height)
-        }
-        .onChange(of: isFullSize) { _, isNowFullSize in
-            guard !isNowFullSize else { return }
-            // At full size, focus may have moved to a photo whose tile is
-            // scrolled out of view, so it's scrolled back in.
-            hasKeyboardFocus = true
-            reveal(focusedIndex, layout: layout, viewportHeight: tileArea.height, isAnimated: false)
-        }
-    }
-
-    /// The tile for a photo, placed where the layout puts the tile at an
-    /// index.
-    private func tile(ofPhoto photoIndex: Int, index: Int, layout: TileLayout) -> some View {
-        let frame = layout.tileFrames[index]
+    /// The tile for a photo, at the tile at an index among the tiles.
+    private func tile(ofPhoto photoIndex: Int, index: Int, size: CGSize) -> some View {
         let photo = grouping.items[photoIndex]
         return PickTile(
             item: photo,
-            size: frame.size,
+            size: size,
             isFocused: index == focusedIndex,
             isKeeper: grouping.keepers.contains(photoIndex)
         )
         // The tile supplies the frame the full-size view zooms out of and
         // back into.
         .matchedGeometryEffect(id: AnyHashable(photo.id), in: zoomNamespace)
-        .contentShape(Rectangle())
-        .onClick { _ in
-            focusedIndex = index
-            hasKeyboardFocus = true
-        } onDoubleClick: { _ in
-            openFullSize()
-        }
-        .position(x: frame.midX, y: frame.midY)
-    }
-
-    /// Moves focus for the movement keys: around the tiles, or one photo
-    /// either way at full size. Passes other keys on to handleActionKey.
-    private func handleKeyPress(_ press: KeyPress, layout: TileLayout, viewportHeight: CGFloat) -> Bool {
-        guard let direction = MoveDirection(press) else { return handleActionKey(press) }
-        let tileCount = layout.tileFrames.count
-        guard tileCount > 0 else { return true }
-        if isFullSize {
-            focusedIndex = max(0, min(tileCount - 1, focusedIndex + direction.linearStep))
-        } else {
-            focusedIndex = layout.target(from: focusedIndex, moving: direction)
-            reveal(focusedIndex, layout: layout, viewportHeight: viewportHeight)
-        }
-        return true
     }
 
     /// Handles the keys that do the same on the tiles and at full size:
@@ -303,18 +234,6 @@ struct PickScreen: View {
             if fullSizeState == .overTile {
                 fullSizeState = .hidden
             }
-        }
-    }
-
-    /// Scrolls just far enough to bring a tile fully into view.
-    private func reveal(_ index: Int, layout: TileLayout, viewportHeight: CGFloat, isAnimated: Bool = true) {
-        guard layout.needsScrolling,
-              let offset = layout.scrollOffset(revealing: index, from: scrollOffset, viewportHeight: viewportHeight)
-        else { return }
-        if isAnimated {
-            withAnimation { scrollPosition.scrollTo(y: offset) }
-        } else {
-            scrollPosition.scrollTo(y: offset)
         }
     }
 }

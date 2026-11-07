@@ -17,7 +17,7 @@ struct DoneScreen: View {
     @FocusState private var hasKeyboardFocus: Bool
 
     private static let cellSize = CGFloat(FramedPhoto.standardFrameLength)
-    private static let spacing: CGFloat = 12
+    private static let spacing = FramedPhoto.gridSpacing
 
     /// Starts with the group last opened selected, if it's done, so coming
     /// back from the pick screen leaves the selection where it was.
@@ -62,7 +62,7 @@ struct DoneScreen: View {
     /// highlight, with click handling.
     private func cell(for group: Range<Int>) -> some View {
         let pile = Pile(group: group, items: grouping.items, keepers: grouping.keepers)
-        return PrintPile(photos: pile.photos, length: Self.cellSize, borderWidth: 7)
+        return PrintPile(photos: pile.photos, length: Self.cellSize, borderWidth: PrintPile.standardFrameBorderWidth)
             .overlay(alignment: .bottom) {
                 PileLabel(text: "\(grouping.keptCount(in: group)) of \(group.count) kept")
             }
