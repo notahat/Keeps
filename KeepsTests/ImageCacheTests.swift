@@ -7,11 +7,11 @@ struct ImageCacheTests {
     @Test("Tallies the cached images and their memory at each size")
     func talliesContents() {
         let cache = ImageCache()
-        let items = makePhotoItems(count: 3)
+        let photos = makePhotos(count: 3)
 
-        cache.setImage(makeImage(width: 10, height: 5), for: items[0], size: .full)
-        cache.setImage(makeImage(width: 4, height: 2), for: items[1], size: .scaled(longestSideLength: 4))
-        cache.setImage(makeImage(width: 4, height: 4), for: items[2], size: .scaled(longestSideLength: 4))
+        cache.setImage(makeImage(width: 10, height: 5), for: photos[0], size: .full)
+        cache.setImage(makeImage(width: 4, height: 2), for: photos[1], size: .scaled(longestSideLength: 4))
+        cache.setImage(makeImage(width: 4, height: 4), for: photos[2], size: .scaled(longestSideLength: 4))
 
         #expect(cache.contents() == [
             ImageCache.Contents(size: .scaled(longestSideLength: 4), imageCount: 2, byteCount: (8 + 16) * 4),
@@ -22,10 +22,10 @@ struct ImageCacheTests {
     @Test("Counts an image once when it replaces one cached under the same photo and size")
     func replacingCountsOnce() {
         let cache = ImageCache()
-        let item = makePhotoItems(count: 1)[0]
+        let photo = makePhotos(count: 1)[0]
 
-        cache.setImage(makeImage(width: 10, height: 10), for: item, size: .full)
-        cache.setImage(makeImage(width: 2, height: 2), for: item, size: .full)
+        cache.setImage(makeImage(width: 10, height: 10), for: photo, size: .full)
+        cache.setImage(makeImage(width: 2, height: 2), for: photo, size: .full)
 
         #expect(cache.contents() == [ImageCache.Contents(size: .full, imageCount: 1, byteCount: 4 * 4)])
     }

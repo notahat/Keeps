@@ -23,13 +23,13 @@ final class ImageCache {
     }
 
     /// The cached image of a photo at a size, or nil if there isn't one.
-    func image(for item: PhotoItem, size: ImageSize) -> NSImage? {
-        cache.object(forKey: cacheKey(for: item, size: size) as NSString)
+    func image(for photo: PhotoItem, size: ImageSize) -> NSImage? {
+        cache.object(forKey: cacheKey(for: photo, size: size) as NSString)
     }
 
     /// Caches the image of a photo at a size, replacing any already there.
-    func setImage(_ image: NSImage, for item: PhotoItem, size: ImageSize) {
-        let key = cacheKey(for: item, size: size) as NSString
+    func setImage(_ image: NSImage, for photo: PhotoItem, size: ImageSize) {
+        let key = cacheKey(for: photo, size: size) as NSString
         // NSCache may not report a replaced image as evicted, so it's taken
         // out of the tally here. Otherwise it would be counted forever.
         if let replaced = cache.object(forKey: key) {
@@ -46,10 +46,10 @@ final class ImageCache {
     }
 
     /// The key an image is cached under: the photo's file and the size.
-    private func cacheKey(for item: PhotoItem, size: ImageSize) -> String {
+    private func cacheKey(for photo: PhotoItem, size: ImageSize) -> String {
         switch size {
-        case let .scaled(longestSideLength): "\(item.sourceURL.path)@\(longestSideLength)"
-        case .full: "\(item.sourceURL.path)@full"
+        case let .scaled(longestSideLength): "\(photo.sourceURL.path)@\(longestSideLength)"
+        case .full: "\(photo.sourceURL.path)@full"
         }
     }
 }

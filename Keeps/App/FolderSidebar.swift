@@ -37,7 +37,7 @@ struct FolderSidebar: View {
                 pile(of: keepers, label: keepersLabel, color: KeeperBadge.color)
                     .sectionHighlight(.keepers, selection: section, padding: Self.highlightPadding)
                     .overlay {
-                        PhotoDragSource(photos: keepers.map { grouping.items[$0] }) {
+                        PhotoDragSource(photos: keepers.map { grouping.photos[$0] }) {
                             section = .keepers
                         }
                     }
@@ -52,11 +52,11 @@ struct FolderSidebar: View {
         }
     }
 
-    /// One labelled pile of some of the folder's photos. Its blank paper is
-    /// the typical shape, since its photos may come from many groups.
+    /// One labelled pile of some of the folder's photos. Its blank prints
+    /// are the typical shape, since its photos may come from many groups.
     private func pile(of photoIndices: [Int], label: String, color: Color? = nil) -> some View {
         PrintPile(
-            photos: photoIndices.map { grouping.items[$0] },
+            photos: photoIndices.map { grouping.photos[$0] },
             length: Self.length,
             aspectRatio: FramedPhoto.typicalAspectRatio
         )

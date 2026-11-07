@@ -12,7 +12,7 @@ enum PhotoGridMetrics {
     /// Where the grid's cells sit: the photo each cell shows, in order, after
     /// some blank slots.
     nonisolated struct SlottedCells {
-        let itemIDs: [UUID]
+        let photoIDs: [UUID]
 
         /// The blank slots shown before the first cell (see blankSlotCount).
         let blankSlotCount: Int
@@ -46,7 +46,7 @@ enum PhotoGridMetrics {
         }
     }
 
-    /// How many blank slots to show before the first item for a requested
+    /// How many blank slots to show before the first cell for a requested
     /// count: only the remainder by the column count, so at most a partial
     /// row. Pure.
     static func blankSlotCount(for requestedCount: Int, columnCount: Int) -> Int {
@@ -54,18 +54,18 @@ enum PhotoGridMetrics {
     }
 
     /// The distance from the top of the grid's content to the top of the
-    /// row holding the item at `index`. Pure.
-    static func rowTop(forIndex index: Int, columnCount: Int) -> CGFloat {
-        let row = index / columnCount
+    /// row holding a slot. Pure.
+    static func rowTop(forSlot slot: Int, columnCount: Int) -> CGFloat {
+        let row = slot / columnCount
         return spacing + CGFloat(row) * (cellSize + spacing)
     }
 
-    /// The item to hold in place after the items change, given the index of
-    /// the item that was pinned: that item if it's still there, otherwise
-    /// the nearest earlier one that is (when items fold into an earlier
+    /// The cell to hold in place after the cells change, given the index of
+    /// the cell that was pinned: that cell if it's still there, otherwise
+    /// the nearest earlier one that is (when cells fold into an earlier
     /// one, that's where they went), otherwise the nearest later one.
     /// Returns its old and new indices, or nil if nothing survives. Pure.
-    static func survivingItem(
+    static func survivingCell(
         from pinnedIndex: Int, oldIDs: [UUID], newIDs: [UUID]
     ) -> (oldIndex: Int, newIndex: Int)? {
         guard oldIDs.indices.contains(pinnedIndex) else { return nil }
@@ -79,21 +79,21 @@ enum PhotoGridMetrics {
         return nil
     }
 
-    /// The scroll offset that keeps the item at `pinnedIndex` among the old
+    /// The scroll offset that keeps the cell at `pinnedIndex` among the old
     /// cells (or, if it has gone, its nearest survivor) at the same height on
     /// screen across a change from the old cells to the new. Nil if nothing
     /// survives. Pure.
-    static func scrollOffsetHoldingItem(
+    static func scrollOffsetHoldingCell(
         at pinnedIndex: Int,
         from old: SlottedCells,
         to new: SlottedCells,
         columnCount: Int,
         currentOffset: CGFloat
     ) -> CGFloat? {
-        guard let survivor = survivingItem(from: pinnedIndex, oldIDs: old.itemIDs, newIDs: new.itemIDs)
+        guard let survivor = survivingCell(from: pinnedIndex, oldIDs: old.photoIDs, newIDs: new.photoIDs)
         else { return nil }
         return scrollOffset(
-            keepingItemFrom: survivor.oldIndex + old.blankSlotCount,
+            keepingSlotContentsFrom: survivor.oldIndex + old.blankSlotCount,
             to: survivor.newIndex + new.blankSlotCount,
             columnCount: columnCount,
             currentOffset: currentOffset
@@ -103,7 +103,7 @@ enum PhotoGridMetrics {
     /// The scroll offset that puts the view a given distance into the row
     /// holding a slot, as when restoring a saved scroll anchor. Pure.
     static func offset(forSlot slot: Int, offsetFromRowTop: CGFloat, columnCount: Int) -> CGFloat {
-        rowTop(forIndex: slot, columnCount: columnCount) + offsetFromRowTop
+        rowTop(forSlot: slot, columnCount: columnCount) + offsetFromRowTop
     }
 
     /// The first slot of the row at a height within the grid's content.
@@ -113,15 +113,15 @@ enum PhotoGridMetrics {
         return row * columnCount
     }
 
-    /// The scroll offset that keeps an item at the same height on screen
-    /// after it moves from one index to another. Not clamped: the scroll
+    /// The scroll offset that keeps a cell at the same height on screen
+    /// after it moves from one slot to another. Not clamped: the scroll
     /// view keeps out-of-range positions in bounds itself, and its minimum
     /// offset depends on content insets this doesn't know about. Pure.
     static func scrollOffset(
-        keepingItemFrom oldIndex: Int, to newIndex: Int, columnCount: Int, currentOffset: CGFloat
+        keepingSlotContentsFrom oldSlot: Int, to newSlot: Int, columnCount: Int, currentOffset: CGFloat
     ) -> CGFloat {
-        let shift = rowTop(forIndex: newIndex, columnCount: columnCount)
-            - rowTop(forIndex: oldIndex, columnCount: columnCount)
+        let shift = rowTop(forSlot: newSlot, columnCount: columnCount)
+            - rowTop(forSlot: oldSlot, columnCount: columnCount)
         return currentOffset + shift
     }
 }

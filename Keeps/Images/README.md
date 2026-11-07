@@ -27,9 +27,9 @@ image arrives.
 
 `FramedPhoto` shows a photo in a fixed frame, for cells, tiles, and
 piles. It shows the image `ImageSize` chooses for the frame's size in
-pixels, with the thumbnail standing in until a larger image loads. `FullSizeImage` shows a photo
-full size, with its thumbnail standing in until it loads and its
-neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
+pixels, with the thumbnail standing in until a larger image loads.
+`FullSizePhoto` shows a photo's full image, with its thumbnail standing in
+until it loads and its neighbours preloaded. `LoadProgressView` is the toolbar ring showing how
 far the current burst of loading has got.
 
 `ScrollingTiles` is the pick and keepers screens' grid of tiles: it lays
@@ -39,10 +39,10 @@ other keys. `TileLayout` is its pure, tested part: the column count, tile
 size, and positions, where the movement keys go, how far to scroll to
 reveal a tile, and the photos' common aspect ratio.
 
-`ImageStatsOverlay` is a debug panel of figures for tuning loading: the
-app's memory, what `ImageCache` holds at each size, reads in flight, the
-hit rate, and how quickly recent full-size steps turned sharp, which
-`ImageLoadStats` keeps. Debug builds turn it on from the Debug menu.
+`ImageStatisticsOverlay` is a debug panel of figures for tuning loading:
+the app's memory, what `ImageCache` holds at each size, reads in flight,
+the hit rate, and how quickly recent full-size steps turned sharp, which
+`ImageLoadStatistics` keeps. Debug builds turn it on from the Debug menu.
 `ImageSignposts` marks the same loading for Instruments: each read, cache
 hits, misses, and evictions, and each full-size step until it turns
 sharp.
@@ -62,5 +62,5 @@ photo or pile, and `KeeperBadge` marks a keeper; its colour stands for the
 keepers wherever they're shown.
 
 Images uses Folder, for `PhotoItem`, and Keys, for `ScrollingTiles`' input.
-It knows nothing about groups: the screens track which item is selected and
+It knows nothing about groups: the screens track which photo is selected and
 draw the sort screen's boundary bars themselves.

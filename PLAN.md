@@ -20,7 +20,7 @@ the findings that shaped the image sizes are in `Benchmarks/README.md`.
   NSCache would drop everything at once.
 
 The signposts (`ImageSignposts`) show these in Instruments, and the debug
-overlay (Debug ▸ Show Image Stats, ⌥⌘I) shows them in the app.
+overlay (Debug ▸ Show Image Statistics, ⌥⌘I) shows them in the app.
 
 ## Scenarios
 
@@ -162,7 +162,7 @@ commit.
     - The benchmark checks for a folder instead of relying on `try?`.
     - `borderColor` goes from `FramedPhoto` and `BlankPrint`, since it's
       always white.
-11. **One name per concept.**
+11. ✅ **One name per concept.**
     - `items` becomes `photos` wherever it means the folder's photos.
     - Pick's "focused" tile becomes "selected", like the other screens.
     - `DoneScreen`'s cells become piles.
@@ -174,6 +174,11 @@ commit.
     - "Stats" becomes "Statistics", keeping the `showsImageStats`
       settings key.
     - Add "to go" and "set aside" to the glossary.
+    (`PhotoItem` keeps its name, but every variable and parameter holding
+    one says photo. The sort grid identifies cells by their photos' ids,
+    so its scrolling speaks of photo ids, and `GridHitTarget.item` became
+    `.cell`. The glossary also gained photo, slot, blank print, and
+    selected.)
 12. **Names that say what they do.**
     - Record the two naming decisions above in the project CLAUDE.md.
     - Functions with side effects get verbs: `makeAppMenu()` and the

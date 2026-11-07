@@ -15,7 +15,7 @@ func makeFile(named name: String, in folder: URL) throws {
 
 /// Creates synthetic PhotoItems with placeholder URLs for store-level tests
 /// that don't need a real folder. Capture dates increase with the index.
-func makePhotoItems(count: Int) -> [PhotoItem] {
+func makePhotos(count: Int) -> [PhotoItem] {
     (1 ... count).map { index in
         PhotoItem(
             id: UUID(),
@@ -35,7 +35,7 @@ func makeGrouping(
     collapsedBoundaries: Set<Int> = [],
     boundaries: Set<Int> = []
 ) -> Grouping {
-    let grouping = Grouping(items: makePhotoItems(count: photoCount))
+    let grouping = Grouping(photos: makePhotos(count: photoCount))
     for boundary in collapsedBoundaries.sorted() {
         grouping.toggleBoundary(atPhoto: boundary)
     }

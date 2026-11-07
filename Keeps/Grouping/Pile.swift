@@ -7,11 +7,11 @@ struct Pile {
     let photos: [PhotoItem]
 
     /// Orders a group's photos for its pile. `group` is the photos' indices
-    /// in `items`; `keepers` may include photos outside the group, which
-    /// are ignored.
-    init(group: Range<Int>, items: [PhotoItem], keepers: Set<Int>) {
+    /// in `folderPhotos`; `keepers` may include photos outside the group,
+    /// which are ignored.
+    init(group: Range<Int>, folderPhotos: [PhotoItem], keepers: Set<Int>) {
         let kept = group.filter { keepers.contains($0) }
         let rest = group.filter { !keepers.contains($0) }
-        photos = (kept + rest).map { items[$0] }
+        photos = (kept + rest).map { folderPhotos[$0] }
     }
 }

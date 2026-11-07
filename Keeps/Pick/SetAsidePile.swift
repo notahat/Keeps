@@ -21,7 +21,7 @@ struct SetAsidePile: View {
 }
 
 #Preview("Set-aside pile") {
-    SetAsidePile(photos: PreviewPhotos.makeItems(count: 4), length: 200, aspectRatio: FramedPhoto.typicalAspectRatio)
+    SetAsidePile(photos: PreviewPhotos.makePhotos(count: 4), length: 200, aspectRatio: FramedPhoto.typicalAspectRatio)
         .padding()
         .background(.black)
 }

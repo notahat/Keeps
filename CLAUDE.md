@@ -26,7 +26,7 @@ folder needs adding to that exception list.
 - `Folder/` — scanning a folder into photos (`PhotoItem`, `FolderScanner`,
   `FolderSession`).
 - `Images/` — loading, caching, and showing images (`ImagePipeline`,
-  `FramedPhoto`, `FullSizeImage`, load progress, `PileJitter`), and
+  `FramedPhoto`, `FullSizePhoto`, load progress, `PileJitter`), and
   `ScrollingTiles`, the tile grid the pick and keepers screens share, with
   `TileLayout` its pure, tested layout.
 - `Grouping/` — the model: `Grouping` holds the boundaries, collapse point,
@@ -71,6 +71,9 @@ name.
 
 ## Glossary
 
+- **Photo**: one picture in the folder: a RAW file, a JPEG, or a pair of
+  them with the same stem (`PhotoItem`). Code calls them photos, never
+  items.
 - **Group**: a run of photos between two boundaries, where the folder's
   start counts as a boundary. The photos after the last boundary aren't a
   group. No type is called plain `Group`, which SwiftUI already has; use
@@ -81,6 +84,9 @@ name.
   last boundary. It holds still on screen as groups collapse.
 - **Collapsed**: a group drawn as a pile, after C. It can't be
   changed.
+- **To go**: the photos not yet in a done group, shown on the sort
+  screen.
+- **Set aside**: the photos of a done group that weren't kept.
 - **Sort screen**: the grid where the folder is split into groups.
 - **Pick screen**: one group at a time, where its **keepers** are picked
   and the group is marked **done**. It takes over the whole window
@@ -96,7 +102,15 @@ name.
   cell is one place in the sort screen's grid, a tile is one photo on the
   pick or keepers screen, and a pile is a stack of prints. Each shows
   whichever image suits its size, so none of them is named after an
-  image.
+  image. The sort screen identifies each cell by its photo's id.
+- **Slot**: a cell's place in the sort screen's grid, with its share of
+  the gap. Blank slots before the first cell keep the photos in their
+  columns as groups collapse.
+- **Blank print**: a white card with a grey patch, drawn in place of a
+  photo while its thumbnail loads, and for the hidden layers of a pile.
+- **Selected**: the one cell, tile, or pile a screen highlights, which
+  the movement keys move. Not the same as keyboard focus, which says
+  whether a screen gets the keys at all.
 - **Thumbnail**: a photo's image scaled to 520 pixels on its longest side,
   for cells, piles, and drag images, and to stand in while a larger image
   loads. It's an image, never a place on screen.

@@ -12,9 +12,9 @@ struct GridScrollResponseTests {
         stable stableIndex: Int? = nil
     ) -> GridScrolling.Cells {
         GridScrolling.Cells(
-            itemIDs: photoIndices.map { photoIDs[$0] },
-            selectedItemID: selectedIndex.map { photoIDs[$0] },
-            stableItemID: stableIndex.map { photoIDs[$0] },
+            photoIDs: photoIndices.map { photoIDs[$0] },
+            selectedPhotoID: selectedIndex.map { photoIDs[$0] },
+            stablePhotoID: stableIndex.map { photoIDs[$0] },
             leadingBlankSlots: 0
         )
     }

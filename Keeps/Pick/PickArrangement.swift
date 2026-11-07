@@ -22,7 +22,7 @@ nonisolated struct PickArrangement {
         pilePhotos = photos.filter { !keepers.contains($0) }
     }
 
-    /// The tile to focus in place of a photo: that photo's own tile, or the
+    /// The tile to select in place of a photo: that photo's own tile, or the
     /// nearest tile before it, or the first tile. Nil when there are no
     /// tiles.
     func tileIndex(nearestPhoto photoIndex: Int) -> Int? {

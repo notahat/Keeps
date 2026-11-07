@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// One tile on the pick screen: the photo scaled to fit, a focus highlight,
-/// and a badge when it's a keeper. Doesn't handle input or know where it
-/// sits; PickScreen places it and handles clicks.
+/// One tile on the pick screen: the photo scaled to fit, a selection
+/// highlight, and a badge when it's a keeper. Doesn't handle input or know
+/// where it sits; PickScreen places it and handles clicks.
 struct PickTile: View {
-    let item: PhotoItem
+    let photo: PhotoItem
     let size: CGSize
-    let isFocused: Bool
+    let isSelected: Bool
     let isKeeper: Bool
 
     var body: some View {
-        FramedPhoto(item: item, frameSize: size)
-            .selectionHighlight(isSelected: isFocused)
+        FramedPhoto(photo: photo, frameSize: size)
+            .selectionHighlight(isSelected: isSelected)
             .overlay(alignment: .topTrailing) {
                 if isKeeper {
                     KeeperBadge()
@@ -25,25 +25,25 @@ struct PickTile: View {
 private let previewTileSize = CGSize(width: 300, height: 300)
 
 #Preview("Plain tile") {
-    PickTile(item: PreviewPhotos.landscape, size: previewTileSize, isFocused: false, isKeeper: false)
+    PickTile(photo: PreviewPhotos.landscape, size: previewTileSize, isSelected: false, isKeeper: false)
         .padding()
         .background(.black)
 }
 
-#Preview("Focused tile") {
-    PickTile(item: PreviewPhotos.landscape, size: previewTileSize, isFocused: true, isKeeper: false)
+#Preview("Selected tile") {
+    PickTile(photo: PreviewPhotos.landscape, size: previewTileSize, isSelected: true, isKeeper: false)
         .padding()
         .background(.black)
 }
 
 #Preview("Keeper tile") {
-    PickTile(item: PreviewPhotos.portrait, size: previewTileSize, isFocused: false, isKeeper: true)
+    PickTile(photo: PreviewPhotos.portrait, size: previewTileSize, isSelected: false, isKeeper: true)
         .padding()
         .background(.black)
 }
 
-#Preview("Focused keeper tile") {
-    PickTile(item: PreviewPhotos.portrait, size: previewTileSize, isFocused: true, isKeeper: true)
+#Preview("Selected keeper tile") {
+    PickTile(photo: PreviewPhotos.portrait, size: previewTileSize, isSelected: true, isKeeper: true)
         .padding()
         .background(.black)
 }

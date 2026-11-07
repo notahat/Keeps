@@ -1,5 +1,5 @@
 /// Figures on how well image loading is keeping up, for the debug overlay
-/// (ImageStatsOverlay). Two kinds of event feed it:
+/// (ImageStatisticsOverlay). Two kinds of event feed it:
 ///
 /// - A lookup is a view asking for an image, which is a hit when the image
 ///   is already cached.
@@ -10,7 +10,7 @@
 ///
 /// Only the most recent steps count, so the figures follow what the user
 /// is doing now. Pure: it measures nothing itself.
-nonisolated struct ImageLoadStats {
+nonisolated struct ImageLoadStatistics {
     /// How a step to a photo at full size ended.
     enum StepOutcome: Equatable {
         /// The full image showed after this long; zero when it was cached.

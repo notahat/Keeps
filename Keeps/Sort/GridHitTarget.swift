@@ -1,18 +1,18 @@
 import Foundation
 
-/// Where a pointer event inside a grid cell landed: on the item itself, or on
-/// the gap between two items. The outer edges of each cell stand in for the
-/// gap, because the real gap is too thin to hit quickly. Gaps are numbered by
-/// the index of the item that follows them, so the right edge of one cell and
-/// the left edge of the next — even across a row wrap — resolve to the same
-/// gap. The gap after the last item is a valid target; there is none before
-/// the first. What a gap is used for, such as placing a boundary, is up to
-/// the caller.
+/// Where a pointer event inside a grid cell landed: on the cell itself, or
+/// on the gap between two cells. The outer edges of each cell stand in for
+/// the gap, because the real gap is too thin to hit quickly. Gaps are
+/// numbered by the index of the cell that follows them, so the right edge of
+/// one cell and the left edge of the next — even across a row wrap —
+/// resolve to the same gap. The gap after the last cell is a valid target;
+/// there is none before the first. What a gap is used for, such as placing
+/// a boundary, is up to the caller.
 nonisolated enum GridHitTarget: Equatable {
-    case item(Int)
+    case cell(Int)
     case gap(beforeIndex: Int)
 
-    /// The gap this targets, or nil when it targets an item.
+    /// The gap this targets, or nil when it targets a cell.
     var gapIndex: Int? {
         if case let .gap(beforeIndex) = self {
             beforeIndex
@@ -34,6 +34,6 @@ nonisolated enum GridHitTarget: Equatable {
         if offset > cellWidth - edgeWidth {
             return .gap(beforeIndex: index + 1)
         }
-        return .item(index)
+        return .cell(index)
     }
 }

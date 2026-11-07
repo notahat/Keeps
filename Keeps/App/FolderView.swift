@@ -31,14 +31,14 @@ struct FolderView: View {
 
     var body: some View {
         Group {
-            if session.items.isEmpty {
+            if session.photos.isEmpty {
                 Text("This folder has no photos")
                     .foregroundStyle(.secondary)
             } else {
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .overlay(alignment: .bottomLeading) {
-                        ImageStatsOverlay()
+                        ImageStatisticsOverlay()
                             .padding(12)
                     }
                     .toolbar {
@@ -85,7 +85,7 @@ struct FolderView: View {
     /// doesn't auto-save, so the work in it isn't written over.
     private func start() {
         guard grouping == nil else { return }
-        let newGrouping = Grouping(items: session.items)
+        let newGrouping = Grouping(photos: session.photos)
         let newKeepsFile = KeepsFile(folderURL: session.folderURL)
         do {
             if let savedGrouping = try newKeepsFile.restore() {
@@ -103,7 +103,7 @@ struct FolderView: View {
         }
         grouping = newGrouping
         keepsFile = newKeepsFile
-        ImagePipeline.shared.prefetchImages(for: session.items, size: .thumbnail)
+        ImagePipeline.shared.prefetchImages(for: session.photos, size: .thumbnail)
     }
 }
 
@@ -119,7 +119,7 @@ private struct CurrentScreen: View {
         if let openGroup = grouping.openGroup {
             // The id tells SwiftUI to build a new pick screen whenever a
             // different group opens. Without it, SwiftUI would reuse the
-            // old one, and its state, such as which tile has focus, would
+            // old one, and its state, such as which tile is selected, would
             // carry over to the new group.
             PickScreen(grouping: grouping, group: openGroup)
                 .id(openGroup)

@@ -66,7 +66,7 @@ final class ImagePipeline {
         return queue
     }()
 
-    /// Every read queued or running, at any priority, by item and size.
+    /// Every read queued or running, at any priority, by photo and size.
     /// Views watch loadProgress rather than this.
     @ObservationIgnored
     private var readsInFlight: [String: Operation] = [:] {
@@ -83,27 +83,27 @@ final class ImagePipeline {
     /// the overlay reads it on a timer, so recording a figure never redraws
     /// a view, which would disturb what's being measured.
     @ObservationIgnored
-    private(set) var stats = ImageLoadStats()
+    private(set) var statistics = ImageLoadStatistics()
 
     // MARK: - Public interface
 
     /// Returns the cached image immediately, or nil if not yet loaded.
-    func cachedImage(for item: PhotoItem, size: ImageSize) -> NSImage? {
-        cache.image(for: item, size: size)
+    func cachedImage(for photo: PhotoItem, size: ImageSize) -> NSImage? {
+        cache.image(for: photo, size: size)
     }
 
-    /// Returns the WatchedImage for an item's image at a size. The
+    /// Returns the WatchedImage for a photo's image at a size. The
     /// WatchedImage already holds the image if the image is cached. The
     /// calling view must keep the WatchedImage in its @State, since the
     /// pipeline holds only a weak reference to it. This doesn't start a
     /// read; use requestImage or prefetchImage for that.
-    func watchedImage(for item: PhotoItem, size: ImageSize) -> WatchedImage {
-        let key = readKey(for: item, size: size) as NSString
+    func watchedImage(for photo: PhotoItem, size: ImageSize) -> WatchedImage {
+        let key = readKey(for: photo, size: size) as NSString
         if let existing = watchedImages.object(forKey: key) {
             recordLookup(of: size, isHit: existing.image != nil)
             return existing
         }
-        let watchedImage = WatchedImage(image: cache.image(for: item, size: size))
+        let watchedImage = WatchedImage(image: cache.image(for: photo, size: size))
         recordLookup(of: size, isHit: watchedImage.image != nil)
         watchedImages.setObject(watchedImage, forKey: key)
         return watchedImage
@@ -112,43 +112,43 @@ final class ImagePipeline {
     /// Starts reading an image at the priority for what's on screen, or
     /// raises an existing read to it. Called when a view needs the image as
     /// soon as possible.
-    func requestImage(for item: PhotoItem, size: ImageSize) {
-        guard cache.image(for: item, size: size) == nil else { return }
-        let key = readKey(for: item, size: size)
+    func requestImage(for photo: PhotoItem, size: ImageSize) {
+        guard cache.image(for: photo, size: size) == nil else { return }
+        let key = readKey(for: photo, size: size)
         if let read = readsInFlight[key] {
             read.queuePriority = requestPriority(for: size)
             return
         }
-        enqueueRead(of: item, size: size, key: key, priority: requestPriority(for: size))
+        enqueueRead(of: photo, size: size, key: key, priority: requestPriority(for: size))
     }
 
     /// Drops a read back to prefetch priority. Called when the view showing
     /// its image leaves the screen.
-    func deprioritizeImage(for item: PhotoItem, size: ImageSize) {
-        readsInFlight[readKey(for: item, size: size)]?.queuePriority = prefetchPriority(for: size)
+    func deprioritizeImage(for photo: PhotoItem, size: ImageSize) {
+        readsInFlight[readKey(for: photo, size: size)]?.queuePriority = prefetchPriority(for: size)
     }
 
     /// Starts reading an image at prefetch priority, unless it's already
     /// cached or being read.
-    func prefetchImage(for item: PhotoItem, size: ImageSize) {
-        let key = readKey(for: item, size: size)
-        guard cache.image(for: item, size: size) == nil, readsInFlight[key] == nil else { return }
-        enqueueRead(of: item, size: size, key: key, priority: prefetchPriority(for: size))
+    func prefetchImage(for photo: PhotoItem, size: ImageSize) {
+        let key = readKey(for: photo, size: size)
+        guard cache.image(for: photo, size: size) == nil, readsInFlight[key] == nil else { return }
+        enqueueRead(of: photo, size: size, key: key, priority: prefetchPriority(for: size))
     }
 
-    /// Queues background reads for all items, first cancelling any earlier
-    /// prefetches that no view has asked for since.
-    func prefetchImages(for items: [PhotoItem], size: ImageSize) {
+    /// Queues background reads for all the photos, first cancelling any
+    /// earlier prefetches that no view has asked for since.
+    func prefetchImages(for photos: [PhotoItem], size: ImageSize) {
         cancelIdlePrefetches(size: size)
-        for item in items {
-            prefetchImage(for: item, size: size)
+        for photo in photos {
+            prefetchImage(for: photo, size: size)
         }
     }
 
     /// Records how a step to a photo at full size ended, for the debug
     /// overlay.
-    func recordStep(_ outcome: ImageLoadStats.StepOutcome) {
-        stats.recordStep(outcome)
+    func recordStep(_ outcome: ImageLoadStatistics.StepOutcome) {
+        statistics.recordStep(outcome)
     }
 
     /// What's cached at each size, for the debug overlay.
@@ -165,11 +165,11 @@ final class ImagePipeline {
     /// loaded. Only for SwiftUI previews, which are drawn before a background
     /// read would finish; in the app it would stall the main thread. Stops
     /// the preview if the file can't be read.
-    func loadImageImmediately(for item: PhotoItem, size: ImageSize) {
-        guard let cgImage = ImageReader.image(from: item.sourceURL, size: size) else {
-            fatalError("Couldn't read the preview photo \(item.sourceURL.lastPathComponent)")
+    func loadImageImmediately(for photo: PhotoItem, size: ImageSize) {
+        guard let cgImage = ImageReader.image(from: photo.sourceURL, size: size) else {
+            fatalError("Couldn't read the preview photo \(photo.sourceURL.lastPathComponent)")
         }
-        store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+        store(NSImage(cgImage: cgImage, size: .zero), for: photo, size: size)
     }
 
     // MARK: - Private
@@ -177,7 +177,7 @@ final class ImagePipeline {
     /// Counts a view asking for an image for the debug overlay, and marks it
     /// for Instruments.
     private func recordLookup(of size: ImageSize, isHit: Bool) {
-        stats.recordLookup(isHit: isHit)
+        statistics.recordLookup(isHit: isHit)
         ImageSignposts.markLookup(of: size, isHit: isHit)
     }
 
@@ -197,30 +197,30 @@ final class ImagePipeline {
         }
     }
 
-    /// The key a read is tracked by: the item and the size.
-    private func readKey(for item: PhotoItem, size: ImageSize) -> String {
+    /// The key a read is tracked by: the photo and the size.
+    private func readKey(for photo: PhotoItem, size: ImageSize) -> String {
         switch size {
-        case let .scaled(longestSideLength): "\(item.id)@\(longestSideLength)"
-        case .full: "\(item.id)@full"
+        case let .scaled(longestSideLength): "\(photo.id)@\(longestSideLength)"
+        case .full: "\(photo.id)@full"
         }
     }
 
-    /// Queues a read of an item's image, which finishes back on the main
+    /// Queues a read of a photo's image, which finishes back on the main
     /// actor (see finishRead).
     private func enqueueRead(
-        of item: PhotoItem,
+        of photo: PhotoItem,
         size: ImageSize,
         key: String,
         priority: Operation.QueuePriority
     ) {
-        let url = item.sourceURL
+        let url = photo.sourceURL
         let enqueueTime = ContinuousClock.now
         let read = BlockOperation {
             let cgImage = ImageSignposts.markRead(of: size, queuedSince: enqueueTime) {
                 ImageReader.image(from: url, size: size)
             }
             Task { @MainActor in
-                self.finishRead(of: item, size: size, key: key, cgImage: cgImage)
+                self.finishRead(of: photo, size: size, key: key, cgImage: cgImage)
             }
         }
         read.queuePriority = priority
@@ -230,20 +230,20 @@ final class ImagePipeline {
 
     /// Stores a finished read's image, or logs that the file gave none, and
     /// stops tracking the read.
-    private func finishRead(of item: PhotoItem, size: ImageSize, key: String, cgImage: CGImage?) {
+    private func finishRead(of photo: PhotoItem, size: ImageSize, key: String, cgImage: CGImage?) {
         if let cgImage {
-            store(NSImage(cgImage: cgImage, size: .zero), for: item, size: size)
+            store(NSImage(cgImage: cgImage, size: .zero), for: photo, size: size)
         } else {
-            Self.logger.error("Couldn't read \(item.sourceURL.path, privacy: .public) at \(size, privacy: .public)")
+            Self.logger.error("Couldn't read \(photo.sourceURL.path, privacy: .public) at \(size, privacy: .public)")
         }
         readsInFlight.removeValue(forKey: key)
     }
 
     /// Caches a loaded image, and hands it to the WatchedImage for it, if a
     /// view is watching, which redraws only the views showing it.
-    private func store(_ image: NSImage, for item: PhotoItem, size: ImageSize) {
-        cache.setImage(image, for: item, size: size)
-        watchedImages.object(forKey: readKey(for: item, size: size) as NSString)?.image = image
+    private func store(_ image: NSImage, for photo: PhotoItem, size: ImageSize) {
+        cache.setImage(image, for: photo, size: size)
+        watchedImages.object(forKey: readKey(for: photo, size: size) as NSString)?.image = image
     }
 
     /// Cancels the reads still at prefetch priority for a size: those no view

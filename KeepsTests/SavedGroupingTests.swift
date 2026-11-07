@@ -8,7 +8,7 @@ struct SavedGroupingTests {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [3], boundaries: [5, 10])
         grouping.selectCell(at: 2)
 
-        let restored = Grouping(items: grouping.items)
+        let restored = Grouping(photos: grouping.photos)
         restored.applyRestored(state: grouping.snapshotState())
 
         #expect(restored.boundaries == [3, 5, 10])
@@ -19,12 +19,12 @@ struct SavedGroupingTests {
     @Test("The scroll position survives a save and restore")
     func scrollAnchorRoundTrip() {
         let grouping = makeGrouping(photoCount: 10)
-        grouping.scrollAnchor = GridScrollAnchor(itemID: grouping.items[6].id, offsetFromRowTop: 42)
+        grouping.scrollAnchor = GridScrollAnchor(photoID: grouping.photos[6].id, offsetFromRowTop: 42)
 
-        let restored = Grouping(items: grouping.items)
+        let restored = Grouping(photos: grouping.photos)
         restored.applyRestored(state: grouping.snapshotState())
 
-        #expect(restored.scrollAnchor == GridScrollAnchor(itemID: grouping.items[6].id, offsetFromRowTop: 42))
+        #expect(restored.scrollAnchor == GridScrollAnchor(photoID: grouping.photos[6].id, offsetFromRowTop: 42))
     }
 
     @Test("Keepers and done groups survive a save to keeps.json and a restore")
@@ -39,7 +39,7 @@ struct SavedGroupingTests {
         let keepsFile = KeepsFile(folderURL: folder)
 
         try keepsFile.save(grouping.snapshotState())
-        let restored = Grouping(items: grouping.items)
+        let restored = Grouping(photos: grouping.photos)
         try restored.applyRestored(state: #require(try keepsFile.restore()))
 
         #expect(restored.keepers == [1, 4])
@@ -51,7 +51,7 @@ struct SavedGroupingTests {
     func collapseToEndRoundTrip() {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [4, 10])
 
-        let restored = Grouping(items: grouping.items)
+        let restored = Grouping(photos: grouping.photos)
         restored.applyRestored(state: grouping.snapshotState())
 
         #expect(restored.collapsedUpTo == 10)
@@ -110,19 +110,19 @@ struct SavedGroupingTests {
         #expect(grouping.boundaries == [3, 5, 10])
         #expect(grouping.collapsedUpTo == 3)
         #expect(grouping.selectedPhotoIndex == 4)
-        #expect(grouping.scrollAnchor == GridScrollAnchor(itemID: grouping.items[6].id, offsetFromRowTop: 42.5))
+        #expect(grouping.scrollAnchor == GridScrollAnchor(photoID: grouping.photos[6].id, offsetFromRowTop: 42.5))
     }
 
     @Test("Restoring drops anything that refers to a photo no longer in the folder")
     func missingStemsDropped() {
         let grouping = makeGrouping(photoCount: 5)
         let state = SavedGrouping(
-            boundaries: [.beforePhoto(grouping.items[2].stem), .beforePhoto("IMG_9999")],
+            boundaries: [.beforePhoto(grouping.photos[2].stem), .beforePhoto("IMG_9999")],
             collapsedUpTo: .beforePhoto("IMG_8888"),
             selectedStem: "IMG_7777",
             scrollAnchor: SavedGrouping.ScrollAnchor(stem: "IMG_6666", offsetFromRowTop: 10),
-            keeperStems: [grouping.items[1].stem, "IMG_5555"],
-            doneGroupStartStems: [grouping.items[0].stem, "IMG_4444"]
+            keeperStems: [grouping.photos[1].stem, "IMG_5555"],
+            doneGroupStartStems: [grouping.photos[0].stem, "IMG_4444"]
         )
 
         grouping.applyRestored(state: state)

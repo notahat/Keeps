@@ -9,15 +9,15 @@ import Foundation
 /// Pure: built once from the folder's photos, which don't change while the
 /// folder is open.
 struct PhotoStems {
-    private let items: [PhotoItem]
+    private let photos: [PhotoItem]
     private let indexByStem: [String: Int]
     private let indexByID: [UUID: Int]
 
     /// Indexes the folder's photos by stem and by id.
-    init(items: [PhotoItem]) {
-        self.items = items
-        indexByStem = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($1.stem, $0) })
-        indexByID = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($1.id, $0) })
+    init(photos: [PhotoItem]) {
+        self.photos = photos
+        indexByStem = Dictionary(uniqueKeysWithValues: photos.enumerated().map { ($1.stem, $0) })
+        indexByID = Dictionary(uniqueKeysWithValues: photos.enumerated().map { ($1.id, $0) })
     }
 
     /// The photo with a stem, or nil if it's no longer in the folder.
@@ -26,14 +26,14 @@ struct PhotoStems {
     }
 
     /// The stem of the photo with an in-memory id, or nil if there's none.
-    func stem(ofItemID id: UUID) -> String? {
-        indexByID[id].map { items[$0].stem }
+    func stem(ofPhotoID id: UUID) -> String? {
+        indexByID[id].map { photos[$0].stem }
     }
 
     /// The saved form of the point just before a photo, or after the last
     /// one when the index is the photo count.
     func position(beforePhoto photoIndex: Int) -> SavedGrouping.Position {
-        photoIndex < items.count ? .beforePhoto(items[photoIndex].stem) : .end
+        photoIndex < photos.count ? .beforePhoto(photos[photoIndex].stem) : .end
     }
 
     /// The photo index a saved position refers to, or nil if its photo is no
@@ -41,14 +41,14 @@ struct PhotoStems {
     func photoIndex(at position: SavedGrouping.Position) -> Int? {
         switch position {
         case let .beforePhoto(stem): indexByStem[stem]
-        case .end: items.count
+        case .end: photos.count
         }
     }
 
     /// The stems of a set of photos in folder order, or nil when there are
     /// none, so that saving nothing writes no entry.
     func stems(ofPhotos photoIndices: Set<Int>) -> [String]? {
-        photoIndices.isEmpty ? nil : photoIndices.sorted().map { items[$0].stem }
+        photoIndices.isEmpty ? nil : photoIndices.sorted().map { photos[$0].stem }
     }
 
     /// The photos with the given stems, leaving out any no longer in the

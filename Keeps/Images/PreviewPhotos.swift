@@ -7,28 +7,28 @@ import Foundation
 @MainActor
 enum PreviewPhotos {
     /// A landscape photo.
-    static let landscape = makeItem(fileName: "preview-landscape", stem: "PREVIEW_LANDSCAPE")
+    static let landscape = makePhoto(fileName: "preview-landscape", stem: "PREVIEW_LANDSCAPE")
 
     /// A portrait photo.
-    static let portrait = makeItem(fileName: "preview-portrait", stem: "PREVIEW_PORTRAIT")
+    static let portrait = makePhoto(fileName: "preview-portrait", stem: "PREVIEW_PORTRAIT")
 
     /// Makes the given number of photos, alternating landscape and portrait.
     /// Each has its own stem, so in a pile each print is tilted differently.
-    static func makeItems(count: Int) -> [PhotoItem] {
+    static func makePhotos(count: Int) -> [PhotoItem] {
         (1 ... count).map { index in
             let fileName = index.isMultiple(of: 2) ? "preview-portrait" : "preview-landscape"
-            return makeItem(fileName: fileName, stem: String(format: "PREVIEW_%04d", index))
+            return makePhoto(fileName: fileName, stem: String(format: "PREVIEW_%04d", index))
         }
     }
 
     /// Makes a photo for one of the preview JPEGs and caches its thumbnail,
     /// failing if the file is missing from the bundle.
-    private static func makeItem(fileName: String, stem: String) -> PhotoItem {
+    private static func makePhoto(fileName: String, stem: String) -> PhotoItem {
         guard let url = Bundle.main.url(forResource: fileName, withExtension: "jpg") else {
             fatalError("Missing preview photo \(fileName).jpg")
         }
-        let item = PhotoItem(id: UUID(), stem: stem, rawURL: nil, jpegURL: url, fileCreationDate: .now)
-        ImagePipeline.shared.loadImageImmediately(for: item, size: .thumbnail)
-        return item
+        let photo = PhotoItem(id: UUID(), stem: stem, rawURL: nil, jpegURL: url, fileCreationDate: .now)
+        ImagePipeline.shared.loadImageImmediately(for: photo, size: .thumbnail)
+        return photo
     }
 }

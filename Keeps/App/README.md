@@ -25,7 +25,7 @@ highlight. The user can also drag the keepers pile: `PhotoDragSource`
 hands over the keepers' files (the RAW where there is one), the same as
 dragging them from Finder, for dropping into Lightroom or a folder. `FolderWindowController` adds the section's name to
 the window title. The document itself never saves. In debug builds,
-`MainMenu` adds a Debug menu, which shows the image stats overlay.
+`MainMenu` adds a Debug menu, which shows the image statistics overlay.
 
 The code here uses every other code folder, and no other code folder uses
 it.

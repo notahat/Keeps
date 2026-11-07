@@ -2,42 +2,41 @@ import AppKit
 import os
 import SwiftUI
 
-/// One photo's full-size image, fitted to the space, with its neighbours
+/// One photo's full image, fitted to the space, with its neighbours
 /// preloaded: the shown photo loads at high priority, and the 4 photos after
 /// it and the 2 before it at low priority. Shows the photo's thumbnail while
 /// the full image loads, or a spinner when there's no thumbnail either.
 ///
 /// Draws and loads only. The caller handles keys and focus, draws anything
-/// over the image, and changes `index` to move through `items`. Knows
+/// over the image, and changes `index` to move through `photos`. Knows
 /// nothing about groups or keepers.
-struct FullSizeImage: View {
-    let items: [PhotoItem]
+struct FullSizePhoto: View {
+    let photos: [PhotoItem]
     let index: Int
 
-    /// The shown photo's full-size image, which redraws this view when it
-    /// loads.
+    /// The shown photo's full image, which redraws this view when it loads.
     @State private var fullImage: WatchedImage?
 
-    /// The shown photo's thumbnail, which stands in until the full-size
-    /// image loads.
+    /// The shown photo's thumbnail, which stands in until the full image
+    /// loads.
     @State private var thumbnail: WatchedImage?
 
-    /// The item being loaded at high priority, tracked so it can be
+    /// The photo being loaded at high priority, tracked so it can be
     /// deprioritised when the user moves on before it finishes.
-    @State private var highPriorityItem: PhotoItem?
+    @State private var highPriorityPhoto: PhotoItem?
 
     /// The step to the shown photo while its full image is still loading,
     /// for timing how long it takes to turn sharp. Nil once it has.
     @State private var pendingStep: PendingStep?
 
-    private var item: PhotoItem {
-        items[index]
+    private var photo: PhotoItem {
+        photos[index]
     }
 
     var body: some View {
         Group {
-            // The sort screen's thumbnail stands in while the full image
-            // loads, so there's a photo to see straight away.
+            // The thumbnail stands in while the full image loads, so there's
+            // a photo to see straight away.
             if let shownImage = fullImage?.image ?? thumbnail?.image {
                 Image(nsImage: shownImage)
                     .resizable()
@@ -46,7 +45,7 @@ struct FullSizeImage: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
-                    Text(item.stem)
+                    Text(photo.stem)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -69,16 +68,16 @@ struct FullSizeImage: View {
         }
     }
 
-    /// Watches the shown photo's images, loads its full-size image at high
+    /// Watches the shown photo's images, loads its full image at high
     /// priority, and prefetches the photos around it.
     private func loadPhotoAndNeighbours() {
-        highPriorityItem = item
-        fullImage = ImagePipeline.shared.watchedImage(for: item, size: .full)
+        highPriorityPhoto = photo
+        fullImage = ImagePipeline.shared.watchedImage(for: photo, size: .full)
         startTimingStep(isSharp: fullImage?.image != nil)
-        thumbnail = ImagePipeline.shared.watchedImage(for: item, size: .thumbnail)
-        ImagePipeline.shared.requestImage(for: item, size: .full)
+        thumbnail = ImagePipeline.shared.watchedImage(for: photo, size: .thumbnail)
+        ImagePipeline.shared.requestImage(for: photo, size: .full)
         for preloadIndex in preloadIndices() {
-            ImagePipeline.shared.prefetchImage(for: items[preloadIndex], size: .full)
+            ImagePipeline.shared.prefetchImage(for: photos[preloadIndex], size: .full)
         }
     }
 
@@ -94,10 +93,10 @@ struct FullSizeImage: View {
         }
         if isSharp {
             ImagePipeline.shared.recordStep(.sharp(after: .zero))
-            ImageSignposts.markSharpStep(to: item.stem)
+            ImageSignposts.markSharpStep(to: photo.stem)
             pendingStep = nil
         } else {
-            pendingStep = PendingStep(start: .now, signpost: ImageSignposts.beginStep(to: item.stem))
+            pendingStep = PendingStep(start: .now, signpost: ImageSignposts.beginStep(to: photo.stem))
         }
     }
 
@@ -111,14 +110,14 @@ struct FullSizeImage: View {
 
     /// Drops the in-flight high-priority load back to prefetch priority.
     private func deprioritizeHighPriorityLoad() {
-        guard let highPriorityItem else { return }
-        ImagePipeline.shared.deprioritizeImage(for: highPriorityItem, size: .full)
-        self.highPriorityItem = nil
+        guard let highPriorityPhoto else { return }
+        ImagePipeline.shared.deprioritizeImage(for: highPriorityPhoto, size: .full)
+        self.highPriorityPhoto = nil
     }
 
     /// The indices to preload: up to 4 ahead and 2 behind the shown photo.
     private func preloadIndices() -> [Int] {
-        (max(0, index - 2) ... min(items.count - 1, index + 4)).filter { $0 != index }
+        (max(0, index - 2) ... min(photos.count - 1, index + 4)).filter { $0 != index }
     }
 }
 

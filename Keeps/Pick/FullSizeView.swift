@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// The pick screen's full-size view of the focused photo, with its keeper
-/// badge and its place in the group. Zooms between the focused tile and full
-/// size through `zoomNamespace`, which the tiles supply their frames to:
-/// until zoomed it takes the focused tile's frame, and once zoomed its own.
-/// With Reduce Motion on, it fades in and out where it is instead.
+/// The pick screen's full-size view of the selected photo, with its keeper
+/// badge and its place in the group. Zooms between the selected tile and
+/// full size through `zoomNamespace`, which the tiles supply their frames
+/// to: until zoomed it takes the selected tile's frame, and once zoomed its
+/// own. With Reduce Motion on, it fades in and out where it is instead.
 ///
 /// Draws only. PickScreen controls when it shows and when it's zoomed, and
 /// handles its keys, since the tiles keep keyboard focus throughout.
 struct FullSizeView: View {
     let photos: [PhotoItem]
-    let focusedIndex: Int
+    let selectedIndex: Int
     let isKeeper: Bool
     let isZoomed: Bool
     let zoomNamespace: Namespace.ID
@@ -22,7 +22,7 @@ struct FullSizeView: View {
     @Environment(\.accessibilityReduceMotion) private var isReducingMotion
 
     var body: some View {
-        FullSizeImage(items: photos, index: focusedIndex)
+        FullSizePhoto(photos: photos, index: selectedIndex)
             .overlay(alignment: .topTrailing) {
                 if isKeeper {
                     KeeperBadge(size: 40)
@@ -30,14 +30,14 @@ struct FullSizeView: View {
                 }
             }
             .overlay(alignment: .bottomTrailing) {
-                PhotoPositionLabel(index: focusedIndex, count: photos.count)
+                PhotoPositionLabel(index: selectedIndex, count: photos.count)
                     .padding(12)
             }
             // The same inset as the tile's photo, so the photo doesn't jump
             // as it takes over from the tile.
             .padding(FramedPhoto.imageInset)
             .matchedGeometryEffect(
-                id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(photos[focusedIndex].id),
+                id: isZoomed || isReducingMotion ? Self.zoomedID : AnyHashable(photos[selectedIndex].id),
                 in: zoomNamespace,
                 isSource: false
             )

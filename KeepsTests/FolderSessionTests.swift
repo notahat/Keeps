@@ -3,7 +3,7 @@ import Foundation
 import Testing
 
 struct FolderSessionTests {
-    @MainActor @Test func scansTheFolderIntoItems() throws {
+    @MainActor @Test func scansTheFolderIntoPhotos() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
@@ -13,7 +13,7 @@ struct FolderSessionTests {
         let session = try FolderSession(folderURL: folder)
 
         #expect(session.folderURL == folder)
-        #expect(session.items.count == 2)
+        #expect(session.photos.count == 2)
     }
 
     @MainActor @Test func throwsWhenTheFolderCannotBeRead() {
@@ -25,7 +25,7 @@ struct FolderSessionTests {
         }
     }
 
-    @MainActor @Test func itemSourceURLPrefersRawOverJpeg() throws {
+    @MainActor @Test func photoSourceURLPrefersRawOverJpeg() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
@@ -34,6 +34,6 @@ struct FolderSessionTests {
 
         let session = try FolderSession(folderURL: folder)
 
-        #expect(session.items[0].sourceURL.pathExtension.lowercased() == "nef")
+        #expect(session.photos[0].sourceURL.pathExtension.lowercased() == "nef")
     }
 }

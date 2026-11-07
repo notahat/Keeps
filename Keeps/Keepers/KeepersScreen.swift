@@ -30,12 +30,12 @@ struct KeepersScreen: View {
 
     init(grouping: Grouping) {
         self.grouping = grouping
-        let keepers = grouping.keepersOfDoneGroups.map { grouping.items[$0] }
+        let keepers = grouping.keepersOfDoneGroups.map { grouping.photos[$0] }
         _aspectRatio = State(initialValue: FramedPhoto.commonAspectRatio(of: keepers))
     }
 
     var body: some View {
-        let keepers = grouping.keepersOfDoneGroups.map { grouping.items[$0] }
+        let keepers = grouping.keepersOfDoneGroups.map { grouping.photos[$0] }
         if keepers.isEmpty {
             // Only for a moment: FolderView goes back to the sort screen
             // once there are no keepers.
@@ -51,7 +51,7 @@ struct KeepersScreen: View {
                 onDoubleClick: { isFullSize = true },
                 handleOtherKey: handleKeyPress
             ) { index, size in
-                FramedPhoto(item: keepers[index], frameSize: size)
+                FramedPhoto(photo: keepers[index], frameSize: size)
                     .selectionHighlight(isSelected: index == selectedIndex)
             }
             .opacity(isFullSize ? 0 : 1)
@@ -67,7 +67,7 @@ struct KeepersScreen: View {
 
     /// The selected keeper full size, with its place among the keepers.
     private func fullSize(of keepers: [PhotoItem]) -> some View {
-        FullSizeImage(items: keepers, index: selectedIndex)
+        FullSizePhoto(photos: keepers, index: selectedIndex)
             .overlay(alignment: .bottomTrailing) {
                 PhotoPositionLabel(index: selectedIndex, count: keepers.count)
                     .padding(12)

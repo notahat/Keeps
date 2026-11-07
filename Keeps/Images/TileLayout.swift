@@ -42,7 +42,7 @@ nonisolated struct TileLayout {
             needsScrolling = false
             return
         }
-        let grid = Grid.choose(
+        let grid = TileGrid.choose(
             tileCount: tileCount,
             aspectRatio: aspectRatio,
             availableSize: availableSize,
@@ -127,7 +127,7 @@ nonisolated struct TileLayout {
 }
 
 /// A chosen column count and tile size, and the geometry that follows.
-private nonisolated struct Grid {
+private nonisolated struct TileGrid {
     let tileCount: Int
     let columnCount: Int
     let tileSize: CGSize
@@ -141,7 +141,7 @@ private nonisolated struct Grid {
         availableSize: CGSize,
         spacing: CGFloat,
         minimumTileLength: CGFloat
-    ) -> Grid {
+    ) -> TileGrid {
         let minimumWidth = aspectRatio >= 1 ? minimumTileLength : minimumTileLength * aspectRatio
         let fittedWidths = (1 ... tileCount).map { columnCount in
             fittedWidth(columnCount: columnCount, tileCount: tileCount, aspectRatio: aspectRatio,
@@ -153,7 +153,7 @@ private nonisolated struct Grid {
             ? (bestIndex + 1, fittedWidths[bestIndex])
             : scrollingColumns(tileCount: tileCount, minimumWidth: minimumWidth,
                                availableWidth: availableSize.width, spacing: spacing)
-        return Grid(
+        return TileGrid(
             tileCount: tileCount,
             columnCount: columnCount,
             tileSize: CGSize(width: width, height: width / aspectRatio),

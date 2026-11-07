@@ -4,7 +4,7 @@ import SwiftUI
 /// top, each tilted and nudged by its PileJitter.
 ///
 /// Only the top few prints (photoLayerCount) show their photos. The prints
-/// beneath are mostly hidden, so they're drawn as blank paper rather than
+/// beneath are mostly hidden, so they're drawn as blank prints rather than
 /// costing a thumbnail load each, and prints beyond maximumLayerCount
 /// aren't drawn at all.
 ///
@@ -15,7 +15,7 @@ struct PrintPile: View {
     /// The width and height of the square the pile fills.
     let length: CGFloat
 
-    /// The photos' usual shape, for the blank paper. When nil, the top
+    /// The photos' usual shape, for the blank prints. When nil, the top
     /// photo's shape is used once it has loaded, which suits a group, whose
     /// photos are nearly always the same shape.
     var aspectRatio: CGFloat?
@@ -47,37 +47,37 @@ struct PrintPile: View {
         .frame(width: length, height: length)
     }
 
-    /// The shape for blank paper: the one given, or the top photo's.
-    private var paperAspectRatio: CGFloat? {
+    /// The shape for blank prints: the one given, or the top photo's.
+    private var blankPrintAspectRatio: CGFloat? {
         aspectRatio ?? topAspectRatio
     }
 
     /// One print on the pile, untilted: the photo for the top few layers,
-    /// otherwise blank paper, or nothing until the paper's shape is known.
+    /// otherwise a blank print, or nothing until the print's shape is known.
     /// Only the top print loads urgently; the others are mostly hidden, so
     /// they load in the background.
     @ViewBuilder private func pilePrint(of photo: PhotoItem, layer: Int) -> some View {
         if layer < Self.photoLayerCount {
             FramedPhoto(
-                item: photo,
+                photo: photo,
                 borderWidth: borderWidth,
                 loadsInBackground: layer > 0,
                 placeholder: placeholder(isTopLayer: layer == 0),
                 frameSize: CGSize(width: length, height: length),
                 onAspectRatioKnown: layer == 0 ? { topAspectRatio = $0 } : nil
             )
-        } else if let paperAspectRatio {
-            BlankPrint(aspectRatio: paperAspectRatio, borderWidth: borderWidth)
+        } else if let blankPrintAspectRatio {
+            BlankPrint(aspectRatio: blankPrintAspectRatio, borderWidth: borderWidth)
                 .frame(width: length, height: length)
         }
     }
 
-    /// What a print shows while loading: blank paper once its shape is
+    /// What a print shows while loading: a blank print once its shape is
     /// known, otherwise the usual square for the top print and nothing for
     /// the ones beneath.
     private func placeholder(isTopLayer: Bool) -> FramedPhoto.Placeholder {
-        if let paperAspectRatio {
-            return .paper(aspectRatio: paperAspectRatio)
+        if let blankPrintAspectRatio {
+            return .blankPrint(aspectRatio: blankPrintAspectRatio)
         }
         return isTopLayer ? .square : .none
     }
@@ -118,13 +118,13 @@ struct PileLabel: View {
 }
 
 #Preview("Small pile, all photos") {
-    PrintPile(photos: PreviewPhotos.makeItems(count: 3), length: 260)
+    PrintPile(photos: PreviewPhotos.makePhotos(count: 3), length: 260)
         .padding()
         .background(.black)
 }
 
 #Preview("Large pile, blank prints beneath") {
-    PrintPile(photos: PreviewPhotos.makeItems(count: 12), length: 260, aspectRatio: FramedPhoto.typicalAspectRatio)
+    PrintPile(photos: PreviewPhotos.makePhotos(count: 12), length: 260, aspectRatio: FramedPhoto.typicalAspectRatio)
         .padding()
         .background(.black)
 }

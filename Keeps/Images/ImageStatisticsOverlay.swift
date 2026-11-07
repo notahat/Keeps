@@ -4,15 +4,16 @@ import SwiftUI
 /// A small panel of figures on image loading, for tuning it: the app's
 /// memory footprint, what's cached at each size, the reads queued or
 /// running, the cache hit rate, and how quickly recent steps at full size
-/// turned sharp (see ImageLoadStats).
+/// turned sharp (see ImageLoadStatistics).
 ///
 /// It shows only while the user has turned it on with the Debug menu's
-/// Show Image Stats, which debug builds alone have. It reads the figures
-/// twice a second rather than observing them, so it never redraws because
-/// an image loaded. Clicks pass through it. Where it sits is up to the view
-/// that shows it.
-struct ImageStatsOverlay: View {
-    /// The user defaults key for whether the overlay shows.
+/// Show Image Statistics, which debug builds alone have. It reads the
+/// figures twice a second rather than observing them, so it never redraws
+/// because an image loaded. Clicks pass through it. Where it sits is up to
+/// the view that shows it.
+struct ImageStatisticsOverlay: View {
+    /// The user defaults key for whether the overlay shows. It keeps its
+    /// original name, so the setting survives the overlay's renaming.
     static let isShownKey = "showsImageStats"
 
     @AppStorage(Self.isShownKey) private var isShown = false
@@ -20,7 +21,7 @@ struct ImageStatsOverlay: View {
     var body: some View {
         if isShown {
             TimelineView(.periodic(from: .now, by: 0.5)) { _ in
-                ImageStatsPanel(snapshot: .current())
+                ImageStatisticsPanel(snapshot: .current())
             }
             .allowsHitTesting(false)
         }
@@ -28,20 +29,20 @@ struct ImageStatsOverlay: View {
 }
 
 /// The figures the overlay shows at one moment.
-private struct ImageStatsSnapshot {
+private struct ImageStatisticsSnapshot {
     let memoryFootprint: UInt64?
     let cacheContents: [ImageCache.Contents]
     let readCount: Int
-    let stats: ImageLoadStats
+    let statistics: ImageLoadStatistics
 
     /// Takes the figures from the image pipeline and the system now.
-    static func current() -> ImageStatsSnapshot {
+    static func current() -> ImageStatisticsSnapshot {
         let pipeline = ImagePipeline.shared
-        return ImageStatsSnapshot(
+        return ImageStatisticsSnapshot(
             memoryFootprint: currentMemoryFootprint(),
             cacheContents: pipeline.cacheContents(),
             readCount: pipeline.readCount,
-            stats: pipeline.stats
+            statistics: pipeline.statistics
         )
     }
 
@@ -61,8 +62,8 @@ private struct ImageStatsSnapshot {
 
 /// Draws a snapshot's figures, with no tie to the pipeline, so it can be
 /// previewed.
-private struct ImageStatsPanel: View {
-    let snapshot: ImageStatsSnapshot
+private struct ImageStatisticsPanel: View {
+    let snapshot: ImageStatisticsSnapshot
 
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 3) {
@@ -74,7 +75,7 @@ private struct ImageStatsPanel: View {
                 )
             }
             row("Reads", "\(snapshot.readCount) queued or running")
-            row("Hit rate", Self.percentage(snapshot.stats.hitRate))
+            row("Hit rate", Self.percentage(snapshot.statistics.hitRate))
             Divider()
             stepRows
         }
@@ -85,11 +86,11 @@ private struct ImageStatsPanel: View {
 
     /// The rows on recent steps at full size.
     @ViewBuilder private var stepRows: some View {
-        let stats = snapshot.stats
-        row("Sharp at once", Self.percentage(stats.sharpStraightAwayShare))
-        row("Time to sharp", "median \(Self.milliseconds(stats.medianTimeToSharp)), "
-            + "slowest \(Self.milliseconds(stats.slowestTimeToSharp))")
-        row("Moved on", "\(stats.movedOnCount) of the last \(ImageLoadStats.recentStepLimit) steps")
+        let statistics = snapshot.statistics
+        row("Sharp at once", Self.percentage(statistics.sharpStraightAwayShare))
+        row("Time to sharp", "median \(Self.milliseconds(statistics.medianTimeToSharp)), "
+            + "slowest \(Self.milliseconds(statistics.slowestTimeToSharp))")
+        row("Moved on", "\(statistics.movedOnCount) of the last \(ImageLoadStatistics.recentStepLimit) steps")
     }
 
     /// One labelled figure.
@@ -120,22 +121,22 @@ private struct ImageStatsPanel: View {
 }
 
 #Preview {
-    var stats = ImageLoadStats()
+    var statistics = ImageLoadStatistics()
     for _ in 0 ..< 9 {
-        stats.recordLookup(isHit: true)
+        statistics.recordLookup(isHit: true)
     }
-    stats.recordLookup(isHit: false)
-    stats.recordStep(.sharp(after: .zero))
-    stats.recordStep(.sharp(after: .milliseconds(42)))
-    stats.recordStep(.movedOn)
-    return ImageStatsPanel(snapshot: ImageStatsSnapshot(
+    statistics.recordLookup(isHit: false)
+    statistics.recordStep(.sharp(after: .zero))
+    statistics.recordStep(.sharp(after: .milliseconds(42)))
+    statistics.recordStep(.movedOn)
+    return ImageStatisticsPanel(snapshot: ImageStatisticsSnapshot(
         memoryFootprint: 1_234_000_000,
         cacheContents: [
             ImageCache.Contents(size: .scaled(longestSideLength: 520), imageCount: 812, byteCount: 585_000_000),
             ImageCache.Contents(size: .full, imageCount: 7, byteCount: 364_000_000),
         ],
         readCount: 3,
-        stats: stats
+        statistics: statistics
     ))
     .padding()
 }

@@ -6,7 +6,7 @@ import SwiftUI
 /// cell, so a boundary at a row wrap shows at both the end of one row and
 /// the start of the next.
 struct SortCell: View {
-    let item: PhotoItem
+    let photo: PhotoItem
     var isSelected: Bool = false
     var leadingBoundary: BoundaryStyle?
     var trailingBoundary: BoundaryStyle?
@@ -43,7 +43,7 @@ struct SortCell: View {
         if let pile {
             CollapsedGroup(pile: pile)
         } else {
-            FramedPhoto(item: item)
+            FramedPhoto(photo: photo)
         }
     }
 }
@@ -79,32 +79,32 @@ private struct BoundaryBar: View {
 }
 
 #Preview("Single photo") {
-    SortCell(item: PreviewPhotos.landscape)
+    SortCell(photo: PreviewPhotos.landscape)
         .padding()
         .background(.black)
 }
 
 #Preview("Selected photo") {
-    SortCell(item: PreviewPhotos.landscape, isSelected: true)
+    SortCell(photo: PreviewPhotos.landscape, isSelected: true)
         .padding()
         .background(.black)
 }
 
 #Preview("Boundaries placed on both sides") {
-    SortCell(item: PreviewPhotos.portrait, leadingBoundary: .placed, trailingBoundary: .placed)
+    SortCell(photo: PreviewPhotos.portrait, leadingBoundary: .placed, trailingBoundary: .placed)
         .padding()
         .background(.black)
 }
 
 #Preview("Boundary previewed under the pointer") {
-    SortCell(item: PreviewPhotos.portrait, trailingBoundary: .preview)
+    SortCell(photo: PreviewPhotos.portrait, trailingBoundary: .preview)
         .padding()
         .background(.black)
 }
 
 #Preview("Collapsed group") {
-    let photos = PreviewPhotos.makeItems(count: 7)
-    SortCell(item: photos[0], pile: Pile(group: 0 ..< 7, items: photos, keepers: []))
+    let photos = PreviewPhotos.makePhotos(count: 7)
+    SortCell(photo: photos[0], pile: Pile(group: 0 ..< 7, folderPhotos: photos, keepers: []))
         .padding()
         .background(.black)
 }

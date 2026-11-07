@@ -16,15 +16,16 @@ import SwiftUI
 final class GridScrolling {
     /// What the grid is showing, as far as scrolling cares.
     nonisolated struct Cells: Equatable {
-        /// The photo each cell shows, in order.
-        let itemIDs: [UUID]
-        let selectedItemID: UUID?
+        /// The photo each cell shows, in order. The grid identifies each
+        /// cell by its photo's id.
+        let photoIDs: [UUID]
+        let selectedPhotoID: UUID?
 
         /// A photo to keep at the same height on screen whenever the cells
         /// change, such as the working point. When nil, the cell the user
         /// last clicked, or the middle of the view after a key press, is
         /// held instead.
-        let stableItemID: UUID?
+        let stablePhotoID: UUID?
 
         /// Empty slots asked for before the first cell. Only the remainder
         /// by the column count is shown (see blankSlotCount).
@@ -40,7 +41,7 @@ final class GridScrolling {
 
         /// Where the cells sit, for working out how far a cell has moved.
         fileprivate var slottedCells: PhotoGridMetrics.SlottedCells {
-            PhotoGridMetrics.SlottedCells(itemIDs: cells.itemIDs, blankSlotCount: blankSlotCount)
+            PhotoGridMetrics.SlottedCells(photoIDs: cells.photoIDs, blankSlotCount: blankSlotCount)
         }
     }
 
@@ -113,11 +114,11 @@ final class GridScrolling {
     /// otherwise the selection, centred.
     fileprivate func appear(cells: Cells, savedAnchor: GridScrollAnchor?, scrollProxy: ScrollViewProxy) {
         hasAppeared = true
-        if let savedAnchor, cells.itemIDs.contains(savedAnchor.itemID) {
+        if let savedAnchor, cells.photoIDs.contains(savedAnchor.photoID) {
             pendingInitialAnchor = savedAnchor
             applyPendingInitialAnchor(cells: cells)
-        } else if let selectedItemID = cells.selectedItemID {
-            scrollProxy.scrollTo(selectedItemID, anchor: .center)
+        } else if let selectedPhotoID = cells.selectedPhotoID {
+            scrollProxy.scrollTo(selectedPhotoID, anchor: .center)
         }
     }
 
@@ -156,8 +157,8 @@ final class GridScrolling {
         switch response {
         case let .holdCell(heldIndex):
             holdPosition(ofCellAt: heldIndex, across: old, to: new)
-        case let .followSelection(selectedItemID):
-            withAnimation { scrollProxy.scrollTo(selectedItemID, anchor: nil) }
+        case let .followSelection(selectedPhotoID):
+            withAnimation { scrollProxy.scrollTo(selectedPhotoID, anchor: nil) }
         case .stay:
             break
         }
@@ -168,7 +169,7 @@ final class GridScrolling {
     /// position depends on the column count.
     private func applyPendingInitialAnchor(cells: Cells) {
         guard let pendingInitialAnchor, isMeasured,
-              let index = cells.itemIDs.firstIndex(of: pendingInitialAnchor.itemID)
+              let index = cells.photoIDs.firstIndex(of: pendingInitialAnchor.photoID)
         else { return }
         let offset = PhotoGridMetrics.offset(
             forSlot: index + blankSlotCount(for: cells),
@@ -185,8 +186,8 @@ final class GridScrolling {
         guard hasAppeared, pendingInitialAnchor == nil,
               let index = firstCellIndex(inRowAt: visibleRegion.offset, cells: cells)
         else { return }
-        let rowTop = PhotoGridMetrics.rowTop(forIndex: index + blankSlotCount(for: cells), columnCount: columnCount)
-        let anchor = GridScrollAnchor(itemID: cells.itemIDs[index], offsetFromRowTop: visibleRegion.offset - rowTop)
+        let rowTop = PhotoGridMetrics.rowTop(forSlot: index + blankSlotCount(for: cells), columnCount: columnCount)
+        let anchor = GridScrollAnchor(photoID: cells.photoIDs[index], offsetFromRowTop: visibleRegion.offset - rowTop)
         // Repeats are skipped so that whatever the binding writes to (such
         // as observed state that gets saved) only changes when the view has.
         guard anchor != scrollAnchor.wrappedValue else { return }
@@ -197,16 +198,16 @@ final class GridScrolling {
     /// content, clamped to the cells so that blank slots and space past the
     /// end land on the nearest cell. Nil when there are no cells.
     private func firstCellIndex(inRowAt height: CGFloat, cells: Cells) -> Int? {
-        guard !cells.itemIDs.isEmpty else { return nil }
+        guard !cells.photoIDs.isEmpty else { return nil }
         let slot = PhotoGridMetrics.firstSlot(inRowAt: height, columnCount: columnCount)
-        return min(max(0, slot - blankSlotCount(for: cells)), cells.itemIDs.count - 1)
+        return min(max(0, slot - blankSlotCount(for: cells)), cells.photoIDs.count - 1)
     }
 
     /// Scrolls so that a cell from before the change, or if it has gone its
     /// nearest survivor, is at the same height on screen as before. Without
     /// this, collapsing groups above the view would carry it forward.
     private func holdPosition(ofCellAt heldIndex: Int, across old: Trigger, to new: Trigger) {
-        guard let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+        guard let offset = PhotoGridMetrics.scrollOffsetHoldingCell(
             at: heldIndex,
             from: old.slottedCells,
             to: new.slottedCells,

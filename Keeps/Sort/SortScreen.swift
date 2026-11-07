@@ -35,19 +35,19 @@ struct SortScreen: View {
     /// The cells as scrolling sees them. Collapsing removes cells ahead of
     /// the uncollapsed photos, and blank slots for the hidden photos keep those
     /// photos in their original columns. The working point is the stable
-    /// item, so it holds still on screen as groups collapse.
+    /// photo, so it holds still on screen as groups collapse.
     private var scrollCells: GridScrolling.Cells {
         GridScrolling.Cells(
-            itemIDs: grouping.cellItems.map(\.id),
-            selectedItemID: grouping.selectedCellIndex.map { grouping.cellItems[$0].id },
-            stableItemID: grouping.workingPointPhotoIndex.map { grouping.items[$0].id },
+            photoIDs: grouping.cellPhotos.map(\.id),
+            selectedPhotoID: grouping.selectedCellIndex.map { grouping.cellPhotos[$0].id },
+            stablePhotoID: grouping.workingPointPhotoIndex.map { grouping.photos[$0].id },
             leadingBlankSlots: grouping.layout.hiddenPhotoCount
         )
     }
 
     var body: some View {
         if grouping.isAllDone {
-            AllDoneMessage(keptCount: grouping.keepers.count, photoCount: grouping.items.count)
+            AllDoneMessage(keptCount: grouping.keepers.count, photoCount: grouping.photos.count)
         } else {
             photoGrid
         }
@@ -80,8 +80,8 @@ struct SortScreen: View {
             ForEach(0 ..< blankSlotCount, id: \.self) { _ in
                 Color.clear.frame(width: Self.slotWidth, height: Self.cellSize)
             }
-            ForEach(Array(grouping.cellItems.enumerated()), id: \.element.id) { index, item in
-                interactiveCell(item: item, index: index, isSelected: index == selectedCellIndex, layout: layout)
+            ForEach(Array(grouping.cellPhotos.enumerated()), id: \.element.id) { index, photo in
+                interactiveCell(photo: photo, index: index, isSelected: index == selectedCellIndex, layout: layout)
             }
         }
         // Measured inside the padding: the adaptive grid computes its
@@ -97,9 +97,9 @@ struct SortScreen: View {
 
     /// One cell, widened to fill its slot, with click and hover handling
     /// attached.
-    private func interactiveCell(item: PhotoItem, index: Int, isSelected: Bool, layout: GroupLayout) -> some View {
+    private func interactiveCell(photo: PhotoItem, index: Int, isSelected: Bool, layout: GroupLayout) -> some View {
         SortCell(
-            item: item,
+            photo: photo,
             isSelected: isSelected,
             leadingBoundary: boundaryStyle(atGap: index, in: layout),
             trailingBoundary: boundaryStyle(atGap: index + 1, in: layout),
@@ -117,7 +117,7 @@ struct SortScreen: View {
         }
         // GridScrolling scrolls to a cell by this id, so without it,
         // keyboard selection couldn't be followed.
-        .id(item.id)
+        .id(photo.id)
     }
 
     /// The pile a cell draws if it is a collapsed group, or nil for a single
@@ -125,7 +125,7 @@ struct SortScreen: View {
     private func pile(ofCell cellIndex: Int, in layout: GroupLayout) -> Pile? {
         let cell = layout.cells[cellIndex]
         guard cell.isCollapsed else { return nil }
-        return Pile(group: cell.photoRange, items: grouping.items, keepers: grouping.keepers)
+        return Pile(group: cell.photoRange, folderPhotos: grouping.photos, keepers: grouping.keepers)
     }
 
     /// How to draw the bar at a gap: nothing at a locked gap, placed if

@@ -18,7 +18,7 @@ import SwiftUI
 /// It draws no selection highlight, badge, or other decoration; the screens
 /// add their own on top.
 struct FramedPhoto: View {
-    let item: PhotoItem
+    let photo: PhotoItem
 
     /// The width, in points, of a white border drawn around the image
     /// itself, following its shape rather than the frame's. Zero for none.
@@ -44,9 +44,9 @@ struct FramedPhoto: View {
         /// A neutral square filling the frame.
         case square
 
-        /// A white card of a guessed width-to-height ratio with a grey patch
-        /// where the image will go, like paper awaiting its print.
-        case paper(aspectRatio: CGFloat)
+        /// A BlankPrint of a guessed width-to-height ratio: a white card
+        /// with a grey patch where the image will go.
+        case blankPrint(aspectRatio: CGFloat)
 
         /// Nothing, for images that should simply appear once ready.
         case none
@@ -117,14 +117,14 @@ struct FramedPhoto: View {
             largerImage = largerImageSize.map { loadImage(size: $0) }
         }
         .onDisappear {
-            ImagePipeline.shared.deprioritizeImage(for: item, size: .thumbnail)
+            ImagePipeline.shared.deprioritizeImage(for: photo, size: .thumbnail)
             if let largerImageSize {
-                ImagePipeline.shared.deprioritizeImage(for: item, size: largerImageSize)
+                ImagePipeline.shared.deprioritizeImage(for: photo, size: largerImageSize)
             }
         }
         .onChange(of: largerImageSize) { oldSize, newSize in
             if let oldSize {
-                ImagePipeline.shared.deprioritizeImage(for: item, size: oldSize)
+                ImagePipeline.shared.deprioritizeImage(for: photo, size: oldSize)
             }
             largerImage = newSize.map { loadImage(size: $0) }
         }
@@ -136,12 +136,12 @@ struct FramedPhoto: View {
     /// Start watching the photo's image at a size, ask for it to be read if
     /// it isn't cached, and return the watched image.
     private func loadImage(size: ImageSize) -> WatchedImage {
-        let watched = ImagePipeline.shared.watchedImage(for: item, size: size)
+        let watched = ImagePipeline.shared.watchedImage(for: photo, size: size)
         guard watched.image == nil else { return watched }
         if loadsInBackground {
-            ImagePipeline.shared.prefetchImage(for: item, size: size)
+            ImagePipeline.shared.prefetchImage(for: photo, size: size)
         } else {
-            ImagePipeline.shared.requestImage(for: item, size: size)
+            ImagePipeline.shared.requestImage(for: photo, size: size)
         }
         return watched
     }
@@ -186,7 +186,7 @@ private struct FramedPhotoContent: View {
         switch placeholder {
         case .square:
             Color(nsColor: .quaternaryLabelColor)
-        case let .paper(aspectRatio):
+        case let .blankPrint(aspectRatio):
             BlankPrint(aspectRatio: aspectRatio, borderWidth: borderWidth)
         case .none:
             EmptyView()
@@ -235,10 +235,10 @@ private let previewFrameSize = CGSize(
     .background(.black)
 }
 
-#Preview("Loading, blank paper placeholder") {
+#Preview("Loading, blank print placeholder") {
     FramedPhotoContent(
         image: nil, borderWidth: 6,
-        placeholder: .paper(aspectRatio: FramedPhoto.typicalAspectRatio), frameSize: previewFrameSize
+        placeholder: .blankPrint(aspectRatio: FramedPhoto.typicalAspectRatio), frameSize: previewFrameSize
     )
     .padding()
     .background(.black)

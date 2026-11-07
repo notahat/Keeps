@@ -73,26 +73,26 @@ enum MainMenu {
         /// Makes the Debug menu, with tools for developing the app.
         private static func debugMenu() -> NSMenu {
             let menu = NSMenu(title: "Debug")
-            let showStats = menu.addItem(withTitle: "Show Image Stats",
-                                         action: #selector(ImageStatsToggle.toggle(_:)), keyEquivalent: "i")
-            showStats.keyEquivalentModifierMask = [.command, .option]
-            showStats.target = ImageStatsToggle.shared
+            let showStatistics = menu.addItem(withTitle: "Show Image Statistics",
+                                              action: #selector(ImageStatisticsToggle.toggle(_:)), keyEquivalent: "i")
+            showStatistics.keyEquivalentModifierMask = [.command, .option]
+            showStatistics.target = ImageStatisticsToggle.shared
             return menu
         }
     #endif
 }
 
 #if DEBUG
-    /// The target of the Debug menu's Show Image Stats item, which turns the
-    /// image stats overlay on and off, and ticks the item while it's on. The
-    /// setting is a user default, so it lasts across launches, and every
-    /// window's overlay follows it.
-    final class ImageStatsToggle: NSObject, NSMenuItemValidation {
-        static let shared = ImageStatsToggle()
+    /// The target of the Debug menu's Show Image Statistics item, which
+    /// turns the image statistics overlay on and off, and ticks the item
+    /// while it's on. The setting is a user default, so it lasts across
+    /// launches, and every window's overlay follows it.
+    final class ImageStatisticsToggle: NSObject, NSMenuItemValidation {
+        static let shared = ImageStatisticsToggle()
 
         private var isShown: Bool {
-            get { UserDefaults.standard.bool(forKey: ImageStatsOverlay.isShownKey) }
-            set { UserDefaults.standard.set(newValue, forKey: ImageStatsOverlay.isShownKey) }
+            get { UserDefaults.standard.bool(forKey: ImageStatisticsOverlay.isShownKey) }
+            set { UserDefaults.standard.set(newValue, forKey: ImageStatisticsOverlay.isShownKey) }
         }
 
         /// Turns the overlay on or off.

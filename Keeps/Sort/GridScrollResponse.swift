@@ -31,23 +31,23 @@ nonisolated enum GridScrollResponse: Equatable {
     case stay
 
     /// Choose the response to a change from one set of cells to another.
-    /// The cell held is the old cells' stable item if there is one,
+    /// The cell held is the old cells' stable photo's cell if there is one,
     /// otherwise the pinned cell; with neither, the view stays where it is.
     static func choose(
         from old: GridScrolling.Cells,
         to new: GridScrolling.Cells,
         pinnedCell: PinnedCell?
     ) -> GridScrollResponse {
-        if old.itemIDs != new.itemIDs {
-            let stableIndex = old.stableItemID.flatMap { stableID in old.itemIDs.firstIndex(of: stableID) }
+        if old.photoIDs != new.photoIDs {
+            let stableIndex = old.stablePhotoID.flatMap { stableID in old.photoIDs.firstIndex(of: stableID) }
             guard let heldIndex = stableIndex ?? pinnedCell?.index else { return .stay }
             return .holdCell(atOldIndex: heldIndex)
         }
-        if old.selectedItemID != new.selectedItemID,
+        if old.selectedPhotoID != new.selectedPhotoID,
            pinnedCell?.isFromClick != true,
-           let selectedItemID = new.selectedItemID
+           let selectedPhotoID = new.selectedPhotoID
         {
-            return .followSelection(selectedItemID)
+            return .followSelection(selectedPhotoID)
         }
         return .stay
     }

@@ -34,29 +34,29 @@ struct PickArrangementTests {
         #expect(arrangement.pilePhotos == [10, 11, 12])
     }
 
-    @Test("Focus stays on a photo that is still a tile")
-    func focusStaysOnTile() {
+    @Test("The selection stays on a photo that is still a tile")
+    func selectionStaysOnTile() {
         let arrangement = PickArrangement(group: 10 ..< 15, keepers: [11, 13], isDone: true)
 
         #expect(arrangement.tileIndex(nearestPhoto: 13) == 1)
     }
 
-    @Test("Focus on a piled photo moves to the nearest tile before it")
-    func focusMovesToEarlierTile() {
+    @Test("A selection on a piled photo moves to the nearest tile before it")
+    func selectionMovesToEarlierTile() {
         let arrangement = PickArrangement(group: 10 ..< 15, keepers: [11, 13], isDone: true)
 
         #expect(arrangement.tileIndex(nearestPhoto: 14) == 1)
     }
 
-    @Test("Focus before every tile moves to the first tile")
-    func focusMovesToFirstTile() {
+    @Test("A selection before every tile moves to the first tile")
+    func selectionMovesToFirstTile() {
         let arrangement = PickArrangement(group: 10 ..< 15, keepers: [11, 13], isDone: true)
 
         #expect(arrangement.tileIndex(nearestPhoto: 10) == 0)
     }
 
-    @Test("There is nowhere to focus when there are no tiles")
-    func noFocusWithoutTiles() {
+    @Test("There is nothing to select when there are no tiles")
+    func noSelectionWithoutTiles() {
         let arrangement = PickArrangement(group: 10 ..< 13, keepers: [], isDone: true)
 
         #expect(arrangement.tileIndex(nearestPhoto: 11) == nil)

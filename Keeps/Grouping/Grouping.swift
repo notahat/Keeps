@@ -22,7 +22,7 @@ import Observation
 class Grouping {
     /// The folder's photos, in folder order. Every photo index refers to
     /// this list.
-    let items: [PhotoItem]
+    let photos: [PhotoItem]
 
     /// The boundaries, each the index of the photo just after it (see
     /// GroupLayout).
@@ -74,17 +74,17 @@ class Grouping {
 
     /// Starts a grouping of the given photos with no boundaries, and nothing
     /// collapsed, selected, open, kept, or done.
-    init(items: [PhotoItem]) {
-        self.items = items
-        stems = PhotoStems(items: items)
-        layout = GroupLayout(photoCount: items.count, boundaries: [])
+    init(photos: [PhotoItem]) {
+        self.photos = photos
+        stems = PhotoStems(photos: photos)
+        layout = GroupLayout(photoCount: photos.count, boundaries: [])
     }
 
     /// Rederives the layout after the boundaries, collapse point, or done
     /// groups change.
     private func updateLayout() {
         layout = GroupLayout(
-            photoCount: items.count,
+            photoCount: photos.count,
             boundaries: boundaries,
             collapsedUpTo: collapsedUpTo,
             doneGroupStarts: doneGroupStarts
@@ -96,14 +96,14 @@ class Grouping {
     /// The photo each cell shows: its own photo, or a collapsed group's
     /// first photo. The sort screen identifies cells, and saves its scroll
     /// position, by this photo.
-    var cellItems: [PhotoItem] {
-        layout.cells.map { items[$0.photoRange.lowerBound] }
+    var cellPhotos: [PhotoItem] {
+        layout.cells.map { photos[$0.photoRange.lowerBound] }
     }
 
     /// Where grouping has reached: the first photo after the last boundary,
     /// or nil before any boundary or once every photo is grouped.
     var workingPointPhotoIndex: Int? {
-        guard let lastBoundary = boundaries.max(), lastBoundary < items.count else { return nil }
+        guard let lastBoundary = boundaries.max(), lastBoundary < photos.count else { return nil }
         return lastBoundary
     }
 
@@ -125,7 +125,7 @@ class Grouping {
     /// always starts a group, so there is no boundary before photo 0. Stops
     /// the app for any other index.
     func toggleBoundary(atPhoto photoIndex: Int) {
-        precondition(1 ... items.count ~= photoIndex, "No boundary can go before photo \(photoIndex)")
+        precondition(1 ... photos.count ~= photoIndex, "No boundary can go before photo \(photoIndex)")
         boundaries.toggle(photoIndex)
     }
 
@@ -170,7 +170,7 @@ class Grouping {
 
     /// Marks a photo as a keeper, or unmarks it if it already is one.
     func toggleKeeper(atPhoto photoIndex: Int) {
-        precondition(items.indices.contains(photoIndex), "There's no photo \(photoIndex)")
+        precondition(photos.indices.contains(photoIndex), "There's no photo \(photoIndex)")
         keepers.toggle(photoIndex)
     }
 
@@ -248,7 +248,7 @@ class Grouping {
     /// work on comes first.
     var photosToGo: [Int] {
         let done = Set(doneGroups.joined())
-        return items.indices.filter { !done.contains($0) }
+        return photos.indices.filter { !done.contains($0) }
     }
 
     /// Whether every photo is in a done group, so the folder is finished.
@@ -267,10 +267,10 @@ class Grouping {
         SavedGrouping(
             boundaries: boundaries.sorted().map(stems.position(beforePhoto:)),
             collapsedUpTo: collapsedUpTo > 0 ? stems.position(beforePhoto: collapsedUpTo) : nil,
-            selectedStem: selectedPhotoIndex.map { items[$0].stem },
+            selectedStem: selectedPhotoIndex.map { photos[$0].stem },
             scrollAnchor: scrollAnchor.map { anchor in
                 // The grid only anchors to the photos it shows.
-                guard let stem = stems.stem(ofItemID: anchor.itemID) else {
+                guard let stem = stems.stem(ofPhotoID: anchor.photoID) else {
                     preconditionFailure("The scroll anchor's photo isn't in the folder")
                 }
                 return SavedGrouping.ScrollAnchor(stem: stem, offsetFromRowTop: anchor.offsetFromRowTop)
@@ -288,7 +288,7 @@ class Grouping {
         selectedPhotoIndex = state.selectedStem.flatMap(stems.photoIndex(ofStem:))
         scrollAnchor = state.scrollAnchor.flatMap { anchor in
             stems.photoIndex(ofStem: anchor.stem).map {
-                GridScrollAnchor(itemID: items[$0].id, offsetFromRowTop: anchor.offsetFromRowTop)
+                GridScrollAnchor(photoID: photos[$0].id, offsetFromRowTop: anchor.offsetFromRowTop)
             }
         }
         keepers = stems.photoIndices(ofStems: state.keeperStems)

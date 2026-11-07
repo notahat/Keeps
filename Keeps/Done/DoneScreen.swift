@@ -16,7 +16,8 @@ struct DoneScreen: View {
     /// Whether the screen has keyboard focus, so that Return reaches it.
     @FocusState private var hasKeyboardFocus: Bool
 
-    private static let cellSize = CGFloat(FramedPhoto.standardFrameLength)
+    /// The width and height of each pile.
+    private static let pileLength = CGFloat(FramedPhoto.standardFrameLength)
     private static let spacing = FramedPhoto.gridSpacing
 
     /// Starts with the group last opened selected, if it's done, so coming
@@ -49,10 +50,10 @@ struct DoneScreen: View {
 
     /// The done groups as a grid of piles, as many columns as fit.
     private func grid(of groups: [Range<Int>]) -> some View {
-        let columns = [GridItem(.adaptive(minimum: Self.cellSize, maximum: Self.cellSize), spacing: Self.spacing)]
+        let columns = [GridItem(.adaptive(minimum: Self.pileLength, maximum: Self.pileLength), spacing: Self.spacing)]
         return LazyVGrid(columns: columns, spacing: Self.spacing) {
             ForEach(groups, id: \.lowerBound) { group in
-                cell(for: group)
+                pile(of: group)
             }
         }
         .padding(Self.spacing)
@@ -60,9 +61,9 @@ struct DoneScreen: View {
 
     /// One done group: its pile, how many were kept, and the selection
     /// highlight, with click handling.
-    private func cell(for group: Range<Int>) -> some View {
-        let pile = Pile(group: group, items: grouping.items, keepers: grouping.keepers)
-        return PrintPile(photos: pile.photos, length: Self.cellSize, borderWidth: PrintPile.standardFrameBorderWidth)
+    private func pile(of group: Range<Int>) -> some View {
+        let pileOrder = Pile(group: group, folderPhotos: grouping.photos, keepers: grouping.keepers)
+        return PrintPile(photos: pileOrder.photos, length: Self.pileLength, borderWidth: PrintPile.standardFrameBorderWidth)
             .overlay(alignment: .bottom) {
                 PileLabel(text: "\(grouping.keptCount(in: group)) of \(group.count) kept")
             }

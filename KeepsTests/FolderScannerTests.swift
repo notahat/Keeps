@@ -3,41 +3,41 @@ import Foundation
 import Testing
 
 struct FolderScannerTests {
-    @Test func producesNoItemsForEmptyFolder() throws {
+    @Test func producesNoPhotosForEmptyFolder() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.isEmpty)
+        #expect(photos.isEmpty)
     }
 
-    @Test func producesOneItemForStandaloneRaw() throws {
+    @Test func producesOnePhotoForStandaloneRaw() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
         try makeFile(named: "IMG_0001.CR3", in: folder)
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.count == 1)
-        #expect(items[0].stem == "IMG_0001")
-        #expect(items[0].rawURL != nil)
-        #expect(items[0].jpegURL == nil)
+        #expect(photos.count == 1)
+        #expect(photos[0].stem == "IMG_0001")
+        #expect(photos[0].rawURL != nil)
+        #expect(photos[0].jpegURL == nil)
     }
 
-    @Test func producesOneItemForStandaloneJpeg() throws {
+    @Test func producesOnePhotoForStandaloneJpeg() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
         try makeFile(named: "IMG_0001.jpg", in: folder)
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.count == 1)
-        #expect(items[0].stem == "IMG_0001")
-        #expect(items[0].rawURL == nil)
-        #expect(items[0].jpegURL != nil)
+        #expect(photos.count == 1)
+        #expect(photos[0].stem == "IMG_0001")
+        #expect(photos[0].rawURL == nil)
+        #expect(photos[0].jpegURL != nil)
     }
 
     @Test func pairsRawAndJpegWithMatchingStem() throws {
@@ -47,23 +47,23 @@ struct FolderScannerTests {
         try makeFile(named: "IMG_0001.CR3", in: folder)
         try makeFile(named: "IMG_0001.jpg", in: folder)
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.count == 1)
-        #expect(items[0].rawURL != nil)
-        #expect(items[0].jpegURL != nil)
+        #expect(photos.count == 1)
+        #expect(photos[0].rawURL != nil)
+        #expect(photos[0].jpegURL != nil)
     }
 
-    @Test func keepsSeparateItemsForDifferentStems() throws {
+    @Test func keepsSeparatePhotosForDifferentStems() throws {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
 
         try makeFile(named: "IMG_0001.CR3", in: folder)
         try makeFile(named: "IMG_0002.jpg", in: folder)
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.count == 2)
+        #expect(photos.count == 2)
     }
 
     @Test func ignoresNonImageFiles() throws {
@@ -74,9 +74,9 @@ struct FolderScannerTests {
         try makeFile(named: "notes.txt", in: folder)
         try makeFile(named: ".DS_Store", in: folder)
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.count == 1)
+        #expect(photos.count == 1)
     }
 
     @Test func sortsByFileCreationDate() throws {
@@ -89,9 +89,9 @@ struct FolderScannerTests {
         try makeFile(named: "Alpha.jpg", in: folder)
         try makeFile(named: "charlie.jpg", in: folder)
 
-        let items = try FolderScanner.scan(url: folder)
+        let photos = try FolderScanner.scan(url: folder)
 
-        #expect(items.map(\.stem) == ["bravo", "Alpha", "charlie"])
+        #expect(photos.map(\.stem) == ["bravo", "Alpha", "charlie"])
     }
 
     @Test func throwsWhenFolderDoesNotExist() throws {

@@ -18,7 +18,7 @@ import os
 ///   event instead.
 ///
 /// Signposts cost next to nothing when nothing is recording, so they stay
-/// in release builds. This only marks; ImageLoadStats keeps the figures the
+/// in release builds. This only marks; ImageLoadStatistics keeps the figures the
 /// debug overlay shows.
 nonisolated enum ImageSignposts {
     private static let signposter = OSSignposter(subsystem: "com.notahat.Keeps", category: "Image loading")

@@ -7,12 +7,12 @@ struct PhotoGridMetricsTests {
 
     @Test("The first row starts below the top padding")
     func firstRowTop() {
-        #expect(PhotoGridMetrics.rowTop(forIndex: 2, columnCount: 4) == PhotoGridMetrics.spacing)
+        #expect(PhotoGridMetrics.rowTop(forSlot: 2, columnCount: 4) == PhotoGridMetrics.spacing)
     }
 
     @Test("Each later row starts one row height further down")
     func laterRowTop() {
-        let top = PhotoGridMetrics.rowTop(forIndex: 9, columnCount: 4)
+        let top = PhotoGridMetrics.rowTop(forSlot: 9, columnCount: 4)
 
         #expect(top == PhotoGridMetrics.spacing + 2 * rowHeight)
     }
@@ -36,24 +36,24 @@ struct PhotoGridMetricsTests {
         #expect(PhotoGridMetrics.firstSlot(inRowAt: -100, columnCount: 4) == 0)
     }
 
-    @Test("A pinned item that survives a change is pinned itself")
-    func survivingPinnedItem() {
+    @Test("A pinned cell that survives a change is pinned itself")
+    func survivingPinnedCell() {
         let ids = (0 ..< 6).map { _ in UUID() }
         let newIDs = [ids[0], ids[3], ids[4], ids[5]]
 
-        let survivor = PhotoGridMetrics.survivingItem(from: 3, oldIDs: ids, newIDs: newIDs)
+        let survivor = PhotoGridMetrics.survivingCell(from: 3, oldIDs: ids, newIDs: newIDs)
 
         #expect(survivor?.oldIndex == 3)
         #expect(survivor?.newIndex == 1)
     }
 
-    @Test("When the pinned item goes, the nearest earlier survivor takes its place")
+    @Test("When the pinned cell goes, the nearest earlier survivor takes its place")
     func earlierSurvivorPreferred() {
         let ids = (0 ..< 6).map { _ in UUID() }
-        // Items 1 to 3 have folded into item 0, as when a group collapses.
+        // Cells 1 to 3 have folded into cell 0, as when a group collapses.
         let newIDs = [ids[0], ids[4], ids[5]]
 
-        let survivor = PhotoGridMetrics.survivingItem(from: 2, oldIDs: ids, newIDs: newIDs)
+        let survivor = PhotoGridMetrics.survivingCell(from: 2, oldIDs: ids, newIDs: newIDs)
 
         #expect(survivor?.oldIndex == 0)
         #expect(survivor?.newIndex == 0)
@@ -64,7 +64,7 @@ struct PhotoGridMetricsTests {
         let ids = (0 ..< 6).map { _ in UUID() }
         let newIDs = [ids[4], ids[5]]
 
-        let survivor = PhotoGridMetrics.survivingItem(from: 2, oldIDs: ids, newIDs: newIDs)
+        let survivor = PhotoGridMetrics.survivingCell(from: 2, oldIDs: ids, newIDs: newIDs)
 
         #expect(survivor?.oldIndex == 4)
         #expect(survivor?.newIndex == 0)
@@ -77,11 +77,11 @@ struct PhotoGridMetricsTests {
         let ids = (0 ..< 20).map { _ in UUID() }
         let newIDs = [ids[0], ids[6]] + ids[12...]
 
-        let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+        let offset = PhotoGridMetrics.scrollOffsetHoldingCell(
             at: 12,
-            from: PhotoGridMetrics.SlottedCells(itemIDs: ids, blankSlotCount: 0),
+            from: PhotoGridMetrics.SlottedCells(photoIDs: ids, blankSlotCount: 0),
             to: PhotoGridMetrics.SlottedCells(
-                itemIDs: Array(newIDs),
+                photoIDs: Array(newIDs),
                 blankSlotCount: PhotoGridMetrics.blankSlotCount(for: 10, columnCount: 4)
             ),
             columnCount: 4,
@@ -92,15 +92,15 @@ struct PhotoGridMetricsTests {
         #expect(offset == 1000 - 2 * rowHeight)
     }
 
-    @Test("Holding an item that has gone falls back to its nearest survivor")
+    @Test("Holding a cell that has gone falls back to its nearest survivor")
     func holdingFallsBackToSurvivor() {
         let ids = (0 ..< 8).map { _ in UUID() }
         let newIDs = [ids[0]] + ids[4...]
 
-        let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+        let offset = PhotoGridMetrics.scrollOffsetHoldingCell(
             at: 2,
-            from: PhotoGridMetrics.SlottedCells(itemIDs: ids, blankSlotCount: 0),
-            to: PhotoGridMetrics.SlottedCells(itemIDs: Array(newIDs), blankSlotCount: 3),
+            from: PhotoGridMetrics.SlottedCells(photoIDs: ids, blankSlotCount: 0),
+            to: PhotoGridMetrics.SlottedCells(photoIDs: Array(newIDs), blankSlotCount: 3),
             columnCount: 4,
             currentOffset: 1000
         )
@@ -116,19 +116,19 @@ struct PhotoGridMetricsTests {
         #expect(offset == PhotoGridMetrics.spacing + 3 * rowHeight + 40)
     }
 
-    @Test("An item that moves up two rows keeps its place on screen when the scroll moves up two rows")
-    func offsetFollowsItemUp() {
+    @Test("A cell that moves up two rows keeps its place on screen when the scroll moves up two rows")
+    func offsetFollowsCellUp() {
         let offset = PhotoGridMetrics.scrollOffset(
-            keepingItemFrom: 20, to: 12, columnCount: 4, currentOffset: 1000
+            keepingSlotContentsFrom: 20, to: 12, columnCount: 4, currentOffset: 1000
         )
 
         #expect(offset == 1000 - 2 * rowHeight)
     }
 
-    @Test("An item that stays in its row needs no scroll change")
+    @Test("A cell that stays in its row needs no scroll change")
     func offsetUnchangedWithinRow() {
         let offset = PhotoGridMetrics.scrollOffset(
-            keepingItemFrom: 21, to: 20, columnCount: 4, currentOffset: 1000
+            keepingSlotContentsFrom: 21, to: 20, columnCount: 4, currentOffset: 1000
         )
 
         #expect(offset == 1000)
