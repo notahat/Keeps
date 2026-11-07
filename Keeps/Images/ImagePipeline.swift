@@ -17,9 +17,11 @@ final class WatchedImage {
 }
 
 /// Schedules image reads and caches the results. Every read goes through a
-/// bounded OperationQueue at one of four priorities: the full-size image
-/// being looked at, then the full-size images near it, then scaled images
-/// on screen, then background prefetching. A view gets a WatchedImage from
+/// bounded OperationQueue at one of four priorities: full images on screen,
+/// then full images read ahead, then scaled images on screen, then scaled
+/// images read ahead. Full images are on screen in the full-size view and
+/// in the largest tiles, which only small groups have, so only a few are
+/// asked for at once. A view gets a WatchedImage from
 /// `watchedImage(for:size:)` and reads its image in its body, so the view
 /// redraws when the image loads, without suspending on async/await. It
 /// doesn't decode files itself (that's ImageReader's job) or draw anything.
@@ -28,11 +30,12 @@ final class WatchedImage {
 final class ImagePipeline {
     static let shared = ImagePipeline()
 
-    /// The full-size image being looked at, which goes ahead of everything.
-    private static let currentImagePriority: Operation.QueuePriority = .veryHigh
+    /// Full images on screen, which go ahead of everything.
+    private static let visibleFullImagePriority: Operation.QueuePriority = .veryHigh
 
-    /// The full-size images either side of it, read ahead.
-    private static let nearbyImagePriority: Operation.QueuePriority = .high
+    /// Full images read ahead, such as the full-size view's neighbours, or
+    /// whose tile has left the screen.
+    private static let fullImagePrefetchPriority: Operation.QueuePriority = .high
 
     /// Scaled images on screen, such as thumbnails and medium images. Low
     /// rather than normal so that full-size reads always pre-empt them.
@@ -173,7 +176,7 @@ final class ImagePipeline {
     /// The priority for an image a view is showing.
     private func requestPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
-        case .full: Self.currentImagePriority
+        case .full: Self.visibleFullImagePriority
         case .scaled: Self.visibleScaledImagePriority
         }
     }
@@ -181,7 +184,7 @@ final class ImagePipeline {
     /// The priority for an image read ahead of being shown.
     private func prefetchPriority(for size: ImageSize) -> Operation.QueuePriority {
         switch size {
-        case .full: Self.nearbyImagePriority
+        case .full: Self.fullImagePrefetchPriority
         case .scaled: Self.backgroundPrefetchPriority
         }
     }

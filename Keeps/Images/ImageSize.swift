@@ -15,8 +15,9 @@ nonisolated enum ImageSize: Hashable, CustomStringConvertible {
     /// in pixels, such as a thumbnail or a medium image.
     case scaled(longestSideLength: Int)
 
-    /// The image the full-size view shows: a RAW file's embedded preview as
-    /// it is, or a JPEG file scaled down to a size ImageReader chooses.
+    /// The image the full-size view and the largest tiles show: a RAW file's
+    /// embedded preview as it is, or a JPEG file scaled down to a size
+    /// ImageReader chooses.
     case full
 
     /// The longest side of a thumbnail, in pixels: twice the length of the

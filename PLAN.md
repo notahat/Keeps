@@ -113,10 +113,12 @@ commit.
    `ImageSizeTests` without `@MainActor`. (The aspect ratio helpers stay
    on `FramedPhoto` until step 6: `commonAspectRatio` reads the image
    cache, which the benchmark doesn't compile.)
-4. **Full image priorities.** Tiles request `.full` images at the same
+4. ✅ **Full image priorities.** Tiles request `.full` images at the same
    top priority as the photo shown full size. Decide with the user
    whether a tile's full image should rank lower, change the code if so,
-   and correct the comments in `ImagePipeline` and `ImageSize`.
+   and correct the comments in `ImagePipeline` and `ImageSize`. (Left as
+   it is: only small groups have tiles that large, so only a few read at
+   once. Revisit if the baseline shows a problem.)
 5. **One click gesture.** The click and double-click handling copied
    into the four screens becomes one modifier in Keys, beside
    `handlesKeys`, with its explanation written once.
