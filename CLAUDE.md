@@ -35,8 +35,8 @@ folder needs adding to that exception list.
 - `Saving/` — keeps.json: `KeepsFile` reads and writes it, and
   `SavedGrouping` is its format.
 - `Sort/` — the sort screen. `SortScreen` draws cells and handles input;
-  `GridScrolling` does the scrolling; the geometry is in pure, tested
-  helpers (`PhotoGridMetrics`, `GridHitTarget`).
+  `GridScrolling` does the scrolling; the logic is in pure, tested
+  helpers (`PhotoGridMetrics`, `GridHitTarget`, `GridScrollResponse`).
 - `Pick/` — the pick screen. `PickScreen` draws the open group's tiles in
   `ScrollingTiles` and handles the pick screen's keys.
 - `Done/` — the done screen. `DoneScreen` shows the done groups as piles,

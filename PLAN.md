@@ -132,7 +132,7 @@ commit.
    over its tile view, so a static on it would be awkward to call. The
    keepers screen's full-size view is now inset by the grid spacing, as
    the pick screen's is, rather than nearly twice that.)
-7. **Scrolling decisions out of `GridScrolling`.** Whether a change holds
+7. ✅ **Scrolling decisions out of `GridScrolling`.** Whether a change holds
    position, follows the selection, or does nothing becomes a pure,
    tested function returning an enum. `PhotoGridMetrics.
    scrollOffsetHoldingItem`'s seven parameters become a before and an

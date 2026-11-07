@@ -8,6 +8,15 @@ import Foundation
 /// up with the gaps, and pure functions over them for rows, slots, scroll
 /// offsets, and where the movement keys go.
 enum PhotoGridMetrics {
+    /// Where the grid's cells sit: the photo each cell shows, in order, after
+    /// some blank slots.
+    nonisolated struct SlottedCells {
+        let itemIDs: [UUID]
+
+        /// The blank slots shown before the first cell (see blankSlotCount).
+        let blankSlotCount: Int
+    }
+
     /// The width and height of a cell, a framed photo's standard frame.
     static var cellSize: CGFloat {
         CGFloat(FramedPhoto.standardFrameLength)
@@ -69,22 +78,22 @@ enum PhotoGridMetrics {
         return nil
     }
 
-    /// The scroll offset that keeps the item at `pinnedIndex` (or, if it
-    /// has gone, its nearest survivor) at the same height on screen across a
-    /// change to the items and blank slots. Nil if nothing survives. Pure.
+    /// The scroll offset that keeps the item at `pinnedIndex` among the old
+    /// cells (or, if it has gone, its nearest survivor) at the same height on
+    /// screen across a change from the old cells to the new. Nil if nothing
+    /// survives. Pure.
     static func scrollOffsetHoldingItem(
         at pinnedIndex: Int,
-        oldIDs: [UUID],
-        newIDs: [UUID],
-        oldBlankSlots: Int,
-        newBlankSlots: Int,
+        from old: SlottedCells,
+        to new: SlottedCells,
         columnCount: Int,
         currentOffset: CGFloat
     ) -> CGFloat? {
-        guard let survivor = survivingItem(from: pinnedIndex, oldIDs: oldIDs, newIDs: newIDs) else { return nil }
+        guard let survivor = survivingItem(from: pinnedIndex, oldIDs: old.itemIDs, newIDs: new.itemIDs)
+        else { return nil }
         return scrollOffset(
-            keepingItemFrom: survivor.oldIndex + oldBlankSlots,
-            to: survivor.newIndex + newBlankSlots,
+            keepingItemFrom: survivor.oldIndex + old.blankSlotCount,
+            to: survivor.newIndex + new.blankSlotCount,
             columnCount: columnCount,
             currentOffset: currentOffset
         )

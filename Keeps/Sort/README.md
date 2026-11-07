@@ -14,7 +14,8 @@ order (keepers on top), with its photo count. Done groups have no cell:
 they've left the grid. Once every photo is in a done group,
 `AllDoneMessage` shows in place of the empty grid.
 
-The geometry is in pure, tested helpers: `PhotoGridMetrics` for rows,
-slots, scroll offsets, and where the movement keys go, and `GridHitTarget`
-for whether a click landed on a photo or a gap. Uses Grouping, Images,
-Folder, and Keys, and never Pick.
+The logic is in pure, tested helpers: `PhotoGridMetrics` for rows, slots,
+scroll offsets, and where the movement keys go, `GridHitTarget` for
+whether a click landed on a photo or a gap, and `GridScrollResponse` for
+whether a change holds the view still, follows the selection, or leaves
+it. Uses Grouping, Images, Folder, and Keys, and never Pick.

@@ -79,10 +79,11 @@ struct PhotoGridMetricsTests {
 
         let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
             at: 12,
-            oldIDs: ids,
-            newIDs: Array(newIDs),
-            oldBlankSlots: 0,
-            newBlankSlots: PhotoGridMetrics.blankSlotCount(for: 10, columnCount: 4),
+            from: PhotoGridMetrics.SlottedCells(itemIDs: ids, blankSlotCount: 0),
+            to: PhotoGridMetrics.SlottedCells(
+                itemIDs: Array(newIDs),
+                blankSlotCount: PhotoGridMetrics.blankSlotCount(for: 10, columnCount: 4)
+            ),
             columnCount: 4,
             currentOffset: 1000
         )
@@ -98,10 +99,8 @@ struct PhotoGridMetricsTests {
 
         let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
             at: 2,
-            oldIDs: ids,
-            newIDs: Array(newIDs),
-            oldBlankSlots: 0,
-            newBlankSlots: 3,
+            from: PhotoGridMetrics.SlottedCells(itemIDs: ids, blankSlotCount: 0),
+            to: PhotoGridMetrics.SlottedCells(itemIDs: Array(newIDs), blankSlotCount: 3),
             columnCount: 4,
             currentOffset: 1000
         )

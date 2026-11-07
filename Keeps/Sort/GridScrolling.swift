@@ -10,12 +10,12 @@ import SwiftUI
 /// SortScreen owns one, attaches it to its scroll view with `gridScrolling`,
 /// tells it the column count once the grid is measured, and tells it about
 /// clicks and key presses before acting on them. GridScrolling doesn't draw
-/// anything or handle input itself. The geometry it works from is in
-/// PhotoGridMetrics.
+/// anything or handle input itself. GridScrollResponse decides what a
+/// change calls for, and the geometry it works from is in PhotoGridMetrics.
 @Observable
 final class GridScrolling {
     /// What the grid is showing, as far as scrolling cares.
-    struct Cells: Equatable {
+    nonisolated struct Cells: Equatable {
         /// The photo each cell shows, in order.
         let itemIDs: [UUID]
         let selectedItemID: UUID?
@@ -37,6 +37,11 @@ final class GridScrolling {
     struct Trigger: Equatable {
         fileprivate let cells: Cells
         fileprivate let blankSlotCount: Int
+
+        /// Where the cells sit, for working out how far a cell has moved.
+        fileprivate var slottedCells: PhotoGridMetrics.SlottedCells {
+            PhotoGridMetrics.SlottedCells(itemIDs: cells.itemIDs, blankSlotCount: blankSlotCount)
+        }
     }
 
     /// The part of the content on screen: its top, in the same terms
@@ -44,15 +49,6 @@ final class GridScrolling {
     fileprivate struct VisibleRegion: Equatable {
         let offset: CGFloat
         let height: CGFloat
-    }
-
-    /// The input behind the next change: a click pins the clicked cell, a
-    /// key press the cell in the middle of the view. Used to hold the view
-    /// still when there's no stable item, and to tell click-driven
-    /// selection changes (which don't scroll) from keyboard ones (which do).
-    private struct PinnedItem {
-        let index: Int
-        let isFromClick: Bool
     }
 
     /// The scroll view's position, bound to it by `gridScrolling`, so that
@@ -68,7 +64,9 @@ final class GridScrolling {
     private var hasAppeared = false
     private var isScrolling = false
     private var visibleRegion = VisibleRegion(offset: 0, height: 0)
-    private var pinnedItem: PinnedItem?
+
+    /// The cell behind the next change, if a click or key press came first.
+    private var pinnedCell: PinnedCell?
 
     /// The saved scroll anchor, held from appearing until the user first
     /// scrolls, clicks, or presses a key. Until then it's re-applied whenever
@@ -98,7 +96,7 @@ final class GridScrolling {
     /// Pins the clicked cell, in case the click changes the cells, and stops
     /// holding the saved scroll position. Call before acting on the click.
     func noteClick(onCellAt index: Int) {
-        pinnedItem = PinnedItem(index: index, isFromClick: true)
+        pinnedCell = PinnedCell(index: index, isFromClick: true)
         pendingInitialAnchor = nil
     }
 
@@ -106,7 +104,7 @@ final class GridScrolling {
     /// followed, and if the cells change, the middle of the view holds
     /// still. Call before acting on the key.
     func noteKeyPress(cells: Cells) {
-        pinnedItem = pinForMiddleOfView(cells: cells)
+        pinnedCell = pinForMiddleOfView(cells: cells)
         pendingInitialAnchor = nil
     }
 
@@ -149,22 +147,19 @@ final class GridScrolling {
         }
     }
 
-    /// Scrolls in response to a change, if it calls for it. When the cells
-    /// change, the view is held still — around the stable item if there is
-    /// one, otherwise the pinned cell — and the selection isn't chased.
-    /// When the selection changes, it's followed unless a click caused it
-    /// (the clicked cell is already on screen), with a nil anchor so it
-    /// scrolls only as far as needed.
+    /// Scrolls in response to a change, if it calls for it (see
+    /// GridScrollResponse). Following the selection uses a nil anchor, so
+    /// the view scrolls only as far as needed.
     fileprivate func respondToChange(from old: Trigger, to new: Trigger, scrollProxy: ScrollViewProxy) {
-        let pin = pinnedItem
-        pinnedItem = nil
-        if old.cells.itemIDs != new.cells.itemIDs {
-            holdPosition(across: old, to: new, pin: pin)
-        } else if old.cells.selectedItemID != new.cells.selectedItemID,
-                  pin?.isFromClick != true,
-                  let id = new.cells.selectedItemID
-        {
-            withAnimation { scrollProxy.scrollTo(id, anchor: nil) }
+        let response = GridScrollResponse.choose(from: old.cells, to: new.cells, pinnedCell: pinnedCell)
+        pinnedCell = nil
+        switch response {
+        case let .holdCell(heldIndex):
+            holdPosition(ofCellAt: heldIndex, across: old, to: new)
+        case let .followSelection(selectedItemID):
+            withAnimation { scrollProxy.scrollTo(selectedItemID, anchor: nil) }
+        case .stay:
+            break
         }
     }
 
@@ -207,30 +202,27 @@ final class GridScrolling {
         return min(max(0, slot - blankSlotCount(for: cells)), cells.itemIDs.count - 1)
     }
 
-    /// Scrolls so that the held cell — the stable item from before the
-    /// change, else the pinned cell, else (if it has gone) its nearest
-    /// survivor — is at the same height on screen as before. Without this,
-    /// collapsing groups above the view would carry it forward.
-    private func holdPosition(across old: Trigger, to new: Trigger, pin: PinnedItem?) {
-        let stableIndex = old.cells.stableItemID.flatMap { old.cells.itemIDs.firstIndex(of: $0) }
-        guard let heldIndex = stableIndex ?? pin?.index,
-              let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
-                  at: heldIndex,
-                  oldIDs: old.cells.itemIDs,
-                  newIDs: new.cells.itemIDs,
-                  oldBlankSlots: old.blankSlotCount,
-                  newBlankSlots: new.blankSlotCount,
-                  columnCount: columnCount,
-                  currentOffset: visibleRegion.offset
-              )
+    /// Scrolls so that a cell from before the change, or if it has gone its
+    /// nearest survivor, is at the same height on screen as before. Without
+    /// this, collapsing groups above the view would carry it forward.
+    private func holdPosition(ofCellAt heldIndex: Int, across old: Trigger, to new: Trigger) {
+        guard let offset = PhotoGridMetrics.scrollOffsetHoldingItem(
+            at: heldIndex,
+            from: old.slottedCells,
+            to: new.slottedCells,
+            columnCount: columnCount,
+            currentOffset: visibleRegion.offset
+        )
         else { return }
         position.scrollTo(y: offset)
     }
 
     /// A pin on the first cell of the row in the middle of the view.
-    private func pinForMiddleOfView(cells: Cells) -> PinnedItem? {
+    private func pinForMiddleOfView(cells: Cells) -> PinnedCell? {
         let middle = visibleRegion.offset + visibleRegion.height / 2
-        return firstCellIndex(inRowAt: middle, cells: cells).map { PinnedItem(index: $0, isFromClick: false) }
+        return firstCellIndex(inRowAt: middle, cells: cells).map { index in
+            PinnedCell(index: index, isFromClick: false)
+        }
     }
 }
 
