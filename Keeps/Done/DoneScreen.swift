@@ -68,17 +68,12 @@ struct DoneScreen: View {
             }
             .selectionHighlight(isSelected: group == selectedGroup)
             .contentShape(Rectangle())
-            // The single click is a simultaneous gesture rather than a
-            // second onTapGesture. SwiftUI would hold back a plain single
-            // tap until the double-click time had passed, to rule out a
-            // double click, so selection would lag behind the click.
-            .onTapGesture(count: 2) {
-                grouping.open(group)
-            }
-            .simultaneousGesture(TapGesture().onEnded {
+            .onClick { _ in
                 selectedGroup = group
                 hasKeyboardFocus = true
-            })
+            } onDoubleClick: { _ in
+                grouping.open(group)
+            }
     }
 
     /// Opens the selected group on the pick screen when Return is pressed.

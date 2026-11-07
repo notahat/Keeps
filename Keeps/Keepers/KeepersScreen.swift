@@ -127,16 +127,12 @@ struct KeepersScreen: View {
         FramedPhoto(item: keeper, frameSize: frame.size)
             .selectionHighlight(isSelected: index == selectedIndex)
             .contentShape(Rectangle())
-            // The single click is a simultaneous gesture. As a second
-            // onTapGesture, it would wait until a double-click was ruled out,
-            // and the selection would lag behind the click.
-            .onTapGesture(count: 2) {
-                isFullSize = true
-            }
-            .simultaneousGesture(TapGesture().onEnded {
+            .onClick { _ in
                 selectedIndex = index
                 hasKeyboardFocus = true
-            })
+            } onDoubleClick: { _ in
+                isFullSize = true
+            }
             .position(x: frame.midX, y: frame.midY)
     }
 

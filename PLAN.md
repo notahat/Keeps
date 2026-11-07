@@ -119,7 +119,7 @@ commit.
    and correct the comments in `ImagePipeline` and `ImageSize`. (Left as
    it is: only small groups have tiles that large, so only a few read at
    once. Revisit if the baseline shows a problem.)
-5. **One click gesture.** The click and double-click handling copied
+5. ✅ **One click gesture.** The click and double-click handling copied
    into the four screens becomes one modifier in Keys, beside
    `handlesKeys`, with its explanation written once.
 6. **One scrolling tile grid.** The tile grid that `PickScreen` and

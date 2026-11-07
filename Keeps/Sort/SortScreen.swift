@@ -107,15 +107,11 @@ struct SortScreen: View {
         )
         .padding(.horizontal, Self.spacing / 2)
         .contentShape(Rectangle())
-        // The single click is simultaneous rather than a second tap
-        // gesture, which would wait out the double-click time and make
-        // selection lag.
-        .onTapGesture(count: 2, coordinateSpace: .local) { location in
+        .onClick { location in
+            handleClick(at: location, index: index)
+        } onDoubleClick: { location in
             handleDoubleClick(at: location, index: index)
         }
-        .simultaneousGesture(SpatialTapGesture(coordinateSpace: .local).onEnded { value in
-            handleClick(at: value.location, index: index)
-        })
         .onContinuousHover { phase in
             updateHoveredGap(for: phase, index: index)
         }

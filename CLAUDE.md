@@ -42,8 +42,8 @@ folder needs adding to that exception list.
   any of which can be opened on the pick screen.
 - `Keepers/` — the keepers screen. `KeepersScreen` shows the keepers of
   the done groups as tiles, any of which can be shown full size.
-- `Keys/` — key handling the screens share (`MoveDirection`,
-  `isPlainLetter`, and the `handlesKeys` modifier).
+- `Keys/` — key and click handling the screens share (`MoveDirection`,
+  `isPlainLetter`, and the `handlesKeys` and `onClick` modifiers).
 
 **Layering.** The folders use each other only like this, with no cycles:
 
@@ -55,8 +55,8 @@ folder needs adding to that exception list.
 - Images uses Folder, and Keys for `MoveDirection`.
 - Saving and Keys use nothing.
 
-Grouping, Saving, Folder, and Keys have no views (Keys has only a
-modifier), which keeps them testable.
+Grouping, Saving, Folder, and Keys have no views (Keys has only
+modifiers), which keeps them testable.
 
 **keeps.json files already on disk must keep loading.** Real folders have
 been grouped, and losing that work is not acceptable. Any change to the

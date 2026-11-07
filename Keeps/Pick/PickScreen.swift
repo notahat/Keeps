@@ -215,16 +215,12 @@ struct PickScreen: View {
         // back into.
         .matchedGeometryEffect(id: AnyHashable(photo.id), in: zoomNamespace)
         .contentShape(Rectangle())
-        // The single click is a simultaneous gesture. As a second
-        // onTapGesture, it would wait until a double-click was ruled out,
-        // and focus would lag behind the click.
-        .onTapGesture(count: 2) {
-            openFullSize()
-        }
-        .simultaneousGesture(TapGesture().onEnded {
+        .onClick { _ in
             focusedIndex = index
             hasKeyboardFocus = true
-        })
+        } onDoubleClick: { _ in
+            openFullSize()
+        }
         .position(x: frame.midX, y: frame.midY)
     }
 
