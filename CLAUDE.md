@@ -162,6 +162,11 @@ once, or in nested closures.
 
 Tests use Swift Testing (`import Testing`, `@Test`, `#expect`) — not XCTest. Write all new tests to match this framework.
 
+`KeepsTests/` mirrors `Keeps/`: a type's tests go in the folder of the
+same name, such as `KeepsTests/Grouping/GroupingTests.swift` for
+`Keeps/Grouping/Grouping.swift`. Helpers shared across folders, such as
+`TestHelpers.swift`, sit at the top of `KeepsTests/`.
+
 ## Swift 6
 
 The main target compiles under Swift 6 strict concurrency. All new code must satisfy the concurrency checker.
