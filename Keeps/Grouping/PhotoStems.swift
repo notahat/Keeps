@@ -16,8 +16,8 @@ struct PhotoStems {
     /// Indexes the folder's photos by stem and by id.
     init(photos: [PhotoItem]) {
         self.photos = photos
-        indexByStem = Dictionary(uniqueKeysWithValues: photos.enumerated().map { ($1.stem, $0) })
-        indexByID = Dictionary(uniqueKeysWithValues: photos.enumerated().map { ($1.id, $0) })
+        indexByStem = Dictionary(uniqueKeysWithValues: photos.enumerated().map { index, photo in (photo.stem, index) })
+        indexByID = Dictionary(uniqueKeysWithValues: photos.enumerated().map { index, photo in (photo.id, index) })
     }
 
     /// The photo with a stem, or nil if it's no longer in the folder.

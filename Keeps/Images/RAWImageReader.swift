@@ -5,17 +5,17 @@ import ImageIO
 /// all its methods are safe to call from any thread.
 enum RAWImageReader {
     /// Read a RAW file's image at a size.
-    nonisolated static func image(from source: CGImageSource, size: ImageSize) -> CGImage? {
+    nonisolated static func readImage(from source: CGImageSource, size: ImageSize) -> CGImage? {
         switch size {
         case let .scaled(targetLongestSideLength):
-            scaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
-        case .full: fullImage(from: source)
+            readScaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
+        case .full: readFullImage(from: source)
         }
     }
 
     /// Read a RAW file's scaled image by scaling its embedded JPEG preview
     /// straight to the size asked for. A thumbnail takes about 20 ms.
-    private nonisolated static func scaledImage(
+    private nonisolated static func readScaledImage(
         from source: CGImageSource,
         targetLongestSideLength: Int
     ) -> CGImage? {
@@ -30,7 +30,7 @@ enum RAWImageReader {
     }
 
     /// Read a RAW file's embedded JPEG preview, at the preview's own size.
-    private nonisolated static func fullImage(from source: CGImageSource) -> CGImage? {
+    private nonisolated static func readFullImage(from source: CGImageSource) -> CGImage? {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
             kCGImageSourceCreateThumbnailWithTransform: true,

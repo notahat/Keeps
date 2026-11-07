@@ -39,7 +39,7 @@ private struct ImageStatisticsSnapshot {
     static func current() -> ImageStatisticsSnapshot {
         let pipeline = ImagePipeline.shared
         return ImageStatisticsSnapshot(
-            memoryFootprint: currentMemoryFootprint(),
+            memoryFootprint: readMemoryFootprint(),
             cacheContents: pipeline.cacheContents(),
             readCount: pipeline.readCount,
             statistics: pipeline.statistics
@@ -48,7 +48,7 @@ private struct ImageStatisticsSnapshot {
 
     /// The app's memory footprint in bytes, as Activity Monitor and Xcode's
     /// memory gauge report it, or nil if the system won't say.
-    private static func currentMemoryFootprint() -> UInt64? {
+    private static func readMemoryFootprint() -> UInt64? {
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
         let result = withUnsafeMutablePointer(to: &info) { infoPointer in

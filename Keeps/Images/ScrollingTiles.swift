@@ -110,7 +110,7 @@ struct ScrollingTiles<Tile: View>: View {
             .frame(width: layout.contentSize.width, height: layout.contentSize.height)
             .padding(Self.edgeRoom)
         }
-        .scrollDisabled(!layout.needsScrolling)
+        .scrollDisabled(!layout.isScrollable)
         .scrollPosition($scrollPosition)
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.y
@@ -161,7 +161,7 @@ struct ScrollingTiles<Tile: View>: View {
 
     /// Scroll just far enough to bring a tile fully into view.
     private func reveal(_ index: Int, layout: TileLayout, viewportHeight: CGFloat, isAnimated: Bool = true) {
-        guard layout.needsScrolling,
+        guard layout.isScrollable,
               let offset = layout.scrollOffset(revealing: index, from: scrollOffset, viewportHeight: viewportHeight)
         else { return }
         if isAnimated {

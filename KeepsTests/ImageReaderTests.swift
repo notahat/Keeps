@@ -9,7 +9,7 @@ struct ImageReaderTests {
     func readsSmallScaledImageUpright() throws {
         let url = try writeJPEG(width: 400, height: 200, orientation: .right)
 
-        let image = ImageReader.image(from: url, size: .scaled(longestSideLength: 40))
+        let image = ImageReader.readImage(from: url, size: .scaled(longestSideLength: 40))
 
         #expect(image?.width == 20)
         #expect(image?.height == 40)

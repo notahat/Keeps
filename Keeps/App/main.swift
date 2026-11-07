@@ -13,7 +13,7 @@ MainActor.assumeIsolated {
     let appDelegate = AppDelegate()
     let app = NSApplication.shared
     app.delegate = appDelegate
-    app.mainMenu = MainMenu.make()
+    app.mainMenu = MainMenu.makeMenuBar()
     // The app holds its delegate weakly, so this keeps it alive while the
     // app runs.
     withExtendedLifetime(appDelegate) {

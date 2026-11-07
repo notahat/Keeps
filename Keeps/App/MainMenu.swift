@@ -8,11 +8,11 @@ import AppKit
 @MainActor
 enum MainMenu {
     /// Makes the whole menu bar.
-    static func make() -> NSMenu {
+    static func makeMenuBar() -> NSMenu {
         let menuBar = NSMenu()
-        var menus = [appMenu(), fileMenu(), windowMenu()]
+        var menus = [makeAppMenu(), makeFileMenu(), makeWindowMenu()]
         #if DEBUG
-            menus.append(debugMenu())
+            menus.append(makeDebugMenu())
         #endif
         for menu in menus {
             let barItem = NSMenuItem()
@@ -23,7 +23,7 @@ enum MainMenu {
     }
 
     /// Makes the menu named after the app: About, hiding, and Quit.
-    private static func appMenu() -> NSMenu {
+    private static func makeAppMenu() -> NSMenu {
         let appName = ProcessInfo.processInfo.processName
         let menu = NSMenu(title: appName)
         menu.addItem(withTitle: "About \(appName)",
@@ -45,7 +45,7 @@ enum MainMenu {
     }
 
     /// Makes the File menu: Open… and Close.
-    private static func fileMenu() -> NSMenu {
+    private static func makeFileMenu() -> NSMenu {
         let menu = NSMenu(title: "File")
         menu.addItem(withTitle: "Open…",
                      action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
@@ -57,7 +57,7 @@ enum MainMenu {
 
     /// Makes the Window menu and registers it with the app, which lists the
     /// open windows in it.
-    private static func windowMenu() -> NSMenu {
+    private static func makeWindowMenu() -> NSMenu {
         let menu = NSMenu(title: "Window")
         menu.addItem(withTitle: "Minimize",
                      action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
@@ -71,7 +71,7 @@ enum MainMenu {
 
     #if DEBUG
         /// Makes the Debug menu, with tools for developing the app.
-        private static func debugMenu() -> NSMenu {
+        private static func makeDebugMenu() -> NSMenu {
             let menu = NSMenu(title: "Debug")
             let showStatistics = menu.addItem(withTitle: "Show Image Statistics",
                                               action: #selector(ImageStatisticsToggle.toggle(_:)), keyEquivalent: "i")

@@ -11,12 +11,12 @@ import ImageIO
 enum ImageReader {
     /// Read a photo's image at a size, returning nil if the file can't be
     /// read.
-    nonisolated static func image(from url: URL, size: ImageSize) -> CGImage? {
+    nonisolated static func readImage(from url: URL, size: ImageSize) -> CGImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
         if isJPEG(url) {
-            return JPEGImageReader.image(from: source, size: size)
+            return JPEGImageReader.readImage(from: source, size: size)
         } else {
-            return RAWImageReader.image(from: source, size: size)
+            return RAWImageReader.readImage(from: source, size: size)
         }
     }
 

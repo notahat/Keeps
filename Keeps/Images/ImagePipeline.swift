@@ -166,7 +166,7 @@ final class ImagePipeline {
     /// read would finish; in the app it would stall the main thread. Stops
     /// the preview if the file can't be read.
     func loadImageImmediately(for photo: PhotoItem, size: ImageSize) {
-        guard let cgImage = ImageReader.image(from: photo.sourceURL, size: size) else {
+        guard let cgImage = ImageReader.readImage(from: photo.sourceURL, size: size) else {
             fatalError("Couldn't read the preview photo \(photo.sourceURL.lastPathComponent)")
         }
         store(NSImage(cgImage: cgImage, size: .zero), for: photo, size: size)
@@ -217,7 +217,7 @@ final class ImagePipeline {
         let enqueueTime = ContinuousClock.now
         let read = BlockOperation {
             let cgImage = ImageSignposts.markRead(of: size, queuedSince: enqueueTime) {
-                ImageReader.image(from: url, size: size)
+                ImageReader.readImage(from: url, size: size)
             }
             Task { @MainActor in
                 self.finishRead(of: photo, size: size, key: key, cgImage: cgImage)

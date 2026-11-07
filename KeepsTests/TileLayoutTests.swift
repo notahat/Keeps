@@ -69,7 +69,7 @@ struct TileLayoutTests {
     func fittingTilesDoNotScroll() {
         let layout = makeThreeOverTwoLayout()
 
-        #expect(!layout.needsScrolling)
+        #expect(!layout.isScrollable)
     }
 
     @Test("Tiles stop shrinking at the minimum size, fill the width, and scroll")
@@ -85,7 +85,7 @@ struct TileLayoutTests {
         #expect(layout.columnCount == 3)
         #expect(layout.tileSize == CGSize(width: 100, height: 100))
         #expect(layout.contentSize == CGSize(width: 300, height: 700))
-        #expect(layout.needsScrolling)
+        #expect(layout.isScrollable)
     }
 
     @Test("The minimum size applies to a portrait tile's height")
@@ -113,7 +113,7 @@ struct TileLayoutTests {
         )
 
         #expect(layout.tileFrames.isEmpty)
-        #expect(!layout.needsScrolling)
+        #expect(!layout.isScrollable)
     }
 
     @Test("h and l move to the previous and next tile, stopping at the ends")

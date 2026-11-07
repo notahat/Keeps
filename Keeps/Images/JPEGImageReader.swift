@@ -15,42 +15,42 @@ enum JPEGImageReader {
     private nonisolated static let maxFullImageLongestSideLength = 4416
 
     /// Read a JPEG file's image at a size.
-    nonisolated static func image(from source: CGImageSource, size: ImageSize) -> CGImage? {
+    nonisolated static func readImage(from source: CGImageSource, size: ImageSize) -> CGImage? {
         switch size {
         case let .scaled(targetLongestSideLength):
-            scaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
-        case .full: fullImage(from: source)
+            readScaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
+        case .full: readFullImage(from: source)
         }
     }
 
     /// Read a JPEG file's scaled image.
-    private nonisolated static func scaledImage(
+    private nonisolated static func readScaledImage(
         from source: CGImageSource,
         targetLongestSideLength: Int
     ) -> CGImage? {
-        guard let imageLongestSideLength = longestSideLength(of: source) else { return nil }
+        guard let imageLongestSideLength = readLongestSideLength(of: source) else { return nil }
         if targetLongestSideLength <= imageLongestSideLength / 8 {
             // If the target side length is an eighth of the image's or less,
             // load it at a quarter of the image's size, then shrink it.
             // That's twice as fast as loading it directly at the target size.
-            guard let image = readScaledImage(from: source, targetLongestSideLength: imageLongestSideLength / 4) else { return nil }
+            guard let image = decode(source, toLongestSideLength: imageLongestSideLength / 4) else { return nil }
             return shrink(image, toLongestSideLength: targetLongestSideLength)
         } else {
             // ...otherwise load it directly at the target size.
-            return readScaledImage(from: source, targetLongestSideLength: targetLongestSideLength)
+            return decode(source, toLongestSideLength: targetLongestSideLength)
         }
     }
 
     /// Read a JPEG file's full image.
-    private nonisolated static func fullImage(from source: CGImageSource) -> CGImage? {
-        guard let imageLongestSideLength = longestSideLength(of: source) else { return nil }
+    private nonisolated static func readFullImage(from source: CGImageSource) -> CGImage? {
+        guard let imageLongestSideLength = readLongestSideLength(of: source) else { return nil }
         // Load it at the image's size halved until it fits the limit. Loading
         // at exactly a half takes half the time of a size a pixel larger.
         let readLongestSideLength = halvedSize(
             of: imageLongestSideLength,
             toAtMost: maxFullImageLongestSideLength
         )
-        return readScaledImage(from: source, targetLongestSideLength: readLongestSideLength)
+        return decode(source, toLongestSideLength: readLongestSideLength)
     }
 
     /// Halve an image's longest side length until it's no more than the
@@ -65,11 +65,11 @@ enum JPEGImageReader {
         return length
     }
 
-    /// Read a JPEG file's image, scaled so its longest side is no more than
-    /// the target length.
-    private nonisolated static func readScaledImage(
-        from source: CGImageSource,
-        targetLongestSideLength: Int
+    /// Decode a JPEG file's image, scaled so its longest side is no more
+    /// than the target length.
+    private nonisolated static func decode(
+        _ source: CGImageSource,
+        toLongestSideLength targetLongestSideLength: Int
     ) -> CGImage? {
         let options: [CFString: Any] = [
             // Always scale from the full image rather than using a smaller
@@ -90,7 +90,7 @@ enum JPEGImageReader {
         let scale = Double(targetLongestSideLength) / Double(max(image.width, image.height))
         let width = max(1, Int((Double(image.width) * scale).rounded()))
         let height = max(1, Int((Double(image.height) * scale).rounded()))
-        let colorSpace = image.colorSpace.flatMap { $0.model == .rgb ? $0 : nil }
+        let colorSpace = image.colorSpace.flatMap { space in space.model == .rgb ? space : nil }
             ?? CGColorSpace(name: CGColorSpace.sRGB)!
         let context = CGContext(
             data: nil,
@@ -109,7 +109,7 @@ enum JPEGImageReader {
     /// Read the length in pixels of the longest side of a file's image. The
     /// length comes from the file's header, so the image isn't decoded.
     /// Return nil if the header doesn't give it.
-    private nonisolated static func longestSideLength(of source: CGImageSource) -> Int? {
+    private nonisolated static func readLongestSideLength(of source: CGImageSource) -> Int? {
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
         guard let width = properties?[kCGImagePropertyPixelWidth] as? Int,
               let height = properties?[kCGImagePropertyPixelHeight] as? Int

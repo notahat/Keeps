@@ -9,7 +9,7 @@ struct SavedGroupingTests {
         grouping.selectCell(at: 2)
 
         let restored = Grouping(photos: grouping.photos)
-        restored.applyRestored(state: grouping.snapshotState())
+        restored.restore(from: grouping.makeSavedGrouping())
 
         #expect(restored.boundaries == [3, 5, 10])
         #expect(restored.collapsedUpTo == 3)
@@ -22,7 +22,7 @@ struct SavedGroupingTests {
         grouping.scrollAnchor = GridScrollAnchor(photoID: grouping.photos[6].id, offsetFromRowTop: 42)
 
         let restored = Grouping(photos: grouping.photos)
-        restored.applyRestored(state: grouping.snapshotState())
+        restored.restore(from: grouping.makeSavedGrouping())
 
         #expect(restored.scrollAnchor == GridScrollAnchor(photoID: grouping.photos[6].id, offsetFromRowTop: 42))
     }
@@ -38,9 +38,9 @@ struct SavedGroupingTests {
         grouping.toggleKeeper(atPhoto: 4)
         let keepsFile = KeepsFile(folderURL: folder)
 
-        try keepsFile.save(grouping.snapshotState())
+        try keepsFile.save(grouping.makeSavedGrouping())
         let restored = Grouping(photos: grouping.photos)
-        try restored.applyRestored(state: #require(try keepsFile.restore()))
+        try restored.restore(from: #require(try keepsFile.restore()))
 
         #expect(restored.keepers == [1, 4])
         #expect(restored.isDone(0 ..< 3))
@@ -52,7 +52,7 @@ struct SavedGroupingTests {
         let grouping = makeGrouping(photoCount: 10, collapsedBoundaries: [4, 10])
 
         let restored = Grouping(photos: grouping.photos)
-        restored.applyRestored(state: grouping.snapshotState())
+        restored.restore(from: grouping.makeSavedGrouping())
 
         #expect(restored.collapsedUpTo == 10)
     }
@@ -61,7 +61,7 @@ struct SavedGroupingTests {
     func emptySnapshot() {
         let grouping = makeGrouping(photoCount: 3)
 
-        #expect(grouping.snapshotState() == SavedGrouping(
+        #expect(grouping.makeSavedGrouping() == SavedGrouping(
             boundaries: [], collapsedUpTo: nil, selectedStem: nil, scrollAnchor: nil
         ))
     }
@@ -105,7 +105,7 @@ struct SavedGroupingTests {
         let keepsFile = KeepsFile(folderURL: folder)
 
         let state = try #require(try keepsFile.restore())
-        grouping.applyRestored(state: state)
+        grouping.restore(from: state)
 
         #expect(grouping.boundaries == [3, 5, 10])
         #expect(grouping.collapsedUpTo == 3)
@@ -125,7 +125,7 @@ struct SavedGroupingTests {
             doneGroupStartStems: [grouping.photos[0].stem, "IMG_4444"]
         )
 
-        grouping.applyRestored(state: state)
+        grouping.restore(from: state)
 
         #expect(grouping.boundaries == [2])
         #expect(grouping.collapsedUpTo == 0)

@@ -157,7 +157,7 @@ struct Read: Sendable {
 
     /// A read the app makes, of an image at a size.
     static func app(_ name: String, size: ImageSize) -> Read {
-        Read(name: name) { ImageReader.image(from: $0, size: size) }
+        Read(name: name) { ImageReader.readImage(from: $0, size: size) }
     }
 
     /// Decodes the image itself in full, rather than any preview: for a RAW,

@@ -2,9 +2,10 @@ import Foundation
 @testable import Keeps
 import Testing
 
-/// A minimal observable model for exercising observation-triggered saves.
+/// An observable selection, standing in for Grouping, whose changes should
+/// trigger saves.
 @Observable
-private final class StubModel {
+private final class ObservableSelection {
     var selectedStem: String?
 }
 
@@ -135,14 +136,14 @@ struct KeepsFileTests {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let keepsFile = KeepsFile(folderURL: folder)
-        let model = StubModel()
+        let selection = ObservableSelection()
         keepsFile.startAutoSaving(
-            snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
+            snapshot: { makeSavedGrouping(selectedStem: selection.selectedStem) },
             onSaveError: { _ in }
         )
 
         // The save runs on the next main-actor turn; yield until it has.
-        model.selectedStem = "IMG_0001"
+        selection.selectedStem = "IMG_0001"
         for _ in 0 ..< 10 where try keepsFile.restore() == nil {
             await Task.yield()
         }
@@ -159,19 +160,19 @@ struct KeepsFileTests {
             withIntermediateDirectories: false
         )
         let keepsFile = KeepsFile(folderURL: folder)
-        let model = StubModel()
-        let errorBox = ErrorBox()
+        let selection = ObservableSelection()
+        let reported = ReportedError()
         keepsFile.startAutoSaving(
-            snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
-            onSaveError: { errorBox.error = $0 }
+            snapshot: { makeSavedGrouping(selectedStem: selection.selectedStem) },
+            onSaveError: { reported.error = $0 }
         )
 
-        model.selectedStem = "IMG_0001"
-        for _ in 0 ..< 10 where errorBox.error == nil {
+        selection.selectedStem = "IMG_0001"
+        for _ in 0 ..< 10 where reported.error == nil {
             await Task.yield()
         }
 
-        #expect(errorBox.error != nil)
+        #expect(reported.error != nil)
     }
 
     @Test("Stopping halts observed saves")
@@ -179,14 +180,14 @@ struct KeepsFileTests {
         let folder = try makeTemporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let keepsFile = KeepsFile(folderURL: folder)
-        let model = StubModel()
+        let selection = ObservableSelection()
         keepsFile.startAutoSaving(
-            snapshot: { makeSavedGrouping(selectedStem: model.selectedStem) },
+            snapshot: { makeSavedGrouping(selectedStem: selection.selectedStem) },
             onSaveError: { _ in }
         )
 
         keepsFile.stopAutoSaving()
-        model.selectedStem = "IMG_0001"
+        selection.selectedStem = "IMG_0001"
         for _ in 0 ..< 10 {
             await Task.yield()
         }
@@ -195,8 +196,8 @@ struct KeepsFileTests {
     }
 }
 
-/// Captures an error reported through an escaping @MainActor callback.
+/// The error a save reported, if any, kept so the test can check it.
 @MainActor
-private final class ErrorBox {
+private final class ReportedError {
     var error: Error?
 }

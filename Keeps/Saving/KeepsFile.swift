@@ -43,17 +43,29 @@ final class KeepsFile {
     /// format. The format name's key is "workflow", the name it was first
     /// written under, so existing files keep loading.
     private struct Contents: Codable {
-        let workflow: String
+        let formatName: String
         let state: SavedGrouping
+
+        private enum CodingKeys: String, CodingKey {
+            case formatName = "workflow"
+            case state
+        }
     }
 
     /// Just the format name, so it can be checked before decoding the rest.
     private struct Header: Decodable {
-        let workflow: String
+        let formatName: String
+
+        private enum CodingKeys: String, CodingKey {
+            case formatName = "workflow"
+        }
     }
 
     private let fileURL: URL
-    private var isAutoSaving = true
+
+    /// Whether stopAutoSaving() has been called, after which nothing more is
+    /// saved.
+    private var isStopped = false
 
     /// Makes a KeepsFile for the keeps.json in a photo folder, without
     /// reading or writing it.
@@ -78,7 +90,7 @@ final class KeepsFile {
     /// format name first.
     private static func decodeGrouping(from data: Data) throws -> SavedGrouping {
         let decoder = JSONDecoder()
-        let formatName = try decoder.decode(Header.self, from: data).workflow
+        let formatName = try decoder.decode(Header.self, from: data).formatName
         guard formatName == SavedGrouping.originalFormatName else {
             throw UnknownFormatError(formatName: formatName)
         }
@@ -91,13 +103,13 @@ final class KeepsFile {
     func save(_ savedGrouping: SavedGrouping) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let contents = Contents(workflow: SavedGrouping.originalFormatName, state: savedGrouping)
+        let contents = Contents(formatName: SavedGrouping.originalFormatName, state: savedGrouping)
         try encoder.encode(contents).write(to: fileURL)
     }
 
     /// Stops auto-saving.
     func stopAutoSaving() {
-        isAutoSaving = false
+        isStopped = true
     }
 
     /// Begins observing whatever observable state `snapshot` reads, writing
@@ -117,7 +129,7 @@ final class KeepsFile {
             _ = snapshot()
         } onChange: {
             Task { @MainActor in
-                guard self.isAutoSaving else { return }
+                guard !self.isStopped else { return }
                 do {
                     try self.save(snapshot())
                 } catch {

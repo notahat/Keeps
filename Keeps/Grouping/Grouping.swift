@@ -197,7 +197,7 @@ class Grouping {
         guard let closed = openGroup else { return }
         openGroup = nil
         guard isDone(closed) else { return }
-        let next = layout.groups.first { $0.lowerBound >= closed.upperBound && !isDone($0) }
+        let next = layout.groups.first { group in group.lowerBound >= closed.upperBound && !isDone(group) }
         selectedPhotoIndex = next?.lowerBound ?? workingPointPhotoIndex
     }
 
@@ -263,7 +263,7 @@ class Grouping {
     /// each saved property here is what subscribes it to that property's
     /// changes: anything left out of the snapshot would change without
     /// triggering a save.
-    func snapshotState() -> SavedGrouping {
+    func makeSavedGrouping() -> SavedGrouping {
         SavedGrouping(
             boundaries: boundaries.sorted().map(stems.position(beforePhoto:)),
             collapsedUpTo: collapsedUpTo > 0 ? stems.position(beforePhoto: collapsedUpTo) : nil,
@@ -282,7 +282,7 @@ class Grouping {
 
     /// Replaces the state with restored state, dropping anything that refers
     /// to a photo no longer in the folder.
-    func applyRestored(state: SavedGrouping) {
+    func restore(from state: SavedGrouping) {
         boundaries = Set(state.boundaries.compactMap(stems.photoIndex(at:)))
         collapsedUpTo = state.collapsedUpTo.flatMap(stems.photoIndex(at:)) ?? 0
         selectedPhotoIndex = state.selectedStem.flatMap(stems.photoIndex(ofStem:))

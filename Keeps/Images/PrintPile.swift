@@ -61,7 +61,7 @@ struct PrintPile: View {
             FramedPhoto(
                 photo: photo,
                 borderWidth: borderWidth,
-                loadsInBackground: layer > 0,
+                shouldLoadInBackground: layer > 0,
                 placeholder: placeholder(isTopLayer: layer == 0),
                 frameSize: CGSize(width: length, height: length),
                 onAspectRatioKnown: layer == 0 ? { topAspectRatio = $0 } : nil

@@ -146,6 +146,18 @@ Benchmarks/run-decode-benchmark
 
 SwiftFormat runs automatically on every `.swift` edit via a PostToolUse hook — no need to run it manually.
 
+**Function names.** A function with side effects or I/O starts with a
+verb (`readImage(from:size:)`, `makeAppMenu()`). Pure lookups and SwiftUI
+view builders may keep the noun names Swift's API guidelines give them
+(`photoIndex(forGap:)`, `header`). This overrides the global rule that
+every function name starts with a verb.
+
+**Closure parameters.** `$0` is fine in a one-line closure whose meaning
+is plain, such as `filter { keepers.contains($0) }`. Name the parameters
+where their order or meaning isn't obvious, such as
+`map { index, photo in (photo.stem, index) }`, when one is used more than
+once, or in nested closures.
+
 ## Testing
 
 Tests use Swift Testing (`import Testing`, `@Test`, `#expect`) — not XCTest. Write all new tests to match this framework.

@@ -89,10 +89,10 @@ struct FolderView: View {
         let newKeepsFile = KeepsFile(folderURL: session.folderURL)
         do {
             if let savedGrouping = try newKeepsFile.restore() {
-                newGrouping.applyRestored(state: savedGrouping)
+                newGrouping.restore(from: savedGrouping)
             }
             newKeepsFile.startAutoSaving(
-                snapshot: { newGrouping.snapshotState() },
+                snapshot: { newGrouping.makeSavedGrouping() },
                 onSaveError: { NSApp.presentError($0) }
             )
         } catch {

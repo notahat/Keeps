@@ -27,7 +27,7 @@ struct FramedPhoto: View {
     /// When true, the image is queued at background priority even while on
     /// screen, as if it were off-screen — for images that are mostly hidden,
     /// such as the lower layers of a pile.
-    var loadsInBackground = false
+    var shouldLoadInBackground = false
 
     /// What to show while the image loads.
     var placeholder: Placeholder = .square
@@ -138,7 +138,7 @@ struct FramedPhoto: View {
     private func loadImage(size: ImageSize) -> WatchedImage {
         let watched = ImagePipeline.shared.watchedImage(for: photo, size: size)
         guard watched.image == nil else { return watched }
-        if loadsInBackground {
+        if shouldLoadInBackground {
             ImagePipeline.shared.prefetchImage(for: photo, size: size)
         } else {
             ImagePipeline.shared.requestImage(for: photo, size: size)

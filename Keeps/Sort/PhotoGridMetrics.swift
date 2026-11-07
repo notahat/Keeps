@@ -69,7 +69,7 @@ enum PhotoGridMetrics {
         from pinnedIndex: Int, oldIDs: [UUID], newIDs: [UUID]
     ) -> (oldIndex: Int, newIndex: Int)? {
         guard oldIDs.indices.contains(pinnedIndex) else { return nil }
-        let newIndexByID = Dictionary(uniqueKeysWithValues: newIDs.enumerated().map { ($1, $0) })
+        let newIndexByID = Dictionary(uniqueKeysWithValues: newIDs.enumerated().map { index, id in (id, index) })
         let searchOrder = Array((0 ... pinnedIndex).reversed()) + Array(pinnedIndex + 1 ..< oldIDs.count)
         for oldIndex in searchOrder {
             if let newIndex = newIndexByID[oldIDs[oldIndex]] {

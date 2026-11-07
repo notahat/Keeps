@@ -33,7 +33,7 @@ final class FolderWindowController: NSWindowController {
     }
 
     /// Records the section showing and retitles the window to match.
-    private func show(_ newSection: FolderSection) {
+    private func updateTitle(for newSection: FolderSection) {
         section = newSection
         synchronizeWindowTitleWithDocumentName()
     }
@@ -41,7 +41,7 @@ final class FolderWindowController: NSWindowController {
     /// Makes the window hosting the folder's view, at the default size.
     private func makeWindow(session: FolderSession) -> NSWindow {
         let folderView = FolderView(session: session) { [weak self] section in
-            self?.show(section)
+            self?.updateTitle(for: section)
         }
         let hostingController = NSHostingController(rootView: folderView)
         // Lets the folder view's SwiftUI toolbar items show in the window's

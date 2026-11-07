@@ -179,7 +179,7 @@ commit.
     so its scrolling speaks of photo ids, and `GridHitTarget.item` became
     `.cell`. The glossary also gained photo, slot, blank print, and
     selected.)
-12. **Names that say what they do.**
+12. ✅ **Names that say what they do.**
     - Record the two naming decisions above in the project CLAUDE.md.
     - Functions with side effects get verbs: `makeAppMenu()` and the
       other menus, `readImage(from:size:)`,
@@ -193,6 +193,11 @@ commit.
       disk.
     - Name the `$0` parameters picked out in the review, and the
       pattern-named test helpers `StubModel` and `ErrorBox`.
+    (`snapshotState()` and `applyRestored(state:)` became
+    `makeSavedGrouping()` and `restore(from:)`, `needsScrolling` became
+    `isScrollable`, `loadsInBackground` became `shouldLoadInBackground`,
+    and `show(_:)` became `updateTitle(for:)`. The test helpers are
+    `ObservableSelection` and `ReportedError`.)
 13. **Comments.**
     - Rewrite function comments as imperative sentences.
     - Give sizes their units.

@@ -22,7 +22,7 @@ nonisolated struct TileLayout {
 
     /// Whether the tiles are taller than the available space, so they
     /// scroll.
-    let needsScrolling: Bool
+    let isScrollable: Bool
 
     /// `aspectRatio` is each tile's width over its height.
     /// `minimumTileLength` is the smallest a tile's longer side may be.
@@ -39,7 +39,7 @@ nonisolated struct TileLayout {
             tileSize = .zero
             tileFrames = []
             contentSize = availableSize
-            needsScrolling = false
+            isScrollable = false
             return
         }
         let grid = TileGrid.choose(
@@ -63,7 +63,7 @@ nonisolated struct TileLayout {
         tileFrames = (0 ..< tileCount).map { grid.frame(ofTile: $0, blockOrigin: origin) }
         self.contentSize = contentSize
         // Allows for rounding, so tiles that fit exactly don't scroll.
-        needsScrolling = blockSize.height > availableSize.height + 0.5
+        isScrollable = blockSize.height > availableSize.height + 0.5
     }
 
     /// The tile a movement key goes to from the given tile. Left and right
@@ -111,7 +111,7 @@ nonisolated struct TileLayout {
     static func commonAspectRatio(of ratios: [CGFloat]) -> CGFloat? {
         let rounded = ratios.map { ($0 * 100).rounded() / 100 }
         let counts = Dictionary(rounded.map { ($0, 1) }, uniquingKeysWith: +)
-        return rounded.max { counts[$0, default: 0] < counts[$1, default: 0] }
+        return rounded.max { first, second in counts[first, default: 0] < counts[second, default: 0] }
     }
 
     /// The tile in a row whose centre is horizontally nearest the given
@@ -148,7 +148,7 @@ private nonisolated struct TileGrid {
                         availableSize: availableSize, spacing: spacing)
         }
         // max(by:) keeps the first of equal widths, so fewer columns win ties.
-        let bestIndex = fittedWidths.indices.max { fittedWidths[$0] < fittedWidths[$1] } ?? 0
+        let bestIndex = fittedWidths.indices.max { first, second in fittedWidths[first] < fittedWidths[second] } ?? 0
         let (columnCount, width) = fittedWidths[bestIndex] >= minimumWidth
             ? (bestIndex + 1, fittedWidths[bestIndex])
             : scrollingColumns(tileCount: tileCount, minimumWidth: minimumWidth,
